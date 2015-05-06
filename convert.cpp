@@ -12,7 +12,7 @@ using namespace std;
 
 // main functions
 void convertXY(int x, int y, int &X, int &Y);
-string findHoppingReal(string &content, int X, int Y, int Z, int u, int v);
+double findHoppingReal(string &content, int X, int Y, int Z, int u, int v);
 string findHoppingRealImag(string &content, int X, int Y, int Z, int u, int v);
 int convertHR2Hopping(int argc, char** argv);
 int combineHR2Flex(int argc, char** argv);
@@ -97,7 +97,7 @@ void convertXY(int x, int y, int &X, int &Y)
 	return;
 }
 
-string findHoppingReal(string &content, int X, int Y, int Z, int u, int v)
+double findHoppingReal(string &content, int X, int Y, int Z, int u, int v)
 {
 	char s[256];
 	double r = 0;
@@ -119,7 +119,7 @@ string findHoppingReal(string &content, int X, int Y, int Z, int u, int v)
 	i /= n;
 	sprintf(s, "%11.8lfD0", r);
 	string str = s;
-	return str;
+	return r;
 }
 
 string findHoppingRealImag(string &content, int X, int Y, int Z, int u, int v)
@@ -156,6 +156,9 @@ int convertHR2Hopping(int argc, char** argv)
 	//string outf1 = "energies.out", outf2 = "hopping.out";
 	string infile2 = argv[2];
 	string outfile2 = argv[3];
+	double fermi = 0;
+	if (argc > 4) fermi = atof(argv[4]);
+	//cout << fermi;
 	char s[256];
 
 	//printf("Input files: %s, %s\n", inf1.c_str(), inf2.c_str());
@@ -187,7 +190,7 @@ int convertHR2Hopping(int argc, char** argv)
 	for (int i = 1; i <= 5; i++)
 	{
 		formatAppendString(out1, "  %d   ", i);
-		out1 += findHoppingReal(s2, 0, 0, 0, i, i) + "\n";
+		formatAppendString(out1,"%11.8lfD0\n", findHoppingReal(s2, 0, 0, 0, i, i)-fermi);
 	}
 
 	//format hopping
