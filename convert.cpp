@@ -11,7 +11,7 @@
 using namespace std;
 
 // main functions
-void convertXY(int x, int y, int &X, int &Y);
+void convertXY(int x, int y, int &X, int &Y, int &t);
 double findHoppingReal(string &content, int X, int Y, int Z, int u, int v);
 string findHoppingRealImag(string &content, int X, int Y, int Z, int u, int v);
 int convertHR2Hopping(int argc, char** argv);
@@ -90,10 +90,19 @@ int main(int argc, char* argv[])
 }
 
 
-void convertXY(int x, int y, int &X, int &Y)
+void convertXY(int x, int y, int &X, int &Y, int &t)
 {
-	X = x - y;
-	Y = x + y;
+	t = (x + y) % 2;
+	if (t != 0)
+	{
+		X = (x - y + 1) / 2;
+		Y = (x + y - 1) / 2;
+	}
+	else
+	{
+		X = (x - y) / 2;
+		Y = (x + y) / 2;
+	}
 	return;
 }
 
@@ -102,21 +111,10 @@ double findHoppingReal(string &content, int X, int Y, int Z, int u, int v)
 	char s[256];
 	double r = 0;
 	double i = 0;
-	int n = 0;
-	for (auto u0 = u; u0 <= u + 5; u0 += 5)
-	{
-		auto v0 = u0;
-		//for (auto v0 = v; v0 <= v + 5; v0 += 5)
-		{
-			sprintf(s, "%5d%5d%5d%5d%5d", X, Y, Z, u0, v0);
-			int pos = content.find(s) + 26;
-			r += atof(content.substr(pos, 12).c_str());
-			i += atof(content.substr(pos + 12, 12).c_str());
-			n++;
-		}
-	}
-	r /= n;
-	i /= n;
+	sprintf(s, "%5d%5d%5d%5d%5d", X, Y, Z, u, v);
+	int pos = content.find(s) + 26;
+	r += atof(content.substr(pos, 12).c_str());
+	i += atof(content.substr(pos + 12, 12).c_str());
 	sprintf(s, "%11.8lfD0", r);
 	string str = s;
 	return r;
@@ -127,26 +125,16 @@ string findHoppingRealImag(string &content, int X, int Y, int Z, int u, int v)
 	char s[256];
 	double r = 0;
 	double i = 0;
-	int n = 0;
-	for (auto u0 = u; u0 <= u + 5; u0 += 5)
-	{
-		for (auto v0 = v; v0 <= v + 5; v0 += 5)
-		{
-			sprintf(s, "%5d%5d%5d%5d%5d", X, Y, Z, u0, v0);
-			int pos = content.find(s) + 26;
-			r += atof(content.substr(pos, 12).c_str());
-			i += atof(content.substr(pos + 12, 12).c_str());
-			n++;
-		}
-	}
-	r /= n;
-	i /= n;
-	if (X == 0 && Y == 0)
+	sprintf(s, "%5d%5d%5d%5d%5d", X, Y, Z, u, v);
+	int pos = content.find(s) + 26;
+	r += atof(content.substr(pos, 12).c_str());
+	i += atof(content.substr(pos + 12, 12).c_str());
+	if (X == 0 && Y == 0 && v < 6)
 	{
 		r = 0;
 		i = 0;
 	}
-	sprintf(s, "(%11.8lfD0, %11.8lfD0)", r, i);
+	sprintf(s, "(%6.3lfD0, %6.3lfD0)", r, i);
 	string str = s;
 	return str;
 }
@@ -190,7 +178,7 @@ int convertHR2Hopping(int argc, char** argv)
 	for (int i = 1; i <= 5; i++)
 	{
 		formatAppendString(out1, "  %d   ", i);
-		formatAppendString(out1,"%11.8lfD0\n", findHoppingReal(s2, 0, 0, 0, i, i)-fermi);
+		formatAppendString(out1,"%6.3lfD0\n", findHoppingReal(s2, 0, 0, 0, i, i)-fermi);
 	}
 
 	//format hopping
@@ -228,18 +216,22 @@ int convertHR2Hopping(int argc, char** argv)
 		{
 			sprintf(s, "------------------- [ %d, %d] hopping------------------------\n", x, y);
 			out2 += s;
-			int X, Y, Z = 0;
-			convertXY(x, y, X, Y);
+			int X, Y, Z = 0, t = 0;
+			convertXY(x, y, X, Y, t);
 
 			for (int u = 1; u <= 5; u++)
 			{
 				for (int v = 1; v <= 5; v++)
 				{
 					string line;
+					int uu = u, vv = v;
+					if (t != 0)
+						vv = v + 5;
 					formatAppendString(line, "%2d, %2d  ", u, v);
-					line += findHoppingRealImag(s2, X, Y, Z, u, v);
+					line += findHoppingRealImag(s2, X, Y, Z, u, vv);
 					line += "\n";
 					out2 += line;
+					//printf("%d, %d, %s", X, Y, line.c_str());
 				}
 			}
 			out2 += "\n";
