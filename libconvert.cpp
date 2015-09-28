@@ -3,7 +3,7 @@
 string readStringFromFile(const string &filename)
 {
 	FILE *fp = fopen(filename.c_str(), "rb");
-	if (fp == nullptr)
+	if (!fp)
 	{
 		printf("Can not open file %s\n", filename.c_str());
 		return "";
