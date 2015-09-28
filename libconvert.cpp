@@ -46,6 +46,13 @@ void replaceStringInFile(const string &oldfilename, const string &newfilename, c
 	writeStringToFile(s, newfilename);
 }
 
+void replaceAllStringInFile(const string &oldfilename, const string &newfilename, const string &oldstring, const string &newstring)
+{
+	string s = readStringFromFile(oldfilename);
+	while (replaceString(s, oldstring, newstring) >= 0);
+	writeStringToFile(s, newfilename);
+}
+
 string formatString(const char *format, ...)
 {
 	char s[1000];

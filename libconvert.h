@@ -14,6 +14,7 @@ string readStringFromFile(const string &filename);
 void writeStringToFile(const string &str, const string &filename);
 int replaceString(string &s, const string &oldstring, const string &newstring);
 void replaceStringInFile(const string &oldfilename, const string &newfilename, const string &oldstring, const string &newstring);
+void replaceAllStringInFile(const string &oldfilename, const string &newfilename, const string &oldstring, const string &newstring);
 string formatString(const char *format, ...);
 void formatAppendString(string &str, const char *format, ...);
 

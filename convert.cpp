@@ -23,6 +23,7 @@ int transGnuplot(int argc, char** argv);
 int findANumber(int argc, char** argv);
 int setWannierFrozen(int argc, char** argv);
 int replaceStringInSingleFile(int argc, char** argv);
+int replaceAllStringInSingleFile(int argc, char** argv);
 int replaceStringInSingleFile2(int argc, char** argv);
 int convertBands(int argc, char** argv);
 int convert10to5(int argc, char** argv);
@@ -47,23 +48,25 @@ int main(int argc, char* argv[])
 	if (option == "-h" || argc == 1)
 	{
 		cout << endl;
-		cout << "\t-f convert the hr data into hopping file.\n";
+		cout << "\t-f\tconvert the hr data into hopping file.\n";
 		cout << "\t   n_hr.dat hopping.out\n\n";
 		//cout << "\t-c combine the data into the flex input file\n.";
 		//cout << "\t\t-c inputfile newfile \n";
-		cout << "\t-i make the lattice parameter with the Fe-As-Fe bond angle.\n";
+		cout << "\t-i\tmake the lattice parameter with the Fe-As-Fe bond angle.\n";
 		cout << "\t   angle\n\n";
-		cout << "\t-g trans the '.gnu' to '.plt' for gnuplot, and add a line for fermi level.\n";
+		cout << "\t-g\ttrans the '.gnu' to '.plt' for gnuplot, and add a line for fermi level.\n";
 		cout << "\t   old.gun new.plt fermivalue\n\n";
-		cout << "\t-n find a number for output in a string.\n";
+		cout << "\t-n\tfind a number for output in a string.\n";
 		cout << "\t   string\n\n";
-		cout << "\t-w change set frozen window near fermi level.\n";
+		cout << "\t-w\tchange set frozen window near fermi level.\n";
 		cout << "\t   seed.win fermivalue -1 1\n\n";
-		cout << "\t-r replace string in a file.\n";
+		cout << "\t-r\treplace string in a file.\n";
 		cout << "\t   filename oldstring newstring\n\n";
-		cout << "\t-b convert the bands data.\n";
+		cout << "\t-ra\treplace string in a file.\n";
+		cout << "\t   filename oldstring newstring\n\n";
+		cout << "\t-b\tconvert the bands data.\n";
 		cout << "\t   input output fermi weight0 weight1 weight2\n\n";
-		cout << "\t-5 convert 10 bands into 5 bands.\n";
+		cout << "\t-5\tconvert 10 bands into 5 bands.\n";
 		cout << "\t   input output edge1 edge2\n\n";
 	}
 
@@ -76,6 +79,7 @@ int main(int argc, char* argv[])
 	if (option == "-n")		ret = findANumber(argc, argv);
 	if (option == "-w")		ret = setWannierFrozen(argc, argv);
 	if (option == "-r")		ret = replaceStringInSingleFile(argc, argv);
+	if (option == "-ra")		ret = replaceAllStringInSingleFile(argc, argv);
 	if (option == "-rf")		ret = replaceStringInSingleFile2(argc, argv);
 	if (option == "-b")		ret = convertBands(argc, argv);
 	if (option == "-5")		ret = convert10to5(argc, argv);
@@ -548,6 +552,22 @@ int replaceStringInSingleFile(int argc, char** argv)
 	string oldstr = argv[strnum+1];
 	string newstr = argv[strnum+2];
 	replaceStringInFile(filename, filename2, oldstr, newstr);
+	return 0;
+}
+
+int replaceAllStringInSingleFile(int argc, char** argv)
+{
+	string filename = argv[2];
+	int strnum = 2;
+	string filename2 = filename;
+	if (argc == 6)
+	{
+		strnum++;
+		filename2 = argv[3];
+	}
+	string oldstr = argv[strnum + 1];
+	string newstr = argv[strnum + 2];
+	replaceAllStringInFile(filename, filename2, oldstr, newstr);
 	return 0;
 }
 
