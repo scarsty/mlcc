@@ -135,8 +135,8 @@ string findHoppingRealImag(string &content, int X, int Y, int Z, int u, int v)
 	i += atof(content.substr(pos + 12, 12).c_str());
 	if (X == 0 && Y == 0 && v < 6)
 	{
-		r = 0;
-		i = 0;
+		//r = 0;
+		//i = 0;
 	}
 	sprintf(s, "(%6.3lfD0, %6.3lfD0)", r, i);
 	string str = s;
