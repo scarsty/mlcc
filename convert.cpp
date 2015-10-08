@@ -240,7 +240,7 @@ int convertHR2Hopping(int argc, char** argv)
 					//printf("%d, %d, %s", X, Y, line.c_str());
 				}
 			}
-			out2 += "\n";
+			//out2 += "\n";
 		}
 	}
 
