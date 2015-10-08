@@ -178,6 +178,7 @@ int convertHR2Hopping(int argc, char** argv)
 	string s2 = readStringFromFile(infile2);
 
 	//find the energies
+	/*
 	string out1;
 	for (int i = 1; i <= 5; i++)
 	{
@@ -190,7 +191,7 @@ int convertHR2Hopping(int argc, char** argv)
 	string out2 = "--------------flux values --------------\n 0.0E0  0.0E0  0.0E0\n\n";
 	out2 += " --------------orbital level-------------\n";
 	out2 += out1 + "\n";
-
+	*/
 	/*
 	int x[] = { 1, 1, 2, 2, 2 }, y[] = { 0, 1, 0, 1, 2 };
 	//for (int x = -2; x <= 2;x++)
