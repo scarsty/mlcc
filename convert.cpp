@@ -187,8 +187,9 @@ int convertHR2Hopping(int argc, char** argv)
 	}
 
 	//format hopping
-
-	string out2 = "--------------flux values --------------\n 0.0E0  0.0E0  0.0E0\n\n";
+	*/
+	string out2;
+	/*string out2 = "--------------flux values --------------\n 0.0E0  0.0E0  0.0E0\n\n";
 	out2 += " --------------orbital level-------------\n";
 	out2 += out1 + "\n";
 	*/
