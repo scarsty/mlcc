@@ -1,5 +1,5 @@
-CXX=icpc
-CPPFLAGS=-I. -O3 -std=c++0x
+CXX=g++
+CPPFLAGS=-I. -O2
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(SOURCES:.cpp=.o)
 TARGET=convert1

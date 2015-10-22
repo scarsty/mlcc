@@ -638,7 +638,7 @@ int convertBands(int argc, char** argv)
 	}
 
 	sort(x.begin(), x.end());
-	vector<vector<double>> y1;
+	vector<vector<double> > y1;
 	y1.resize(xCount);
 	for (int i = 0; i < y0.size(); i++)
 	{
@@ -652,7 +652,7 @@ int convertBands(int argc, char** argv)
 			}
 		}
 	}
-	vector<vector<double>> y;
+	vector<vector<double> > y;
 	//divide
 	y.resize(groupCount);
 	for (int i = 0; i < groupCount; i++)
