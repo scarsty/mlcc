@@ -4,7 +4,8 @@
 #include<vector>
 #include<stdarg.h>
 #include<math.h>
-#include <stdlib.h>
+#include<stdlib.h>
+#include<stdio.h>
 
 using namespace std;
 
