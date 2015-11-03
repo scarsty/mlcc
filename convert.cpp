@@ -138,7 +138,7 @@ string findHoppingRealImag(string &content, int X, int Y, int Z, int u, int v)
 		//r = 0;
 		//i = 0;
 	}
-	sprintf(s, "(%6.3lfD0, %6.3lfD0)", r, i);
+	sprintf(s, "(%6.2lfD0, 0D0)", r, i);
 	string str = s;
 	return str;
 }
