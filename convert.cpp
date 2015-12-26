@@ -454,13 +454,13 @@ int calLatticeWithAngleFeSe(int argc, char** argv)
 	vec b = vec(0, 1, 0)*changeXY;
 	vec c = vec(0, 0, 1.46560424966799)*(1/changeXY/changeXY);
 
-	vec Fe1 = vec(0, 0, 0);
-	vec Fe2 = vec(0.5, 0.5, 0);
-	vec Se1 = vec(0, 0.5, 0.243);
-	vec Se2 = vec(0.5, 0, 0.757);
+	vec Fe1 = vec(0.75, 0.25, 0);
+	vec Fe2 = vec(0.25, 0.75, 0);
+	vec Se1 = vec(0.75, 0.75, 0.243);
+	vec Se2 = vec(0.25, 0.25, 0.757);
 	
 	if (singlelayer == 2)
-		Se2 = vec(0.5, 0, -0.243);	
+		Se2 = vec(0.25, 0.25, -0.243);	
 
 	if (singlelayer)
 	{
