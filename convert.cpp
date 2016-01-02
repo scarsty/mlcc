@@ -459,10 +459,10 @@ int calLatticeWithAngleFeSe(int argc, char** argv)
 	vec Fe1 = vec(0.75, 0.25, 0);
 	vec Fe2 = vec(0.25, 0.75, 0);
 	vec Se1 = vec(0.75, 0.75, 0.243);
-	vec Se2 = vec(0.25, 0.25, 0.757);
+	vec Se2 = vec(0.25, 0.25, -0.243);
 	
-	if (singlelayer == 2)
-		Se2 = vec(0.25, 0.25, -0.243);	
+	//if (singlelayer == 2)
+	//Se2 = vec(0.25, 0.25, -0.243);	
 
 	if (singlelayer)
 	{
@@ -1049,7 +1049,7 @@ int renamefiles(int argc, char** argv)
 	string s = readStringFromFile(argv[2]);
 	vector<string> s1 = splitString(s, "\r");
 	string r;
-	for (string t : s1)
+	for (string t = s1.back(); s1.size() >= 0; t = s1.back(), s1.pop_back())
 	{
 		int k = 0;
 		for (int i = 0; i <= 5; i++)
