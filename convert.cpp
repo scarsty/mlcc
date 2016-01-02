@@ -1047,14 +1047,14 @@ int cgChem(int argc, char** argv)
 int renamefiles(int argc, char** argv)
 {
 	string s = readStringFromFile(argv[2]);
-	auto s1 = splitString(s, "\r");
+	vector<string> s1 = splitString(s, "\r");
 	string r;
-	for (auto t : s1)
+	for (string t : s1)
 	{
 		int k = 0;
 		for (int i = 0; i <= 5; i++)
 		{
-			auto c = t.c_str()[i];
+			char c = t.c_str()[i];
 			if (c >= '0' && c <= '9')
 			{
 				k = k + 1;
@@ -1062,7 +1062,7 @@ int renamefiles(int argc, char** argv)
 			}
 			if (k > 0 && c == '.')
 			{
-				auto s = t.substr(k+2, t.length() - k);
+				string s = t.substr(k+2, t.length() - k);
 				//cout << "rename \""<<t<<"\" \""<<s<<"\"\n";
 				//formatAppendString(r, "rename \"%s\" \"%s\"\n", t.c_str(), s.c_str());
 				printf("rename \"%s\" \"%s\"\n", t.substr(1,t.length()-1).c_str(), s.c_str());
