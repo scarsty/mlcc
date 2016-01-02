@@ -86,6 +86,6 @@ double diff2(double y2, double x2, double y1, double x1, double y0, double x0);
 int findNumbers(const string &s, vector<double> &data);
 string findANumber(const string &s);
 unsigned findTheLast(const string &s, const string &content);
-
+std::vector<std::string> splitString(std::string str, std::string pattern);
 
 

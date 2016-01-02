@@ -28,6 +28,7 @@ int replaceStringInSingleFile2(int argc, char** argv);
 int convertBands(int argc, char** argv);
 int convert10to5(int argc, char** argv);
 int cgChem(int argc, char** argv);
+int renamefiles(int argc, char** argv);
 
 
 int main(int argc, char* argv[])
@@ -85,6 +86,7 @@ int main(int argc, char* argv[])
 	if (option == "-5")		ret = convert10to5(argc, argv);
 	if (option == "-cg")		ret = cgChem(argc, argv);
 	if (option == "-i2")		ret = calLatticeWithAngle2(argc, argv);
+	if (option == "-rename")		ret = renamefiles(argc, argv);
 
 #ifdef WIN32
 	printf("\nPress and key to exit.");
@@ -138,7 +140,7 @@ string findHoppingRealImag(string &content, int X, int Y, int Z, int u, int v)
 		//r = 0;
 		//i = 0;
 	}
-	sprintf(s, "(%6.2lfD0, 0D0)", r);
+	sprintf(s, "(%11.7lfD0, %11.7lfD0)", r,i);
 	string str = s;
 	return str;
 }
@@ -1042,6 +1044,35 @@ int cgChem(int argc, char** argv)
 	return 0;
 }
 
+int renamefiles(int argc, char** argv)
+{
+	string s = readStringFromFile(argv[2]);
+	auto s1 = splitString(s, "\r");
+	string r;
+	for (auto t : s1)
+	{
+		int k = 0;
+		for (int i = 0; i <= 5; i++)
+		{
+			auto c = t.c_str()[i];
+			if (c >= '0' && c <= '9')
+			{
+				k = k + 1;
+				//cout << c;
+			}
+			if (k > 0 && c == '.')
+			{
+				auto s = t.substr(k+2, t.length() - k);
+				//cout << "rename \""<<t<<"\" \""<<s<<"\"\n";
+				//formatAppendString(r, "rename \"%s\" \"%s\"\n", t.c_str(), s.c_str());
+				printf("rename \"%s\" \"%s\"\n", t.substr(1,t.length()-1).c_str(), s.c_str());
+				break;
+			}
+		}
+			}
+	//cout << r;
+	return 0;
+}
 
 
 
