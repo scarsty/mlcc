@@ -42,6 +42,7 @@ int replaceString(string &s, const string &oldstring, const string &newstring)
 void replaceStringInFile(const string &oldfilename, const string &newfilename, const string &oldstring, const string &newstring)
 {
 	string s = readStringFromFile(oldfilename);
+	if (s.length() <= 0) return;
 	replaceString(s, oldstring, newstring);
 	writeStringToFile(s, newfilename);
 }
@@ -49,6 +50,7 @@ void replaceStringInFile(const string &oldfilename, const string &newfilename, c
 void replaceAllStringInFile(const string &oldfilename, const string &newfilename, const string &oldstring, const string &newstring)
 {
 	string s = readStringFromFile(oldfilename);
+	if (s.length() <= 0) return;
 	while (replaceString(s, oldstring, newstring) >= 0);
 	writeStringToFile(s, newfilename);
 }

@@ -49,26 +49,26 @@ int main(int argc, char* argv[])
 	if (option == "-h" || argc == 1)
 	{
 		cout << endl;
-		cout << "\t-f\tconvert the hr data into hopping file.\n";
-		cout << "\t   n_hr.dat hopping.out\n\n";
-		//cout << "\t-c combine the data into the flex input file\n.";
-		//cout << "\t\t-c inputfile newfile \n";
-		cout << "\t-i\tmake the lattice parameter with the Fe-As-Fe bond angle.\n";
-		cout << "\t   angle\n\n";
-		cout << "\t-g\ttrans the '.gnu' to '.plt' for gnuplot, and add a line for fermi level.\n";
-		cout << "\t   old.gun new.plt fermivalue\n\n";
-		cout << "\t-n\tfind a number for output in a string.\n";
-		cout << "\t   string\n\n";
-		cout << "\t-w\tchange set frozen window near fermi level.\n";
-		cout << "\t   seed.win fermivalue -1 1\n\n";
-		cout << "\t-r\treplace string in a file.\n";
-		cout << "\t   filename oldstring newstring\n\n";
-		cout << "\t-ra\treplace string in a file.\n";
-		cout << "\t   filename oldstring newstring\n\n";
-		cout << "\t-b\tconvert the bands data.\n";
-		cout << "\t   input output fermi weight0 weight1 weight2\n\n";
-		cout << "\t-5\tconvert 10 bands into 5 bands.\n";
-		cout << "\t   input output edge1 edge2\n\n";
+		cout << "-f\tconvert the hr data into hopping file.\n";
+		cout << "   n_hr.dat hopping.out\n\n";
+		//cout << "-c combine the data into the flex input file\n.";
+		//cout << "\t-c inputfile newfile \n";
+		cout << "-i\tmake the lattice parameter with the Fe-As-Fe bond angle.\n";
+		cout << "   angle\n\n";
+		cout << "-g\ttrans the '.gnu' to '.plt' for gnuplot, and add a line for fermi level.\n";
+		cout << "   old.gun new.plt fermivalue\n\n";
+		cout << "-n\tfind a number for output in a string.\n";
+		cout << "   string\n\n";
+		cout << "-w\tchange set frozen window near fermi level.\n";
+		cout << "   seed.win fermivalue -1 1\n\n";
+		cout << "-r\treplace string in a file.\n";
+		cout << "   filename oldstring newstring\n\n";
+		cout << "-ra\treplace string in a file.\n";
+		cout << "   filename oldstring newstring\n\n";
+		cout << "-b\tconvert the bands data.\n";
+		cout << "   input output fermi weight0 weight1 weight2\n\n";
+		cout << "-5\tconvert 10 bands into 5 bands.\n";
+		cout << "   input output edge1 edge2\n\n";
 	}
 
 	if (option == "-f")		ret = convertHR2Hopping(argc, argv);
