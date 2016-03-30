@@ -49,25 +49,25 @@ int main(int argc, char* argv[])
 	if (option == "-h" || argc == 1)
 	{
 		cout << endl;
-		cout << "-f\tconvert the hr data into hopping file.\n";
+		cout << " -f\tconvert the hr data into hopping file.\n";
 		cout << "   n_hr.dat hopping.out\n\n";
 		//cout << "-c combine the data into the flex input file\n.";
 		//cout << "\t-c inputfile newfile \n";
-		cout << "-i\tmake the lattice parameter with the Fe-As-Fe bond angle.\n";
+		cout << " -i\tmake the lattice parameter with the Fe-As-Fe bond angle.\n";
 		cout << "   angle\n\n";
-		cout << "-g\ttrans the '.gnu' to '.plt' for gnuplot, and add a line for fermi level.\n";
+		cout << " -g\ttrans the '.gnu' to '.plt' for gnuplot, and add a line for fermi level.\n";
 		cout << "   old.gun new.plt fermivalue\n\n";
-		cout << "-n\tfind a number for output in a string.\n";
+		cout << " -n\tfind a number for output in a string.\n";
 		cout << "   string\n\n";
-		cout << "-w\tchange set frozen window near fermi level.\n";
+		cout << " -w\tchange set frozen window near fermi level.\n";
 		cout << "   seed.win fermivalue -1 1\n\n";
-		cout << "-r\treplace string in a file.\n";
+		cout << " -r\treplace string in a file.\n";
 		cout << "   filename oldstring newstring\n\n";
-		cout << "-ra\treplace string in a file.\n";
+		cout << " -ra\treplace string in a file.\n";
 		cout << "   filename oldstring newstring\n\n";
-		cout << "-b\tconvert the bands data.\n";
+		cout << " -b\tconvert the bands data.\n";
 		cout << "   input output fermi weight0 weight1 weight2\n\n";
-		cout << "-5\tconvert 10 bands into 5 bands.\n";
+		cout << " -5\tconvert 10 bands into 5 bands.\n";
 		cout << "   input output edge1 edge2\n\n";
 	}
 
