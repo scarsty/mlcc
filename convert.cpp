@@ -49,17 +49,17 @@ int main(int argc, char* argv[])
 
 	if (option == "-h" || argc == 1)
 	{
-		cout << endl;
+		cout << "functions of this program:" << endl;
 		cout << " -f\tconvert the hr data into hopping file.\n";
 		cout << "   n_hr.dat hopping.out\n";
 		//cout << "-c combine the data into the flex input file\n.";
 		//cout << "\t-c inputfile newfile \n";
 		cout << " -i\tmake the lattice parameter with the Fe-As-Fe bond angle.\n";
-		cout << "   angle\n\n";
+		cout << "   angle\n\;
 		cout << " -g\ttrans the '.gnu' to '.plt' for gnuplot, and add a line for fermi level.\n";
 		cout << "   old.gun new.plt fermivalue\n";
 		cout << " -n\tfind a number for output in a string.\n";
-		cout << "   string\n\n";
+		cout << "   string\n";
 		cout << " -w\tchange set frozen window near fermi level.\n";
 		cout << "   seed.win fermivalue -1 1\n";
 		cout << " -r\treplace string in a file.\n";
