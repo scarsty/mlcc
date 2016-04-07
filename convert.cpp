@@ -1096,26 +1096,29 @@ int setProperty(int argc, char** argv)
 	string pro = argv[strnum + 1];
 	string content = argv[strnum + 2];
 
-	pro = "da";
-	content = "abc";
-
 	string f = readStringFromFile(filename);
 	int pos = 0;
-	while (pos>=0)
+	while (pos >= 0)
 	{
 		int pos0 = f.find(pro, pos);
-		if (pos0 > 0)
+		if (pos0 < 0)
 		{
-			char c1 = f.at(pos0 - 1);
+			return -1;
+		}
+		else
+		{
+			char c1 = ' ';
+			if (pos > 0)
+				c1 = f.at(pos0 - 1);
 			char c2 = f.at(pos0 + pro.length());
-			cout << "chars:"<<c1 << c2 << endl;
+			//cout << "chars:" << pro << c1 << c2 << endl;
 			if (!isProChar(c1) && !isProChar(c2))
 			{
 				pos = pos0;
 				break;
 			}
 		}
-		pos = pos0+1;
+		pos = pos0 + 1;
 	}
 	if (pos < 0) return -1;
 	int pos1 = f.find("=", pos) + 1;
@@ -1125,7 +1128,9 @@ int setProperty(int argc, char** argv)
 	f.erase(pos1, len);
 	f.insert(pos1, content);
 	writeStringToFile(f, filename2);
+#ifdef _DEBUG
 	cout << "\nresult:\n"<<f;
+#endif
 	return 0;
 }
 
