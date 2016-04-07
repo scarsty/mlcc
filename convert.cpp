@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 
 	if (option == "-h" || argc == 1)
 	{
-		cout << "functions of this program:" << endl;
+		cout << "\nfunctions of this program:\n"
 		cout << " -f\tconvert the hr data into hopping file.\n";
 		cout << "   n_hr.dat hopping.out\n";
 		//cout << "-c combine the data into the flex input file\n.";
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 		cout << "   seed.win fermivalue -1 1\n";
 		cout << " -r\treplace string in a file.\n";
 		cout << "   filename oldstring newstring\n";
-		cout << " -ra\treplace string in a file.\n";
+		cout << " -ra\treplace all string in a file.\n";
 		cout << "   filename oldstring newstring\n";
 		cout << " -b\tconvert the bands data.\n";
 		cout << "   input output fermi weight0 weight1 weight2\n";
@@ -72,6 +72,7 @@ int main(int argc, char* argv[])
 		cout << "   input output edge1 edge2\n";
 		cout << " -s\treset a property of a fortran input file.\n";
 		cout << "   filename property content\n";
+		cout << "\n";
 	}
 
 	if (option == "-f")		ret = convertHR2Hopping(argc, argv);
