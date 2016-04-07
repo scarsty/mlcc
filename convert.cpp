@@ -1108,26 +1108,28 @@ int setProperty(int argc, char** argv)
 		else
 		{
 			char c1 = ' ';
-			if (pos > 0)
+			if (pos0 > 0)
 				c1 = f.at(pos0 - 1);
 			char c2 = f.at(pos0 + pro.length());
 			//cout << "chars:" << pro << c1 << c2 << endl;
 			if (!isProChar(c1) && !isProChar(c2))
 			{
 				pos = pos0;
-				break;
+				//两边都不是合理字符，说明这个是控制字，可以操作
+				int pos1 = f.find("=", pos) + 1;
+				int pos2 = min(min(f.find(",", pos), f.find("\n", pos)), min(f.find(";", pos), f.find("\r", pos)));
+				int len = pos2 - pos1;
+				if (len > 0)
+				{
+					f.erase(pos1, len);
+					f.insert(pos1, content);
+					writeStringToFile(f, filename2);
+					break;
+				}
 			}
 		}
 		pos = pos0 + 1;
 	}
-	if (pos < 0) return -1;
-	int pos1 = f.find("=", pos) + 1;
-	int pos2 = min(min(f.find(",", pos), f.find("\n", pos)), min(f.find(";", pos), f.find("\r", pos)));
-	int len = pos2 - pos1;
-	if (len < 0) return -2;
-	f.erase(pos1, len);
-	f.insert(pos1, content);
-	writeStringToFile(f, filename2);
 #ifdef _DEBUG
 	cout << "\nresult:\n"<<f;
 #endif
