@@ -28,15 +28,27 @@ void writeStringToFile(const string &str, const string &filename)
 	fclose(fp);
 }
 
-int replaceString(string &s, const string &oldstring, const string &newstring)
+int replaceString(string &s, const string &oldstring, const string &newstring, int pos0/*=0*/)
 {
-	int pos = s.find(oldstring);
+	int pos = s.find(oldstring, pos0);
 	if (pos >= 0)
 	{
 		s.erase(pos, oldstring.length());
 		s.insert(pos, newstring);
 	}
-	return pos;
+	return pos + newstring.length();
+}
+
+int replaceAllString(string &s, const string &oldstring, const string &newstring)
+{
+	int pos = s.find(oldstring);
+	while (pos >= 0)
+	{
+		s.erase(pos, oldstring.length());
+		s.insert(pos, newstring);
+		pos = s.find(oldstring, pos+ newstring.length());
+	}
+	return pos + newstring.length();
 }
 
 void replaceStringInFile(const string &oldfilename, const string &newfilename, const string &oldstring, const string &newstring)
@@ -51,7 +63,7 @@ void replaceAllStringInFile(const string &oldfilename, const string &newfilename
 {
 	string s = readStringFromFile(oldfilename);
 	if (s.length() <= 0) return;
-	while (replaceString(s, oldstring, newstring) >= 0);
+	replaceAllString(s, oldstring, newstring);
 	writeStringToFile(s, newfilename);
 }
 

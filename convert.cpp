@@ -29,6 +29,7 @@ int convertBands(int argc, char** argv);
 int convert10to5(int argc, char** argv);
 int cgChem(int argc, char** argv);
 int renamefiles(int argc, char** argv);
+int setProperty(int argc, char** argv);
 
 
 int main(int argc, char* argv[])
@@ -50,25 +51,27 @@ int main(int argc, char* argv[])
 	{
 		cout << endl;
 		cout << " -f\tconvert the hr data into hopping file.\n";
-		cout << "   n_hr.dat hopping.out\n\n";
+		cout << "   n_hr.dat hopping.out\n";
 		//cout << "-c combine the data into the flex input file\n.";
 		//cout << "\t-c inputfile newfile \n";
 		cout << " -i\tmake the lattice parameter with the Fe-As-Fe bond angle.\n";
 		cout << "   angle\n\n";
 		cout << " -g\ttrans the '.gnu' to '.plt' for gnuplot, and add a line for fermi level.\n";
-		cout << "   old.gun new.plt fermivalue\n\n";
+		cout << "   old.gun new.plt fermivalue\n";
 		cout << " -n\tfind a number for output in a string.\n";
 		cout << "   string\n\n";
 		cout << " -w\tchange set frozen window near fermi level.\n";
-		cout << "   seed.win fermivalue -1 1\n\n";
+		cout << "   seed.win fermivalue -1 1\n";
 		cout << " -r\treplace string in a file.\n";
-		cout << "   filename oldstring newstring\n\n";
+		cout << "   filename oldstring newstring\n";
 		cout << " -ra\treplace string in a file.\n";
-		cout << "   filename oldstring newstring\n\n";
+		cout << "   filename oldstring newstring\n";
 		cout << " -b\tconvert the bands data.\n";
-		cout << "   input output fermi weight0 weight1 weight2\n\n";
+		cout << "   input output fermi weight0 weight1 weight2\n";
 		cout << " -5\tconvert 10 bands into 5 bands.\n";
-		cout << "   input output edge1 edge2\n\n";
+		cout << "   input output edge1 edge2\n";
+		cout << " -s\treset a property of a fortran input file.\n";
+		cout << "   filename property content\n";
 	}
 
 	if (option == "-f")		ret = convertHR2Hopping(argc, argv);
@@ -87,6 +90,7 @@ int main(int argc, char* argv[])
 	if (option == "-cg")		ret = cgChem(argc, argv);
 	if (option == "-i2")		ret = calLatticeWithAngle2(argc, argv);
 	if (option == "-rename")		ret = renamefiles(argc, argv);
+	if (option == "-s")		ret = setProperty(argc, argv);
 
 #ifdef WIN32
 	printf("\nPress and key to exit.");
@@ -1074,5 +1078,54 @@ int renamefiles(int argc, char** argv)
 	return 0;
 }
 
+bool isProChar(char c)
+{
+	return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'z');
+}
 
+int setProperty(int argc, char** argv)
+{
+	string filename = argv[2];
+	int strnum = 2;
+	string filename2 = filename;
+	if (argc == 6)
+	{
+		strnum++;
+		filename2 = argv[3];
+	}
+	string pro = argv[strnum + 1];
+	string content = argv[strnum + 2];
+
+	pro = "da";
+	content = "abc";
+
+	string f = readStringFromFile(filename);
+	int pos = 0;
+	while (pos>=0)
+	{
+		int pos0 = f.find(pro, pos);
+		if (pos0 > 0)
+		{
+			char c1 = f.at(pos0 - 1);
+			char c2 = f.at(pos0 + pro.length());
+			cout << "chars:"<<c1 << c2 << endl;
+			if (!isProChar(c1) && !isProChar(c2))
+			{
+				pos = pos0;
+				break;
+			}
+		}
+		pos = pos0+1;
+	}
+	if (pos < 0) return -1;
+	int pos1 = f.find("=", pos) + 1;
+	int pos2 = min(min(f.find(",", pos), f.find("\n", pos)), min(f.find(";", pos), f.find("\r", pos)));
+	int len = pos2 - pos1;
+	if (len < 0) return -2;
+	f.erase(pos1, len);
+	f.insert(pos1, content);
+	writeStringToFile(f, filename2);
+	cout << "\nresult:\n"<<f;
+	return 0;
+}
 
