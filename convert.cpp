@@ -1103,6 +1103,7 @@ int setProperty(int argc, char** argv)
 		int pos0 = f.find(pro, pos);
 		if (pos0 < 0)
 		{
+			cout << "cannot find property: " << pro << endl;
 			return -1;
 		}
 		else
