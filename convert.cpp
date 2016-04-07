@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
 		//cout << "-c combine the data into the flex input file\n.";
 		//cout << "\t-c inputfile newfile \n";
 		cout << " -i\tmake the lattice parameter with the Fe-As-Fe bond angle.\n";
-		cout << "   angle\n\;
+		cout << "   angle\n";
 		cout << " -g\ttrans the '.gnu' to '.plt' for gnuplot, and add a line for fermi level.\n";
 		cout << "   old.gun new.plt fermivalue\n";
 		cout << " -n\tfind a number for output in a string.\n";
