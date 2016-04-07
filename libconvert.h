@@ -88,5 +88,5 @@ int findNumbers(const string &s, vector<double> &data);
 string findANumber(const string &s);
 unsigned findTheLast(const string &s, const string &content);
 std::vector<std::string> splitString(std::string str, std::string pattern);
-
+bool isProChar(char c);
 

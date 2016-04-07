@@ -1078,11 +1078,6 @@ int renamefiles(int argc, char** argv)
 	return 0;
 }
 
-bool isProChar(char c)
-{
-	return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'z');
-}
-
 int setProperty(int argc, char** argv)
 {
 	string filename = argv[2];
@@ -1117,6 +1112,7 @@ int setProperty(int argc, char** argv)
 			{
 				pos = pos0;
 				//两边都不是合理字符，说明这个是控制字，可以操作
+				//这个方法只处理找到的第一个，且不能用于设置数组
 				int pos1 = f.find("=", pos) + 1;
 				int pos2 = min(min(f.find(",", pos), f.find("\n", pos)), min(f.find(";", pos), f.find("\r", pos)));
 				int len = pos2 - pos1;

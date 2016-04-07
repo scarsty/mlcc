@@ -193,3 +193,8 @@ std::vector<std::string> splitString(std::string str, std::string pattern)
 	}
 	return result;
 }
+
+bool isProChar(char c)
+{
+	return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'z') || (c >= '(' && c <= ')');
+}
