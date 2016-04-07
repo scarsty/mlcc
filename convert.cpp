@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 
 	if (option == "-h" || argc == 1)
 	{
-		cout << "\nfunctions of this program:\n"
+		cout << "\nfunctions of this program:\n";
 		cout << " -f\tconvert the hr data into hopping file.\n";
 		cout << "   n_hr.dat hopping.out\n";
 		//cout << "-c combine the data into the flex input file\n.";
