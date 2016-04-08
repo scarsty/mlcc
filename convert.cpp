@@ -21,6 +21,7 @@ int calLatticeWithAngle2(int argc, char** argv);
 int calLatticeWithAngleFeSe(int argc, char** argv);
 int transGnuplot(int argc, char** argv);
 int findANumber(int argc, char** argv);
+int findAllNumbers(int argc, char** argv);
 int setWannierFrozen(int argc, char** argv);
 int replaceStringInSingleFile(int argc, char** argv);
 int replaceAllStringInSingleFile(int argc, char** argv);
@@ -60,6 +61,8 @@ int main(int argc, char* argv[])
 		cout << "   old.gun new.plt fermivalue\n";
 		cout << " -n\tfind a number for output in a string.\n";
 		cout << "   string\n";
+		cout << " -na\tfind all number for summary and average.\n";
+		cout << "   string\n";
 		cout << " -w\tchange set frozen window near fermi level.\n";
 		cout << "   seed.win fermivalue -1 1\n";
 		cout << " -r\treplace string in a file.\n";
@@ -82,6 +85,7 @@ int main(int argc, char* argv[])
 	if (option == "-2")		ret = calLatticeWithAngle(argc, argv);
 	if (option == "-g")		ret = transGnuplot(argc, argv);
 	if (option == "-n")		ret = findANumber(argc, argv);
+	if (option == "-na")		ret = findAllNumbers(argc, argv);
 	if (option == "-w")		ret = setWannierFrozen(argc, argv);
 	if (option == "-r")		ret = replaceStringInSingleFile(argc, argv);
 	if (option == "-ra")		ret = replaceAllStringInSingleFile(argc, argv);
@@ -535,6 +539,25 @@ int findANumber(int argc, char** argv)
 	return 0;
 }
 
+int findAllNumbers(int argc, char** argv)
+{
+	string s;
+	for (int i = 2; i < argc; i++)
+	{
+		s += " ";
+		s += argv[i];
+	}
+	s += " ";
+	vector<double> nums;
+	int n = findNumbers(s,nums);
+	double sum = 0;
+	for (int i = 0; i < n; i++)
+	{
+		sum += nums.at(i);
+	}
+	printf("number: %d\tsummary: %lf\taverage:%lf\n",n,sum,sum/n);
+	return 0;
+}
 
 
 int setWannierFrozen(int argc, char** argv)
