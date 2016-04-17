@@ -1,6 +1,6 @@
 #include "libconvert.h"
 
-string readStringFromFile(const string &filename)
+std::string readStringFromFile(const std::string &filename)
 {
 	FILE *fp = fopen(filename.c_str(), "rb");
 	if (!fp)
@@ -14,13 +14,13 @@ string readStringFromFile(const string &filename)
 	char* s = new char[length + 1];
 	for (int i = 0; i <= length; s[i++] = '\0');
 	fread(s, length, 1, fp);
-	string str(s);
+	std::string str(s);
 	fclose(fp);
 	delete[] s;
 	return str;
 }
 
-void writeStringToFile(const string &str, const string &filename)
+void writeStringToFile(const std::string &str, const std::string &filename)
 {
 	FILE *fp = fopen(filename.c_str(), "wb");
 	int length = str.length();
@@ -28,7 +28,7 @@ void writeStringToFile(const string &str, const string &filename)
 	fclose(fp);
 }
 
-int replaceString(string &s, const string &oldstring, const string &newstring, int pos0/*=0*/)
+int replaceString(std::string &s, const std::string &oldstring, const std::string &newstring, int pos0/*=0*/)
 {
 	int pos = s.find(oldstring, pos0);
 	if (pos >= 0)
@@ -39,7 +39,7 @@ int replaceString(string &s, const string &oldstring, const string &newstring, i
 	return pos + newstring.length();
 }
 
-int replaceAllString(string &s, const string &oldstring, const string &newstring)
+int replaceAllString(std::string &s, const std::string &oldstring, const std::string &newstring)
 {
 	int pos = s.find(oldstring);
 	while (pos >= 0)
@@ -51,23 +51,23 @@ int replaceAllString(string &s, const string &oldstring, const string &newstring
 	return pos + newstring.length();
 }
 
-void replaceStringInFile(const string &oldfilename, const string &newfilename, const string &oldstring, const string &newstring)
+void replaceStringInFile(const std::string &oldfilename, const std::string &newfilename, const std::string &oldstring, const std::string &newstring)
 {
-	string s = readStringFromFile(oldfilename);
+	std::string s = readStringFromFile(oldfilename);
 	if (s.length() <= 0) return;
 	replaceString(s, oldstring, newstring);
 	writeStringToFile(s, newfilename);
 }
 
-void replaceAllStringInFile(const string &oldfilename, const string &newfilename, const string &oldstring, const string &newstring)
+void replaceAllStringInFile(const std::string &oldfilename, const std::string &newfilename, const std::string &oldstring, const std::string &newstring)
 {
-	string s = readStringFromFile(oldfilename);
+	std::string s = readStringFromFile(oldfilename);
 	if (s.length() <= 0) return;
 	replaceAllString(s, oldstring, newstring);
 	writeStringToFile(s, newfilename);
 }
 
-string formatString(const char *format, ...)
+std::string formatString(const char *format, ...)
 {
 	char s[1000];
 	va_list arg_ptr;
@@ -77,7 +77,7 @@ string formatString(const char *format, ...)
 	return s;
 }
 
-void formatAppendString(string &str, const char *format, ...)
+void formatAppendString(std::string &str, const char *format, ...)
 {
 	char s[1000];
 	va_list arg_ptr;
@@ -97,10 +97,10 @@ double diff2(double y2, double x2, double y1, double x1, double y0, double x0)
 	return (diff1(y2, x2, y1, x1) - diff1(y1, x1, y0, x0)) / (x1 - x0);
 }
 
-int findNumbers(const string &s, vector<double> &data)
+int findNumbers(const std::string &s, std::vector<double> &data)
 {
 	int n = 0;
-	string str = "";
+	std::string str = "";
 	bool haveNum = false;
 	for (int i = 0; i < s.length(); i++)
 	{
@@ -126,12 +126,12 @@ int findNumbers(const string &s, vector<double> &data)
 	return n;
 }
 
-string findANumber(const string &s)
+std::string findANumber(const std::string &s)
 {
 	bool findPoint = false;
 	bool findNumber = false;
 	bool findE = false;
-	string n;
+	std::string n;
 	for (int i = 0; i < s.length(); i++)
 	{
 		char c = s[i];
@@ -166,7 +166,7 @@ string findANumber(const string &s)
 	return n;
 }
 
-unsigned findTheLast(const string &s, const string &content)
+unsigned findTheLast(const std::string &s, const std::string &content)
 {
 	int pos = 0, prepos = 0;
 	while (pos >= 0)

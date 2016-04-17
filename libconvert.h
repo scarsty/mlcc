@@ -1,24 +1,21 @@
 #pragma once
 #define _USE_MATH_DEFINES 
-#include<string>
-#include<vector>
-#include<stdarg.h>
-#include<math.h>
-#include<stdlib.h>
-#include<stdio.h>
-
-using namespace std;
+#include <string>
+#include <vector>
+#include <stdarg.h>
+#include <math.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 //string functions
-
-string readStringFromFile(const string &filename);
-void writeStringToFile(const string &str, const string &filename);
-int replaceString(string &s, const string &oldstring, const string &newstring, int pos0=0);
-int replaceAllString(string &s, const string &oldstring, const string &newstring);
-void replaceStringInFile(const string &oldfilename, const string &newfilename, const string &oldstring, const string &newstring);
-void replaceAllStringInFile(const string &oldfilename, const string &newfilename, const string &oldstring, const string &newstring);
-string formatString(const char *format, ...);
-void formatAppendString(string &str, const char *format, ...);
+std::string readStringFromFile(const std::string &filename);
+void writeStringToFile(const std::string &str, const std::string &filename);
+int replaceString(std::string &s, const std::string &oldstring, const std::string &newstring, int pos0 = 0);
+int replaceAllString(std::string &s, const std::string &oldstring, const std::string &newstring);
+void replaceStringInFile(const std::string &oldfilename, const std::string &newfilename, const std::string &oldstring, const std::string &newstring);
+void replaceAllStringInFile(const std::string &oldfilename, const std::string &newfilename, const std::string &oldstring, const std::string &newstring);
+std::string formatString(const char *format, ...);
+void formatAppendString(std::string &str, const char *format, ...);
 
 //math functions
 
@@ -75,7 +72,7 @@ public:
 	{
 		return acos(dotProduct(vec2) / length() / vec2.length()) * 180 / M_PI;
 	}
-	string tostring()
+	std::string tostring()
 	{
 		return formatString("%1.10lf %1.10lf %1.10lf", x, y, z);
 	}
@@ -84,9 +81,9 @@ public:
 
 double diff1(double y1, double x1, double y0, double x0);
 double diff2(double y2, double x2, double y1, double x1, double y0, double x0);
-int findNumbers(const string &s, vector<double> &data);
-string findANumber(const string &s);
-unsigned findTheLast(const string &s, const string &content);
+int findNumbers(const std::string &s, std::vector<double> &data);
+std::string findANumber(const std::string &s);
+unsigned findTheLast(const std::string &s, const std::string &content);
 std::vector<std::string> splitString(std::string str, std::string pattern);
 bool isProChar(char c);
 
