@@ -1,4 +1,4 @@
-#include "stringfunctions.h"
+#include "sf.h"
 
 int findANumber(int argc, char** argv)
 {

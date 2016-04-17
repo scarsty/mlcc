@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "libconvert.h"
-#include "stringfunctions.h"
+#include "sf.h"
 #include "others.h"
 
 using namespace std;

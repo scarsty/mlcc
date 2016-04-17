@@ -80,13 +80,13 @@
   <ItemGroup>
     <ClInclude Include="libconvert.h" />
     <ClInclude Include="others.h" />
-    <ClInclude Include="stringfunctions.h" />
+    <ClInclude Include="sf.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="convert.cpp" />
     <ClCompile Include="libconvert.cpp" />
     <ClCompile Include="others.cpp" />
-    <ClCompile Include="stringfunctions.cpp" />
+    <ClCompile Include="sf.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
