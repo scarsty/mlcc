@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 	if (option == "-h" || argc == 1)
 	{
 		cout << "\nfunctions of this program:\n";
-		cout << "part 1: string and file\n";
+		cout << "\npart 1: string and file\n";
 		cout << " -n\tfind a number for output in a string.\n";
 		cout << "   string\n";
 		cout << " -na\tfind all number for summary and average.\n";
@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 		cout << " -s\treset a property of a fortran input file.\n";
 		cout << "   filename property content\n";
 
-		cout << "part 2: others\n";
+		cout << "\npart 2: others\n";
 		cout << " -f\tconvert the hr data into hopping file.\n";
 		cout << "   n_hr.dat hopping.out\n";
 		//cout << "-c combine the data into the flex input file\n.";
