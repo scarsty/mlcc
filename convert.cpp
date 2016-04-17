@@ -1,12 +1,14 @@
-#include<stdio.h>
-#include<string>
-#include<iostream>
-#include<stdlib.h>
-#include<math.h>
-#include<vector>
-#include<algorithm>
-#include<float.h>
-#include"libconvert.h"
+#include <stdio.h>
+#include <string>
+#include <iostream>
+#include <stdlib.h>
+#include <math.h>
+#include <vector>
+#include <algorithm>
+#include <float.h>
+
+#include "libconvert.h"
+#include "stringfunctions.h"
 
 using namespace std;
 
@@ -20,17 +22,11 @@ int calLatticeWithAngle(int argc, char** argv);
 int calLatticeWithAngle2(int argc, char** argv);
 int calLatticeWithAngleFeSe(int argc, char** argv);
 int transGnuplot(int argc, char** argv);
-int findANumber(int argc, char** argv);
-int findAllNumbers(int argc, char** argv);
 int setWannierFrozen(int argc, char** argv);
-int replaceStringInSingleFile(int argc, char** argv);
-int replaceAllStringInSingleFile(int argc, char** argv);
-int replaceStringInSingleFile2(int argc, char** argv);
 int convertBands(int argc, char** argv);
 int convert10to5(int argc, char** argv);
 int cgChem(int argc, char** argv);
-int renamefiles(int argc, char** argv);
-int setProperty(int argc, char** argv);
+
 
 
 int main(int argc, char* argv[])
@@ -51,6 +47,19 @@ int main(int argc, char* argv[])
 	if (option == "-h" || argc == 1)
 	{
 		cout << "\nfunctions of this program:\n";
+		cout << "part 1: string and file\n";
+		cout << " -n\tfind a number for output in a string.\n";
+		cout << "   string\n";
+		cout << " -na\tfind all number for summary and average.\n";
+		cout << "   string\n";
+		cout << " -r\treplace string in a file.\n";
+		cout << "   filename oldstring newstring\n";
+		cout << " -ra\treplace all string in a file.\n";
+		cout << "   filename oldstring newstring\n";
+		cout << " -s\treset a property of a fortran input file.\n";
+		cout << "   filename property content\n";
+
+		cout << "part 2: others\n";
 		cout << " -f\tconvert the hr data into hopping file.\n";
 		cout << "   n_hr.dat hopping.out\n";
 		//cout << "-c combine the data into the flex input file\n.";
@@ -59,24 +68,26 @@ int main(int argc, char* argv[])
 		cout << "   angle\n";
 		cout << " -g\ttrans the '.gnu' to '.plt' for gnuplot, and add a line for fermi level.\n";
 		cout << "   old.gun new.plt fermivalue\n";
-		cout << " -n\tfind a number for output in a string.\n";
-		cout << "   string\n";
-		cout << " -na\tfind all number for summary and average.\n";
-		cout << "   string\n";
 		cout << " -w\tchange set frozen window near fermi level.\n";
 		cout << "   seed.win fermivalue -1 1\n";
-		cout << " -r\treplace string in a file.\n";
-		cout << "   filename oldstring newstring\n";
-		cout << " -ra\treplace all string in a file.\n";
-		cout << "   filename oldstring newstring\n";
 		cout << " -b\tconvert the bands data.\n";
 		cout << "   input output fermi weight0 weight1 weight2\n";
 		cout << " -5\tconvert 10 bands into 5 bands.\n";
 		cout << "   input output edge1 edge2\n";
-		cout << " -s\treset a property of a fortran input file.\n";
-		cout << "   filename property content\n";
+
 		cout << "\n";
 	}
+
+	argc -= 2;
+	argv += 2;
+
+	if (option == "-n")		ret = findANumber(argc, argv);
+	if (option == "-na")		ret = findAllNumbers(argc, argv);
+	if (option == "-r")		ret = replaceStringInSingleFile(argc, argv);
+	if (option == "-ra")		ret = replaceAllStringInSingleFile(argc, argv);
+	if (option == "-rf")		ret = replaceStringInSingleFile2(argc, argv);
+	if (option == "-rename")		ret = renamefiles(argc, argv);
+	if (option == "-s")		ret = setProperty(argc, argv);
 
 	if (option == "-f")		ret = convertHR2Hopping(argc, argv);
 	if (option == "-c")		ret = combineHR2Flex(argc, argv);
@@ -84,18 +95,12 @@ int main(int argc, char* argv[])
 	if (option == "-ifs")		ret = calLatticeWithAngleFeSe(argc, argv);
 	if (option == "-2")		ret = calLatticeWithAngle(argc, argv);
 	if (option == "-g")		ret = transGnuplot(argc, argv);
-	if (option == "-n")		ret = findANumber(argc, argv);
-	if (option == "-na")		ret = findAllNumbers(argc, argv);
 	if (option == "-w")		ret = setWannierFrozen(argc, argv);
-	if (option == "-r")		ret = replaceStringInSingleFile(argc, argv);
-	if (option == "-ra")		ret = replaceAllStringInSingleFile(argc, argv);
-	if (option == "-rf")		ret = replaceStringInSingleFile2(argc, argv);
 	if (option == "-b")		ret = convertBands(argc, argv);
 	if (option == "-5")		ret = convert10to5(argc, argv);
 	if (option == "-cg")		ret = cgChem(argc, argv);
 	if (option == "-i2")		ret = calLatticeWithAngle2(argc, argv);
-	if (option == "-rename")		ret = renamefiles(argc, argv);
-	if (option == "-s")		ret = setProperty(argc, argv);
+
 
 #ifdef WIN32
 	printf("\nPress and key to exit.");
@@ -263,7 +268,7 @@ int convertHR2Hopping(int argc, char** argv)
 
 int combineHR2Flex(int argc, char** argv)
 {
-	replaceStringInFile("n.flex.model", argv[3], "[insert here]", readStringFromFile(argv[2]));
+	replaceStringInFile("n.flex.model", argv[1], "[insert here]", readStringFromFile(argv[0]));
 	return 0;
 }
 
@@ -272,11 +277,11 @@ int calLatticeWithAngle(int argc, char** argv)
 	double a = 7.4593, b = a, c = a * 1.7711;
 	string Rname = "Na";
 
-	double angle = atof(argv[2])*M_PI / 180;
+	double angle = atof(argv[0])*M_PI / 180;
 
-	if (argc > 3) a = atof(argv[3]);
-	if (argc > 4) c = a*atof(argv[4]);
-	if (argc > 5) Rname = argv[5];
+	if (argc > 1) a = atof(argv[1]);
+	if (argc > 2) c = a*atof(argv[2]);
+	if (argc > 3) Rname = argv[3];
 
 	vec lattice = vec(a, b, c);
 	printf("\nOld lattice parameters are\n%lf %lf %lf\n", lattice.x, lattice.y, lattice.z);
@@ -367,11 +372,11 @@ int calLatticeWithAngle2(int argc, char** argv)
 	double a = 7.626, b = a, c = a * 2.16559;
 	string Rname = "Na";
 
-	double angle = atof(argv[2])*M_PI / 180;
+	double angle = atof(argv[0])*M_PI / 180;
 
-	if (argc > 3) a = atof(argv[3]);
-	if (argc > 4) c = a*atof(argv[4]);
-	if (argc > 5) Rname = argv[5];
+	if (argc > 1) a = atof(argv[1]);
+	if (argc > 2) c = a*atof(argv[2]);
+	if (argc > 3) Rname = argv[3];
 
 	vec lattice = vec(a, b, c);
 	vec unit = vec(1, 1, 1);
@@ -456,9 +461,9 @@ int calLatticeWithAngle2(int argc, char** argv)
 
 int calLatticeWithAngleFeSe(int argc, char** argv)
 {
-	double changeXY = atof(argv[2]);
-	int singlelayer = atoi(argv[3]);
-	string output = argv[4]; 
+	double changeXY = atof(argv[0]);
+	int singlelayer = atoi(argv[1]);
+	string output = argv[2]; 
 
 	double celldm1 = 7.11481885898746;
 	vec a = vec(1, 0, 0)*changeXY;
@@ -511,7 +516,7 @@ int calLatticeWithAngleFeSe(int argc, char** argv)
 
 int transGnuplot(int argc, char** argv)
 {
-	string s = readStringFromFile(argv[2]);
+	string s = readStringFromFile(argv[0]);
 	replaceString(s, "set data style dots", "clear\nunset arrow\nset style data dots");
 
 	int pos0 = s.find("[0:");
@@ -526,106 +531,25 @@ int transGnuplot(int argc, char** argv)
 	return 0;
 }
 
-int findANumber(int argc, char** argv)
-{
-	string s;
-	for (int i = 2; i < argc; i++)
-	{
-		s += " ";
-		s += argv[i];
-	}
-
-	cout << findANumber(s);
-	return 0;
-}
-
-int findAllNumbers(int argc, char** argv)
-{
-	string s;
-	for (int i = 2; i < argc; i++)
-	{
-		s += " ";
-		s += argv[i];
-	}
-	s += " ";
-	vector<double> nums;
-	int n = findNumbers(s,nums);
-	double sum = 0;
-	for (int i = 0; i < n; i++)
-	{
-		sum += nums.at(i);
-	}
-	printf("number: %d\tsummary: %lf\taverage:%lf\n",n,sum,sum/n);
-	return 0;
-}
-
-
 int setWannierFrozen(int argc, char** argv)
 {
-	double f = atof(argv[3]);
-	double dif0 = atof(argv[4]);
-	double dif1 = atof(argv[5]);
-	string filename = argv[2];
+	double f = atof(argv[1]);
+	double dif0 = atof(argv[2]);
+	double dif1 = atof(argv[3]);
+	string filename = argv[0];
 	replaceStringInFile(filename, filename, "[minfrozen]", formatString("%lf", f + dif0));
 	replaceStringInFile(filename, filename, "[maxfrozen]", formatString("%lf", f + dif1));
 	return 0;
 }
 
-int replaceStringInSingleFile(int argc, char** argv)
-{
-	string filename = argv[2];
-	int strnum = 2;
-	string filename2 = filename;
-	if (argc == 6)
-	{
-		strnum++;
-		filename2 = argv[3];
-	}
-	string oldstr = argv[strnum+1];
-	string newstr = argv[strnum+2];
-	replaceStringInFile(filename, filename2, oldstr, newstr);
-	return 0;
-}
-
-int replaceAllStringInSingleFile(int argc, char** argv)
-{
-	string filename = argv[2];
-	int strnum = 2;
-	string filename2 = filename;
-	if (argc == 6)
-	{
-		strnum++;
-		filename2 = argv[3];
-	}
-	string oldstr = argv[strnum + 1];
-	string newstr = argv[strnum + 2];
-	replaceAllStringInFile(filename, filename2, oldstr, newstr);
-	return 0;
-}
-
-int replaceStringInSingleFile2(int argc, char** argv)
-{
-	string filename = argv[2];
-	int strnum = 2;
-	string filename2 = filename;
-	if (argc == 6)
-	{
-		strnum++;
-		filename2 = argv[3];
-	}
-	string oldstr = argv[strnum + 1];
-	string newstr = readStringFromFile(argv[strnum + 2]);
-	replaceStringInFile(filename, filename2, oldstr, newstr);
-	return 0;
-}
 
 int convertBands(int argc, char** argv)
 {
-	string s = readStringFromFile(argv[2]);
-	double w0 = 1, w1 = 0, w2 = 0, w3 = 0, fermi = atof(argv[4]);
-	if (argc >= 6) w0 = atof(argv[5]);
-	if (argc >= 7) w1 = atof(argv[6]);
-	if (argc >= 8) w2 = atof(argv[7]);
+	string s = readStringFromFile(argv[0]);
+	double w0 = 1, w1 = 0, w2 = 0, w3 = 0, fermi = atof(argv[2]);
+	if (argc >= 4) w0 = atof(argv[3]);
+	if (argc >= 5) w1 = atof(argv[4]);
+	if (argc >= 6) w2 = atof(argv[5]);
 	//double w0 = atof(argv[4]);
 	vector<double> numbers, x0, y0;
 	int totalCount = findNumbers(s, numbers);
@@ -738,11 +662,11 @@ int convertBands(int argc, char** argv)
 
 int convert10to5(int argc, char** argv)
 {
-	string s = readStringFromFile(argv[2]);
+	string s = readStringFromFile(argv[0]);
 	vector<double> numbers, x0, y0[10];
 	//region where 10 overlap to 5
-	double x1 = atof(argv[4]);
-	double x2 = atof(argv[5]);
+	double x1 = atof(argv[2]);
+	double x2 = atof(argv[3]);
 	int totalCount = findNumbers(s, numbers);
 	cout << "Total numbers is " << totalCount << endl;
 	//divide x and y
@@ -887,14 +811,14 @@ string findAtomFinal(const string& s)
 int cgChem(int argc, char** argv)
 {
 	double ryd = 13.60569253;
-	string option = argv[2];
+	string option = argv[0];
 	int beginop = 3;
 
 	//pure c - only one time
 	if (option == "pc")
 	{
-		double x = atof(argv[3]);
-		double y = atof(argv[4]);
+		double x = atof(argv[1]);
+		double y = atof(argv[2]);
 		string prefix = formatString("c-%1.3lf-%1.3lf", x, y);
 		string a1 = formatString("%1.12lf", 3.0*x);
 		string b1 = formatString("%1.12lf", -1.5 * x);
@@ -911,15 +835,15 @@ int cgChem(int argc, char** argv)
 	if (option == "sg" || option == "re" || option == "re2" || option == "scf2")
 	{
 		
-		string name = argv[3];
-		string weight = argv[4];
-		string pp = argv[5];
-		string charge = argv[6];
+		string name = argv[1];
+		string weight = argv[2];
+		string pp = argv[3];
+		string charge = argv[4];
 		double x=0, y=0;
-		if (argc > 8)
+		if (argc > 6)
 		{
-			x = atof(argv[7]);
-			y = atof(argv[8]);
+			x = atof(argv[5]);
+			y = atof(argv[6]);
 		}
 
 		string a1 = formatString("%1.12lf", 3.0*x);
@@ -940,7 +864,7 @@ int cgChem(int argc, char** argv)
 
 		if (option == "re")
 		{
-			string position = argv[7];
+			string position = argv[5];
 
 			if (position[0] >= 'a' && position[0] <= 'z')
 			{
@@ -963,7 +887,7 @@ int cgChem(int argc, char** argv)
 
 		if (option == "re2")
 		{
-			string filerelax = argv[9];
+			string filerelax = argv[7];
 
 			prefix = formatString("%s-c-%1.3lf-%1.3lf", name.c_str(), x, y);
 
@@ -989,7 +913,7 @@ int cgChem(int argc, char** argv)
 
 		if (option == "re2b")
 		{
-			string filerelax = argv[9];
+			string filerelax = argv[7];
 
 			prefix = formatString("%s-cB2-%1.3lf-%1.3lf", name.c_str(), x, y);
 
@@ -1024,9 +948,6 @@ int cgChem(int argc, char** argv)
 		cout << filename;
 	}
 
-
-
-
 	if (option == "fe")
 	{
 		printf("%1.8lf", findFinalEnergy(readStringFromFile(argv[3])));
@@ -1053,7 +974,7 @@ int cgChem(int argc, char** argv)
 		}
 		//cout << argv[3 + index] << " " << min << "\n";
 
-		string filename = argv[3 + index];
+		string filename = argv[1 + index];
 		
 		string pos;
 		do
@@ -1072,88 +993,4 @@ int cgChem(int argc, char** argv)
 	return 0;
 }
 
-int renamefiles(int argc, char** argv)
-{
-	string s = readStringFromFile(argv[2]);
-	vector<string> s1 = splitString(s, "\r");
-	string r;
-	for (string t = s1.back(); s1.size() >= 0; t = s1.back(), s1.pop_back())
-	{
-		int k = 0;
-		for (int i = 0; i <= 5; i++)
-		{
-			char c = t.c_str()[i];
-			if (c >= '0' && c <= '9')
-			{
-				k = k + 1;
-				//cout << c;
-			}
-			if (k > 0 && c == '.')
-			{
-				string s = t.substr(k+2, t.length() - k);
-				//cout << "rename \""<<t<<"\" \""<<s<<"\"\n";
-				//formatAppendString(r, "rename \"%s\" \"%s\"\n", t.c_str(), s.c_str());
-				printf("rename \"%s\" \"%s\"\n", t.substr(1,t.length()-1).c_str(), s.c_str());
-				break;
-			}
-		}
-			}
-	//cout << r;
-	return 0;
-}
-
-int setProperty(int argc, char** argv)
-{
-	string filename = argv[2];
-	int strnum = 2;
-	string filename2 = filename;
-	if (argc == 6)
-	{
-		strnum++;
-		filename2 = argv[3];
-	}
-	string pro = argv[strnum + 1];
-	string content = argv[strnum + 2];
-
-	string f = readStringFromFile(filename);
-	int pos = 0;
-	while (pos >= 0)
-	{
-		int pos0 = f.find(pro, pos);
-		if (pos0 < 0)
-		{
-			cout << "cannot find property: " << pro << endl;
-			return -1;
-		}
-		else
-		{
-			char c1 = ' ';
-			if (pos0 > 0)
-				c1 = f.at(pos0 - 1);
-			char c2 = f.at(pos0 + pro.length());
-			//cout << "chars:" << pro << c1 << c2 << endl;
-			if (!isProChar(c1) && !isProChar(c2))
-			{
-				pos = pos0;
-				//两边都不是合理字符，说明这个是控制字，可以操作
-				//这个方法只处理找到的第一个，且不能用于设置数组
-				int pos1 = f.find("=", pos) + 1;
-				int pos2 = min(min(f.find(",", pos), f.find("\n", pos)), min(f.find(";", pos), f.find("\r", pos)));
-				int len = pos2 - pos1;
-				if (len > 0)
-				{
-					f.erase(pos1, len);
-					f.insert(pos1, content);
-					writeStringToFile(f, filename2);
-					break;
-				}
-			}
-		}
-		pos = pos0 + 1;
-	}
-#ifdef _DEBUG
-	cout << "\nresult:\n"<<f;
-#endif
-	return 0;
-}
 

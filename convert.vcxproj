@@ -78,14 +78,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="libconvert.h" />
+    <ClInclude Include="stringfunctions.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="convert.cpp" />
     <ClCompile Include="libconvert.cpp" />
+    <ClCompile Include="stringfunctions.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
