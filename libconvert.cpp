@@ -105,13 +105,14 @@ int findNumbers(const std::string &s, std::vector<double> &data)
 	for (int i = 0; i < s.length(); i++)
 	{
 		char c = s[i];
-		if ((c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+' || c == 'E' || c == 'e')
+		bool findNumChar = (c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+' || c == 'E' || c == 'e';
+		if (findNumChar)
 		{
 			str += c;
 			if (c >= '0' && c <= '9')
 				haveNum = true;
 		}
-		else
+		if (!findNumChar || i == s.length() - 1)
 		{
 			if (str != "" && haveNum)
 			{
