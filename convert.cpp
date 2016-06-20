@@ -63,43 +63,25 @@ int main(int argc, char* argv[])
 	argc -= 2;
 	argv += 2;
 
-	if (option == "-n")		
-		ret = findANumber(argc, argv);
-	if (option == "-na")		
-		ret = findAllNumbers(argc, argv);
-	if (option == "-r")		
-		ret = replaceStringInSingleFile(argc, argv);
-	if (option == "-ra")		
-		ret = replaceAllStringInSingleFile(argc, argv);
-	if (option == "-rf")		
-		ret = replaceStringInSingleFile2(argc, argv);
-	if (option == "-rename")		
-		ret = renamefiles(argc, argv);
-	if (option == "-s")	
-		ret = setProperty(argc, argv);
+	if (option == "-n")		ret = findANumber(argc, argv);
+	if (option == "-na")		ret = findAllNumbers(argc, argv);
+	if (option == "-r")		ret = replaceStringInSingleFile(argc, argv);
+	if (option == "-ra")		ret = replaceAllStringInSingleFile(argc, argv);
+	if (option == "-rf")		ret = replaceStringInSingleFile2(argc, argv);
+	if (option == "-rename")		ret = renamefiles(argc, argv);
+	if (option == "-s")		ret = setProperty(argc, argv);
 
-	if (option == "-f")	
-		ret = convertHR2Hopping(argc, argv);
-	if (option == "-c")		
-		ret = combineHR2Flex(argc, argv);
-	if (option == "-i")		
-		ret = calLatticeWithAngle(argc, argv);
-	if (option == "-ifs")	
-		ret = calLatticeWithAngleFeSe(argc, argv);
-	if (option == "-2")		
-		ret = calLatticeWithAngle(argc, argv);
-	if (option == "-g")		
-		ret = transGnuplot(argc, argv);
-	if (option == "-w")		
-		ret = setWannierFrozen(argc, argv);
-	if (option == "-b")		
-		ret = convertBands(argc, argv);
-	if (option == "-5")		
-		ret = convert10to5(argc, argv);
-	if (option == "-cg")		
-		ret = cgChem(argc, argv);
-	if (option == "-i2")		
-		ret = calLatticeWithAngle2(argc, argv);
+	if (option == "-f")		ret = convertHR2Hopping(argc, argv);
+	if (option == "-c")		ret = combineHR2Flex(argc, argv);
+	if (option == "-i")		ret = calLatticeWithAngle(argc, argv);
+	if (option == "-ifs")		ret = calLatticeWithAngleFeSe(argc, argv);
+	if (option == "-2")		ret = calLatticeWithAngle(argc, argv);
+	if (option == "-g")		ret = transGnuplot(argc, argv);
+	if (option == "-w")		ret = setWannierFrozen(argc, argv);
+	if (option == "-b")		ret = convertBands(argc, argv);
+	if (option == "-5")		ret = convert10to5(argc, argv);
+	if (option == "-cg")		ret = cgChem(argc, argv);
+	if (option == "-i2")		ret = calLatticeWithAngle2(argc, argv);
 
 
 #ifdef WIN32
