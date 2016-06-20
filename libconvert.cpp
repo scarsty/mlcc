@@ -2,9 +2,8 @@
 
 std::string readStringFromFile(const std::string &filename)
 {
-	FILE *fp;
-	auto err = fopen_s(&fp, filename.c_str(), "rb");
-	if (err)
+	FILE *fp = fopen(filename.c_str(), "rb");
+	if (!fp)
 	{
 		printf("Can not open file %s\n", filename.c_str());
 		return "";
@@ -23,9 +22,7 @@ std::string readStringFromFile(const std::string &filename)
 
 void writeStringToFile(const std::string &str, const std::string &filename)
 {
-	FILE *fp;
-	if (fopen_s(&fp, filename.c_str(), "wb"))
-		return;
+	FILE *fp = fopen(filename.c_str(), "wb");
 	int length = str.length();
 	fwrite(str.c_str(), length, 1, fp);
 	fclose(fp);
@@ -75,7 +72,7 @@ std::string formatString(const char *format, ...)
 	char s[1000];
 	va_list arg_ptr;
 	va_start(arg_ptr, format);
-	vsprintf_s(s, format, arg_ptr);
+	vsprintf(s, format, arg_ptr);
 	va_end(arg_ptr);
 	return s;
 }
@@ -85,7 +82,7 @@ void formatAppendString(std::string &str, const char *format, ...)
 	char s[1000];
 	va_list arg_ptr;
 	va_start(arg_ptr, format);
-	vsprintf_s(s, format, arg_ptr);
+	vsprintf(s, format, arg_ptr);
 	va_end(arg_ptr);
 	str += s;
 }
@@ -108,13 +105,14 @@ int findNumbers(const std::string &s, std::vector<double> &data)
 	for (int i = 0; i < s.length(); i++)
 	{
 		char c = s[i];
-		if ((c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+' || c == 'E' || c == 'e')
+		bool findNumChar = (c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+' || c == 'E' || c == 'e';
+		if (findNumChar)
 		{
 			str += c;
 			if (c >= '0' && c <= '9')
 				haveNum = true;
 		}
-		else
+		if (!findNumChar || i == s.length() - 1)
 		{
 			if (str != "" && haveNum)
 			{
