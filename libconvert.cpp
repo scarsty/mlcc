@@ -2,8 +2,9 @@
 
 std::string readStringFromFile(const std::string &filename)
 {
-	FILE *fp = fopen(filename.c_str(), "rb");
-	if (!fp)
+	FILE *fp;
+	auto err = fopen_s(&fp, filename.c_str(), "rb");
+	if (err)
 	{
 		printf("Can not open file %s\n", filename.c_str());
 		return "";
@@ -22,7 +23,9 @@ std::string readStringFromFile(const std::string &filename)
 
 void writeStringToFile(const std::string &str, const std::string &filename)
 {
-	FILE *fp = fopen(filename.c_str(), "wb");
+	FILE *fp;
+	if (fopen_s(&fp, filename.c_str(), "wb"))
+		return;
 	int length = str.length();
 	fwrite(str.c_str(), length, 1, fp);
 	fclose(fp);
@@ -72,7 +75,7 @@ std::string formatString(const char *format, ...)
 	char s[1000];
 	va_list arg_ptr;
 	va_start(arg_ptr, format);
-	vsprintf(s, format, arg_ptr);
+	vsprintf_s(s, format, arg_ptr);
 	va_end(arg_ptr);
 	return s;
 }
@@ -82,7 +85,7 @@ void formatAppendString(std::string &str, const char *format, ...)
 	char s[1000];
 	va_list arg_ptr;
 	va_start(arg_ptr, format);
-	vsprintf(s, format, arg_ptr);
+	vsprintf_s(s, format, arg_ptr);
 	va_end(arg_ptr);
 	str += s;
 }
