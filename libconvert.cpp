@@ -5,7 +5,7 @@ std::string readStringFromFile(const std::string &filename)
 	FILE *fp = fopen(filename.c_str(), "rb");
 	if (!fp)
 	{
-		printf("Can not open file %s\n", filename.c_str());
+		fprintf(stderr, "Can not open file %s\n", filename.c_str());
 		return "";
 	}
 	fseek(fp, 0, SEEK_END);
@@ -46,7 +46,7 @@ int replaceAllString(std::string &s, const std::string &oldstring, const std::st
 	{
 		s.erase(pos, oldstring.length());
 		s.insert(pos, newstring);
-		pos = s.find(oldstring, pos+ newstring.length());
+		pos = s.find(oldstring, pos + newstring.length());
 	}
 	return pos + newstring.length();
 }
@@ -87,45 +87,7 @@ void formatAppendString(std::string &str, const char *format, ...)
 	str += s;
 }
 
-double diff1(double y1, double x1, double y0, double x0)
-{
-	return (y1 - y0) / (x1 - x0);
-}
 
-double diff2(double y2, double x2, double y1, double x1, double y0, double x0)
-{
-	return (diff1(y2, x2, y1, x1) - diff1(y1, x1, y0, x0)) / (x1 - x0);
-}
-
-int findNumbers(const std::string &s, std::vector<double> &data)
-{
-	int n = 0;
-	std::string str = "";
-	bool haveNum = false;
-	for (int i = 0; i < s.length(); i++)
-	{
-		char c = s[i];
-		bool findNumChar = (c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+' || c == 'E' || c == 'e';
-		if (findNumChar)
-		{
-			str += c;
-			if (c >= '0' && c <= '9')
-				haveNum = true;
-		}
-		if (!findNumChar || i == s.length() - 1)
-		{
-			if (str != "" && haveNum)
-			{
-				double f = atof(str.c_str());
-				data.push_back(f);
-				n++;
-			}
-			str = "";
-			haveNum = false;
-		}
-	}
-	return n;
-}
 
 std::string findANumber(const std::string &s)
 {
@@ -136,7 +98,7 @@ std::string findANumber(const std::string &s)
 	for (int i = 0; i < s.length(); i++)
 	{
 		char c = s[i];
-		if (c >= '0' && c <= '9' || c=='-' || c == '.' || c=='e' || c=='E')
+		if (c >= '0' && c <= '9' || c == '-' || c == '.' || c == 'e' || c == 'E')
 		{
 			if (c >= '0' && c <= '9' || c == '-')
 			{
@@ -203,3 +165,4 @@ bool isProChar(char c)
 {
 	return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'z') || (c >= '(' && c <= ')');
 }
+

@@ -1,4 +1,5 @@
 #include "others.h"
+#include "vec.h"
 
 void convertXY(int x, int y, int &X, int &Y, int &t)
 {

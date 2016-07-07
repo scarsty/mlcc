@@ -20,3 +20,5 @@ convert.opensdf
 convert1
 convert.VC.opendb
 *.md
+*.db
+*.opendb
