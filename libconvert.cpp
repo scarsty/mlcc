@@ -87,8 +87,6 @@ void formatAppendString(std::string &str, const char *format, ...)
 	str += s;
 }
 
-
-
 std::string findANumber(const std::string &s)
 {
 	bool findPoint = false;

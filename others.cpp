@@ -17,7 +17,7 @@ void convertXY(int x, int y, int &X, int &Y, int &t)
 	return;
 }
 
-double findHoppingReal(string &content, int X, int Y, int Z, int u, int v)
+double findHoppingReal(const string &content, int X, int Y, int Z, int u, int v)
 {
 	char s[256];
 	double r = 0;
@@ -31,7 +31,7 @@ double findHoppingReal(string &content, int X, int Y, int Z, int u, int v)
 	return r;
 }
 
-string findHoppingRealImag(string &content, int X, int Y, int Z, int u, int v)
+std::string findHoppingRealImag(const string &content, int X, int Y, int Z, int u, int v)
 {
 	char s[256];
 	double r = 0;
@@ -443,7 +443,7 @@ int convertBands(int argc, char** argv)
 	if (argc >= 6) w2 = atof(argv[5]);
 	//double w0 = atof(argv[4]);
 	vector<double> numbers, x0, y0;
-	int totalCount = findNumbers(s, numbers);
+	int totalCount = findNumbers(s, &numbers);
 	cout << "Total numbers is " << totalCount << endl;
 	//divide x and y
 	for (int i = 0; i < numbers.size(); i++)
@@ -558,7 +558,7 @@ int convert10to5(int argc, char** argv)
 	//region where 10 overlap to 5
 	double x1 = atof(argv[2]);
 	double x2 = atof(argv[3]);
-	int totalCount = findNumbers(s, numbers);
+	int totalCount = findNumbers(s, &numbers);
 	cout << "Total numbers is " << totalCount << endl;
 	//divide x and y
 	for (int i = 0; i < numbers.size(); i++)

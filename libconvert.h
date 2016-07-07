@@ -22,7 +22,7 @@ std::vector<std::string> splitString(std::string str, std::string pattern);
 bool isProChar(char c);
 
 template<typename T>
-int findNumbers(const std::string &s, std::vector<T> &data)
+int findNumbers(const std::string &s, std::vector<T> *data)
 {
 	int n = 0;
 	std::string str = "";
@@ -42,7 +42,7 @@ int findNumbers(const std::string &s, std::vector<T> &data)
 			if (str != "" && haveNum)
 			{
 				auto f = T(atof(str.c_str()));
-				data.push_back(f);
+				data->push_back(f);
 				n++;
 			}
 			str = "";

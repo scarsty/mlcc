@@ -23,7 +23,7 @@ int findAllNumbers(int argc, char** argv)
 	}
 	s += " ";
 	vector<double> nums;
-	int n = findNumbers(s, nums);
+	int n = findNumbers(s, &nums);
 	double sum = 0;
 	for (int i = 0; i < n; i++)
 	{
