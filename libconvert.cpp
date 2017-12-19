@@ -1,4 +1,5 @@
 #include "libconvert.h"
+#include <stdio.h>
 
 std::string readStringFromFile(const std::string& filename)
 {

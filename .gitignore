@@ -22,3 +22,5 @@ convert.VC.opendb
 *.md
 *.db
 *.opendb
+Debug/
+.vs/

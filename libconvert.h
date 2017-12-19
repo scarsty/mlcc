@@ -3,9 +3,7 @@
 #include <string>
 #include <vector>
 #include <stdarg.h>
-#include <math.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 //string functions
 std::string readStringFromFile(const std::string& filename);
