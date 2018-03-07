@@ -101,10 +101,5 @@ int main(int argc, char* argv[])
     if (option == "-i2")
     { ret = calLatticeWithAngle2(argc, argv); }
 
-
-#ifdef WIN32
-    printf("\nPress and key to exit.");
-    getchar();
-#endif
     return ret;
 }
