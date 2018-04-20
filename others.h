@@ -9,6 +9,7 @@
 #include "libconvert.h"
 
 using namespace std;
+using namespace convert;
 
 void convertXY(int x, int y, int& X, int& Y, int& t);
 double findHoppingReal(const string& content, int X, int Y, int Z, int u, int v);

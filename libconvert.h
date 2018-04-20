@@ -1,13 +1,15 @@
 #pragma once
-#define _USE_MATH_DEFINES
 #include <string>
 #include <vector>
 #include <stdarg.h>
 #include <stdlib.h>
 
+namespace convert
+{
 //string functions
 std::string readStringFromFile(const std::string& filename);
 void writeStringToFile(const std::string& str, const std::string& filename);
+void writeStringAppendToFile(const std::string& str, FILE *fp);
 int replaceString(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 = 0);
 int replaceAllString(std::string& s, const std::string& oldstring, const std::string& newstring);
 void replaceStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring);
@@ -16,7 +18,7 @@ std::string formatString(const char* format, ...);
 void formatAppendString(std::string& str, const char* format, ...);
 std::string findANumber(const std::string& s);
 unsigned findTheLast(const std::string& s, const std::string& content);
-std::vector<std::string> splitString(std::string str, std::string pattern);
+std::vector<std::string> splitString(std::string str, std::string pattern = "");
 bool isProChar(char c);
 
 template<typename T>
@@ -49,3 +51,4 @@ int findNumbers(const std::string& s, std::vector<T>* data)
     }
     return n;
 }
+};

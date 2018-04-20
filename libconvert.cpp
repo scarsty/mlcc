@@ -1,7 +1,12 @@
 #include "libconvert.h"
 #include <stdio.h>
 
-std::string readStringFromFile(const std::string& filename)
+#ifdef _MSC_VER
+#define vsprintf vsprintf_s
+//#define fopen fopen_s
+#endif
+
+std::string convert::readStringFromFile(const std::string& filename)
 {
     FILE* fp = fopen(filename.c_str(), "rb");
     if (!fp)
@@ -12,16 +17,14 @@ std::string readStringFromFile(const std::string& filename)
     fseek(fp, 0, SEEK_END);
     int length = ftell(fp);
     fseek(fp, 0, 0);
-    char* s = new char[length + 1];
-    for (int i = 0; i <= length; s[i++] = '\0');
-    fread(s, length, 1, fp);
-    std::string str(s);
+    std::string str;
+    str.resize(length, '\0');
+    fread((void*)str.c_str(), length, 1, fp);
     fclose(fp);
-    delete[] s;
     return str;
 }
 
-void writeStringToFile(const std::string& str, const std::string& filename)
+void convert::writeStringToFile(const std::string& str, const std::string& filename)
 {
     FILE* fp = fopen(filename.c_str(), "wb");
     int length = str.length();
@@ -29,7 +32,14 @@ void writeStringToFile(const std::string& str, const std::string& filename)
     fclose(fp);
 }
 
-int replaceString(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0/*=0*/)
+void convert::writeStringAppendToFile(const std::string& str, FILE* fp)
+{
+    int length = str.length();
+    fwrite(str.c_str(), length, 1, fp);
+    fputc('\n', fp);
+}
+
+int convert::replaceString(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0/*=0*/)
 {
     int pos = s.find(oldstring, pos0);
     if (pos >= 0)
@@ -40,7 +50,7 @@ int replaceString(std::string& s, const std::string& oldstring, const std::strin
     return pos + newstring.length();
 }
 
-int replaceAllString(std::string& s, const std::string& oldstring, const std::string& newstring)
+int convert::replaceAllString(std::string& s, const std::string& oldstring, const std::string& newstring)
 {
     int pos = s.find(oldstring);
     while (pos >= 0)
@@ -52,7 +62,7 @@ int replaceAllString(std::string& s, const std::string& oldstring, const std::st
     return pos + newstring.length();
 }
 
-void replaceStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring)
+void convert::replaceStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring)
 {
     std::string s = readStringFromFile(oldfilename);
     if (s.length() <= 0) { return; }
@@ -60,7 +70,7 @@ void replaceStringInFile(const std::string& oldfilename, const std::string& newf
     writeStringToFile(s, newfilename);
 }
 
-void replaceAllStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring)
+void convert::replaceAllStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring)
 {
     std::string s = readStringFromFile(oldfilename);
     if (s.length() <= 0) { return; }
@@ -68,7 +78,7 @@ void replaceAllStringInFile(const std::string& oldfilename, const std::string& n
     writeStringToFile(s, newfilename);
 }
 
-std::string formatString(const char* format, ...)
+std::string convert::formatString(const char* format, ...)
 {
     char s[1000];
     va_list arg_ptr;
@@ -78,7 +88,7 @@ std::string formatString(const char* format, ...)
     return s;
 }
 
-void formatAppendString(std::string& str, const char* format, ...)
+void convert::formatAppendString(std::string& str, const char* format, ...)
 {
     char s[1000];
     va_list arg_ptr;
@@ -88,7 +98,7 @@ void formatAppendString(std::string& str, const char* format, ...)
     str += s;
 }
 
-std::string findANumber(const std::string& s)
+std::string convert::findANumber(const std::string& s)
 {
     bool findPoint = false;
     bool findNumber = false;
@@ -107,7 +117,9 @@ std::string findANumber(const std::string& s)
             if (c == '.')
             {
                 if (!findPoint)
-                { n += c; }
+                {
+                    n += c;
+                }
                 findPoint = true;
             }
             if (c == 'e' || c == 'E')
@@ -122,13 +134,15 @@ std::string findANumber(const std::string& s)
         else
         {
             if (findNumber)
-            { break; }
+            {
+                break;
+            }
         }
     }
     return n;
 }
 
-unsigned findTheLast(const std::string& s, const std::string& content)
+unsigned convert::findTheLast(const std::string& s, const std::string& content)
 {
     int pos = 0, prepos = 0;
     while (pos >= 0)
@@ -140,27 +154,35 @@ unsigned findTheLast(const std::string& s, const std::string& content)
     return prepos;
 }
 
-std::vector<std::string> splitString(std::string str, std::string pattern)
+std::vector<std::string> convert::splitString(std::string str, std::string pattern)
 {
     std::string::size_type pos;
     std::vector<std::string> result;
-    str += pattern; //扩展字符串以方便操作
+    if (pattern.empty())
+    {
+        pattern = ",;| ";
+    }
+    str += pattern[0]; //扩展字符串以方便操作
+    bool have_space = pattern.find(" ") != std::string::npos;
     int size = str.size();
-
     for (int i = 0; i < size; i++)
     {
-        pos = str.find(pattern, i);
+        if (have_space)
+        {
+            while (str[i] == ' ') { i++; }    //当空格作为分隔符时，连续空格视为一个
+        }
+        pos = str.find_first_of(pattern, i);
         if (pos < size)
         {
             std::string s = str.substr(i, pos - i);
             result.push_back(s);
-            i = pos + pattern.size() - 1;
+            i = pos;
         }
     }
     return result;
 }
 
-bool isProChar(char c)
+bool convert::isProChar(char c)
 {
     return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'z') || (c >= '(' && c <= ')');
 }

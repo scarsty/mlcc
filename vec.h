@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "libconvert.h"
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 struct vec
