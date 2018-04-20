@@ -59,7 +59,7 @@ public:
     }
     std::string tostring()
     {
-        return formatString("%1.10lf %1.10lf %1.10lf", x, y, z);
+        return convert::formatString("%1.10lf %1.10lf %1.10lf", x, y, z);
     }
 };
 

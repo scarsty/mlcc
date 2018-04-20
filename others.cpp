@@ -1,6 +1,9 @@
 #include "others.h"
 #include "vec.h"
 
+using namespace std;
+using namespace convert;
+
 void convertXY(int x, int y, int& X, int& Y, int& t)
 {
     t = (x + y) % 2;

@@ -154,7 +154,7 @@ unsigned convert::findTheLast(const std::string& s, const std::string& content)
     return prepos;
 }
 
-std::vector<std::string> convert::splitString(std::string str, std::string pattern)
+std::vector<std::string> convert::splitString(std::string str, std::string pattern, bool ignore_psspace)
 {
     std::string::size_type pos;
     std::vector<std::string> result;
@@ -175,6 +175,15 @@ std::vector<std::string> convert::splitString(std::string str, std::string patte
         if (pos < size)
         {
             std::string s = str.substr(i, pos - i);
+            if (ignore_psspace)
+            {
+                auto pre = s.find_first_not_of(" ");
+                auto suf = s.find_last_not_of(" ");
+                if (pre != std::string::npos && suf != std::string::npos)
+                {
+                    s = s.substr(pre, suf - pre + 1);
+                }
+            }
             result.push_back(s);
             i = pos;
         }

@@ -18,7 +18,7 @@ std::string formatString(const char* format, ...);
 void formatAppendString(std::string& str, const char* format, ...);
 std::string findANumber(const std::string& s);
 unsigned findTheLast(const std::string& s, const std::string& content);
-std::vector<std::string> splitString(std::string str, std::string pattern = "");
+std::vector<std::string> splitString(std::string str, std::string pattern = "", bool ignore_psspace = true);
 bool isProChar(char c);
 
 template<typename T>

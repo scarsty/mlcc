@@ -1,5 +1,8 @@
 #include "sf.h"
 
+using namespace std;
+using namespace convert;
+
 int findANumber(int argc, char** argv)
 {
     string s;
