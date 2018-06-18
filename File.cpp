@@ -10,8 +10,8 @@
 #include <fstream>
 #include <string.h>
 #ifdef __GNUC__
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #endif
 
 File::File()
@@ -188,6 +188,17 @@ std::vector<std::string> File::getFilesInDir(std::string dirname)
     closedir(dir);
     //std::sort(ret.begin(), ret.end());
     return ret;
+#endif
+}
+
+bool File::isPath(const std::string& name)
+{
+#ifdef _WIN32
+    return GetFileAttributesA(name.c_str()) & FILE_ATTRIBUTE_DIRECTORY;
+#else
+    struct stat sb;
+    stat(name.c_str(), &sb);
+    return sb.st_mode & S_IFDIR;
 #endif
 }
 

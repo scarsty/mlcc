@@ -25,6 +25,7 @@ public:
     static std::string changeFileExt(const std::string& filename, const std::string& ext);
     static std::string getFilePath(const std::string& filename);
     static std::vector<std::string> getFilesInDir(std::string dirname);
+    static bool isPath(const std::string& name);
 
     static bool readFile(const std::string& filename, char** s, int* len);
     static void readFile(const std::string& filename, void* s, int len);
