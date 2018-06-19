@@ -134,26 +134,24 @@ int File::writeFile(const std::string& filename, void* s, int len)
 
 int File::getLastPathCharPos(const std::string& filename)
 {
-    int pos_win = std::string::npos;
+    int pos = std::string::npos;
 #ifdef _WIN32
-    pos_win = filename.find_last_of('\\');
+    //ansi
+    for (int i = 0; i < filename.size(); i++)
+    {
+        if (uint8_t(filename[i]) >= 128)
+        {
+            i++;
+        }
+        else if (filename[i] == '\\' || filename[i] == '/')
+        {
+            pos = i;
+        }
+    }
+#else
+    pos = filename.find_last_of('/');
 #endif    // _WIN32
-    int pos_other = filename.find_last_of('/');
-    if (pos_win == std::string::npos)
-    {
-        return pos_other;
-    }
-    else
-    {
-        if (pos_other == std::string::npos)
-        {
-            return pos_win;
-        }
-        else
-        {
-            return pos_other > pos_win ? pos_other : pos_win;
-        }
-    }
+    return pos;
 }
 
 std::string File::getFileExt(const std::string& filename)

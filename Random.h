@@ -78,4 +78,4 @@ public:
 };
 
 typedef Random<double> RandomDouble;    //use this in usual
-typedef Random<float> RandomFloat;    //use this in usual
+typedef Random<float> RandomFloat;      //use this in usual
