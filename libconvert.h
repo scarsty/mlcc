@@ -10,8 +10,8 @@ namespace convert
 std::string readStringFromFile(const std::string& filename);
 void writeStringToFile(const std::string& str, const std::string& filename);
 void writeStringAppendToFile(const std::string& str, FILE* fp);
-int replaceString(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 = 0);
-int replaceAllString(std::string& s, const std::string& oldstring, const std::string& newstring);
+std::string replaceString(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 = 0);    //this function will change original string
+std::string replaceAllString(std::string& s, const std::string& oldstring, const std::string& newstring);               //this function will change original string
 void replaceStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring);
 void replaceAllStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring);
 std::string formatString(const char* format, ...);
@@ -20,6 +20,7 @@ std::string findANumber(const std::string& s);
 unsigned findTheLast(const std::string& s, const std::string& content);
 std::vector<std::string> splitString(std::string str, std::string pattern = "", bool ignore_psspace = true);
 bool isProChar(char c);
+std::string convertCase(const std::string& s, int mode = -1);
 
 template <typename T>
 int findNumbers(const std::string& s, std::vector<T>* data)

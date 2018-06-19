@@ -1,14 +1,19 @@
 #include "File.h"
+#include <fstream>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
+
 #ifdef _WIN32
 #include <Windows.h>
+#include <direct.h>
 #include <strsafe.h>
 #else
 #include "dirent.h"
+#include <sys/uio.h>
+#include <unistd.h>
 #endif
-#include <fstream>
-#include <string.h>
+
 #ifdef __GNUC__
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -81,156 +86,6 @@ void File::reverse(unsigned char* c, int n)
     }
 }
 
-int File::getLastPathPos(const std::string& filename)
-{
-    int pos_win = std::string::npos;
-#ifdef _WIN32
-    pos_win = filename.find_last_of('\\');
-#endif    // _WIN32
-    int pos_other = filename.find_last_of('/');
-    if (pos_win == std::string::npos)
-    {
-        return pos_other;
-    }
-    else
-    {
-        if (pos_other == std::string::npos)
-        {
-            return pos_win;
-        }
-        else
-        {
-            return pos_other > pos_win ? pos_other : pos_win;
-        }
-    }
-}
-
-std::string File::getFileExt(const std::string& filename)
-{
-    int pos_p = getLastPathPos(filename);
-    int pos_d = filename.find_last_of('.');
-    if (pos_p < pos_d)
-    {
-        return filename.substr(pos_d + 1);
-    }
-    return "";
-}
-
-//find the last point as default, and find the first when mode is 1
-std::string File::getFileMainname(const std::string& filename, FindMode mode)
-{
-    int pos_p = getLastPathPos(filename);
-    int pos_d = filename.find_last_of('.');
-    if (mode == FINDFIRST)
-    {
-        pos_d = filename.find_first_of('.', pos_p + 1);
-    }
-    if (pos_p < pos_d)
-    {
-        return filename.substr(0, pos_d);
-    }
-    return filename;
-}
-
-std::string File::getFilenameWithoutPath(const std::string& filename)
-{
-    int pos_p = getLastPathPos(filename);
-    if (pos_p != std::string::npos)
-    {
-        return filename.substr(pos_p + 1);
-    }
-    return filename;
-}
-
-std::string File::changeFileExt(const std::string& filename, const std::string& ext)
-{
-    auto e = ext;
-    if (e != "" && e[0] != '.')
-    {
-        e = "." + e;
-    }
-    return getFileMainname(filename) + e;
-}
-
-std::string File::getFilePath(const std::string& filename)
-{
-    int pos_p = getLastPathPos(filename);
-    if (pos_p != std::string::npos)
-    {
-        return filename.substr(0, pos_p);
-    }
-    return "";
-}
-
-std::vector<std::string> File::getFilesInPath(std::string path)
-{
-    std::vector<std::string> ret;
-    if (!isPath(path))
-    {
-        if (fileExist(path))
-        {
-            ret.push_back(path);
-        }
-        return ret;
-    }
-#ifdef _WIN32
-    WIN32_FIND_DATAA ffd;
-    //LARGE_INTEGER filesize;
-    std::string szDir;
-    //size_t length_of_arg;
-    HANDLE hFind = INVALID_HANDLE_VALUE;
-    DWORD dwError = 0;
-    szDir = path + "\\*";
-    hFind = FindFirstFileA(szDir.c_str(), &ffd);
-
-    if (INVALID_HANDLE_VALUE == hFind)
-    {
-        fprintf(stderr, "Get file name error!\n");
-        return ret;
-    }
-    do
-    {
-        if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-        {
-            std::string filename = ffd.cFileName;    //(const char*)
-            std::string filedir = filename;
-            ret.push_back(filedir);
-        }
-    } while (FindNextFileA(hFind, &ffd) != 0);
-
-    dwError = GetLastError();
-    if (dwError != ERROR_NO_MORE_FILES)
-    {
-        fprintf(stderr, "Find first file error!\n");
-        return ret;
-    }
-    FindClose(hFind);
-    return ret;
-#else
-    DIR* dir;
-    struct dirent* ptr;
-    dir = opendir(path.c_str());
-    while ((ptr = readdir(dir)) != NULL)
-    {
-        std::string file = std::string(ptr->d_name);
-        ret.push_back(file);
-    }
-    closedir(dir);
-    return ret;
-#endif
-}
-
-bool File::isPath(const std::string& name)
-{
-#ifdef _WIN32
-    return GetFileAttributesA(name.c_str()) & FILE_ATTRIBUTE_DIRECTORY;
-#else
-    struct stat sb;
-    stat(name.c_str(), &sb);
-    return sb.st_mode & S_IFDIR;
-#endif
-}
-
 bool File::readFile(const std::string& filename, char** s, int* len)
 {
     FILE* fp = fopen(filename.c_str(), "rb");
@@ -277,6 +132,151 @@ int File::writeFile(const std::string& filename, void* s, int len)
     return len;
 }
 
+int File::getLastPathCharPos(const std::string& filename)
+{
+    int pos_win = std::string::npos;
+#ifdef _WIN32
+    pos_win = filename.find_last_of('\\');
+#endif    // _WIN32
+    int pos_other = filename.find_last_of('/');
+    if (pos_win == std::string::npos)
+    {
+        return pos_other;
+    }
+    else
+    {
+        if (pos_other == std::string::npos)
+        {
+            return pos_win;
+        }
+        else
+        {
+            return pos_other > pos_win ? pos_other : pos_win;
+        }
+    }
+}
+
+std::string File::getFileExt(const std::string& filename)
+{
+    int pos_p = getLastPathCharPos(filename);
+    int pos_d = filename.find_last_of('.');
+    if (pos_p < pos_d)
+    {
+        return filename.substr(pos_d + 1);
+    }
+    return "";
+}
+
+//find the last point as default, and find the first when mode is 1
+std::string File::getFileMainname(const std::string& filename, FindMode mode)
+{
+    int pos_p = getLastPathCharPos(filename);
+    int pos_d = filename.find_last_of('.');
+    if (mode == FINDFIRST)
+    {
+        pos_d = filename.find_first_of('.', pos_p + 1);
+    }
+    if (pos_p < pos_d)
+    {
+        return filename.substr(0, pos_d);
+    }
+    return filename;
+}
+
+std::string File::getFilenameWithoutPath(const std::string& filename)
+{
+    int pos_p = getLastPathCharPos(filename);
+    if (pos_p != std::string::npos)
+    {
+        return filename.substr(pos_p + 1);
+    }
+    return filename;
+}
+
+std::string File::changeFileExt(const std::string& filename, const std::string& ext)
+{
+    auto e = ext;
+    if (e != "" && e[0] != '.')
+    {
+        e = "." + e;
+    }
+    return getFileMainname(filename) + e;
+}
+
+std::string File::getFilePath(const std::string& filename)
+{
+    int pos_p = getLastPathCharPos(filename);
+    if (pos_p != std::string::npos)
+    {
+        return filename.substr(0, pos_p);
+    }
+    return "";
+}
+
+std::vector<std::string> File::getFilesInPath(std::string dirname)
+{
+#ifdef _WIN32
+    WIN32_FIND_DATAA ffd;
+    //LARGE_INTEGER filesize;
+    std::string szDir;
+    //size_t length_of_arg;
+    HANDLE hFind = INVALID_HANDLE_VALUE;
+    DWORD dwError = 0;
+    std::vector<std::string> ret;
+
+    szDir = dirname + "\\*";
+    hFind = FindFirstFileA(szDir.c_str(), &ffd);
+
+    if (INVALID_HANDLE_VALUE == hFind)
+    {
+        fprintf(stderr, "get file name error\n");
+        return ret;
+    }
+    do
+    {
+        if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+        {
+            std::string filename = ffd.cFileName;    //(const char*)
+            std::string filedir = filename;
+            ret.push_back(filedir);
+        }
+    } while (FindNextFileA(hFind, &ffd) != 0);
+
+    dwError = GetLastError();
+    if (dwError != ERROR_NO_MORE_FILES)
+    {
+        fprintf(stderr, "FindFirstFile error\n");
+        return ret;
+    }
+    FindClose(hFind);
+    return ret;
+#else
+    DIR* dir;
+    struct dirent* ptr;
+    dir = opendir(dirname.c_str());
+    std::vector<std::string> ret;
+    while ((ptr = readdir(dir)) != NULL)
+    {
+        std::string path = std::string(ptr->d_name);
+        ret.push_back(path);
+    }
+    closedir(dir);
+    //std::sort(ret.begin(), ret.end());
+    return ret;
+#endif
+}
+
+bool File::isPath(const std::string& name)
+{
+#ifdef _WIN32
+    return GetFileAttributesA(name.c_str()) & FILE_ATTRIBUTE_DIRECTORY;
+#else
+    struct stat sb;
+    stat(name.c_str(), &sb);
+    return sb.st_mode & S_IFDIR;
+#endif
+}
+
 std::string File::getFileTime(std::string filename)
 {
 #if defined(__clang__) && defined(_WIN32)
@@ -299,4 +299,9 @@ std::string File::getFileTime(std::string filename)
         return buf;
     }
     return "";
+}
+
+void File::changePath(const std::string& path)
+{
+    chdir(path.c_str());
 }

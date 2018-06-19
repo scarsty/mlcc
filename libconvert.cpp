@@ -1,4 +1,5 @@
 #include "libconvert.h"
+#include <algorithm>
 #include <stdio.h>
 
 #ifdef _MSC_VER
@@ -39,7 +40,7 @@ void convert::writeStringAppendToFile(const std::string& str, FILE* fp)
     fputc('\n', fp);
 }
 
-int convert::replaceString(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*=0*/)
+std::string convert::replaceString(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*=0*/)
 {
     int pos = s.find(oldstring, pos0);
     if (pos >= 0)
@@ -47,10 +48,10 @@ int convert::replaceString(std::string& s, const std::string& oldstring, const s
         s.erase(pos, oldstring.length());
         s.insert(pos, newstring);
     }
-    return pos + newstring.length();
+    return s;
 }
 
-int convert::replaceAllString(std::string& s, const std::string& oldstring, const std::string& newstring)
+std::string convert::replaceAllString(std::string& s, const std::string& oldstring, const std::string& newstring)
 {
     int pos = s.find(oldstring);
     while (pos >= 0)
@@ -59,7 +60,7 @@ int convert::replaceAllString(std::string& s, const std::string& oldstring, cons
         s.insert(pos, newstring);
         pos = s.find(oldstring, pos + newstring.length());
     }
-    return pos + newstring.length();
+    return s;
 }
 
 void convert::replaceStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring)
@@ -203,4 +204,18 @@ std::vector<std::string> convert::splitString(std::string str, std::string patte
 bool convert::isProChar(char c)
 {
     return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'z') || (c >= '(' && c <= ')');
+}
+
+std::string convert::convertCase(const std::string& s, int mode)
+{
+    std::string s1 = s;
+    if (mode > 0)
+    {
+        std::transform(s1.begin(), s1.end(), s1.begin(), ::toupper);
+    }
+    else
+    {
+        std::transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
+    }
+    return s1;
 }
