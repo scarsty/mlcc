@@ -81,6 +81,30 @@ void File::reverse(unsigned char* c, int n)
     }
 }
 
+int File::getLastPathPos(const std::string& filename)
+{
+    int pos_win = std::string::npos;
+#ifdef _WIN32
+    pos_win = filename.find_last_of('\\');
+#endif    // _WIN32
+    int pos_other = filename.find_last_of('/');
+    if (pos_win == std::string::npos)
+    {
+        return pos_other;
+    }
+    else
+    {
+        if (pos_other == std::string::npos)
+        {
+            return pos_win;
+        }
+        else
+        {
+            return pos_other > pos_win ? pos_other : pos_win;
+        }
+    }
+}
+
 std::string File::getFileExt(const std::string& filename)
 {
     int pos_p = getLastPathPos(filename);
@@ -138,8 +162,17 @@ std::string File::getFilePath(const std::string& filename)
     return "";
 }
 
-std::vector<std::string> File::getFilesInDir(std::string dirname)
+std::vector<std::string> File::getFilesInPath(std::string path)
 {
+    std::vector<std::string> ret;
+    if (!isPath(path))
+    {
+        if (fileExist(path))
+        {
+            ret.push_back(path);
+        }
+        return ret;
+    }
 #ifdef _WIN32
     WIN32_FIND_DATAA ffd;
     //LARGE_INTEGER filesize;
@@ -147,14 +180,12 @@ std::vector<std::string> File::getFilesInDir(std::string dirname)
     //size_t length_of_arg;
     HANDLE hFind = INVALID_HANDLE_VALUE;
     DWORD dwError = 0;
-    std::vector<std::string> ret;
-
-    szDir = dirname + "\\*";
+    szDir = path + "\\*";
     hFind = FindFirstFileA(szDir.c_str(), &ffd);
 
     if (INVALID_HANDLE_VALUE == hFind)
     {
-        fprintf(stderr, "get file name error\n");
+        fprintf(stderr, "Get file name error!\n");
         return ret;
     }
     do
@@ -170,7 +201,7 @@ std::vector<std::string> File::getFilesInDir(std::string dirname)
     dwError = GetLastError();
     if (dwError != ERROR_NO_MORE_FILES)
     {
-        fprintf(stderr, "FindFirstFile error\n");
+        fprintf(stderr, "Find first file error!\n");
         return ret;
     }
     FindClose(hFind);
@@ -178,15 +209,13 @@ std::vector<std::string> File::getFilesInDir(std::string dirname)
 #else
     DIR* dir;
     struct dirent* ptr;
-    dir = opendir(dirname.c_str());
-    std::vector<std::string> ret;
+    dir = opendir(path.c_str());
     while ((ptr = readdir(dir)) != NULL)
     {
-        std::string path = std::string(ptr->d_name);
-        ret.push_back(path);
+        std::string file = std::string(ptr->d_name);
+        ret.push_back(file);
     }
     closedir(dir);
-    //std::sort(ret.begin(), ret.end());
     return ret;
 #endif
 }
@@ -200,30 +229,6 @@ bool File::isPath(const std::string& name)
     stat(name.c_str(), &sb);
     return sb.st_mode & S_IFDIR;
 #endif
-}
-
-int File::getLastPathPos(const std::string& filename)
-{
-    int pos_win = std::string::npos;
-#ifdef _WIN32
-    pos_win = filename.find_last_of('\\');
-#endif    // _WIN32
-    int pos_other = filename.find_last_of('/');
-    if (pos_win == std::string::npos)
-    {
-        return pos_other;
-    }
-    else
-    {
-        if (pos_other == std::string::npos)
-        {
-            return pos_win;
-        }
-        else
-        {
-            return pos_other > pos_win ? pos_other : pos_win;
-        }
-    }
 }
 
 bool File::readFile(const std::string& filename, char** s, int* len)

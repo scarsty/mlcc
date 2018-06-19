@@ -19,12 +19,16 @@ public:
     static void deleteBuffer(unsigned char* buffer);
     static void reverse(unsigned char* c, int n);
 
+private:
+    static int getLastPathPos(const std::string& filename);
+
+public:
     static std::string getFileExt(const std::string& filename);
     static std::string getFileMainname(const std::string& fileName, FindMode mode = FINDLAST);
     static std::string getFilenameWithoutPath(const std::string& fileName);
     static std::string changeFileExt(const std::string& filename, const std::string& ext);
     static std::string getFilePath(const std::string& filename);
-    static std::vector<std::string> getFilesInDir(std::string dirname);
+    static std::vector<std::string> getFilesInPath(std::string dirname);
     static bool isPath(const std::string& name);
 
     static bool readFile(const std::string& filename, char** s, int* len);
@@ -70,7 +74,4 @@ public:
             memcpy(data + length_one * i, &v[i], length_one);
         }
     }
-
-private:
-    static int getLastPathPos(const std::string& filename);
 };
