@@ -91,11 +91,11 @@ public:
         int pos = content.find(line_break_, 1);
         if (pos != std::string::npos && pos < content.size())
         {
-            if (content[pos - 1] = '\r')
+            if (content[pos - 1] == '\r')
             {
                 line_break_ = "\r\n";
             }
-            else if (content[pos + 1] = '\r')
+            else if (content[pos + 1] == '\r')
             {
                 line_break_ = "\n\r";
             }
@@ -241,6 +241,12 @@ public:
     }
 
 private:
+    enum
+    {
+        READ = 0,
+        WRITE = 1,
+    };
+
     std::string content_, line_break_;
     std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
     typedef std::map<std::string, std::map<std::string, std::string, COM2>, COM1> values_type;
@@ -253,6 +259,11 @@ private:
         int ret = values_[section].count(key);
         values_[section][key] = value;
         return ret;
+    }
+
+    void eraseKeyFromNew(std::string section, std::string key)
+    {
+        new_values_[section].erase(key);
     }
 
 private:
@@ -272,14 +283,14 @@ private:
                 if (pos < size)
                 {
                     std::string s = str.substr(i, pos - i);
-                    if (s.empty() && pre_pattern != '\0' && pre_pattern != str[i])    //a pair of different patterns are omitted,
+                    if (s.empty() && pre_pattern != '\0' && pre_pattern != str[pos])    //a pair of different patterns are omitted,
                     {
                         pre_pattern = '\0';
                     }
                     else
                     {
                         result.push_back(s);
-                        pre_pattern = str[i];
+                        pre_pattern = str[pos];
                     }
                     i = pos;
                 }
@@ -290,12 +301,6 @@ private:
         lines_section_.resize(lines_.size());
         return ini_parse_lines(lines_, lines_section_, READ);
     }
-
-    enum
-    {
-        READ = 0,
-        WRITE = 1,
-    };
 
     int ini_parse_lines(std::vector<std::string>& lines, std::vector<std::string>& lines_section, int mode)
     {
@@ -413,12 +418,17 @@ private:
                     {
                         if (hasKey(section, key))
                         {
-                            value = getString(section, key, value);
-                            lines[lineno - 1] = key + " = " + value + blanks + comment;
+                            auto value1 = getString(section, key, value);
+                            if (value1 != value)
+                            {
+                                //rewrite the line
+                                lines[lineno - 1] = key + " = " + value + blanks + comment;
+                            }
+                            eraseKeyFromNew(section, key);
                         }
                         else
                         {
-                            //key has been erased
+                            //key has been erased, a unusual string is assigned
                             lines[lineno - 1] = "";
                             lines[lineno - 1].resize(1, '\0');
                         }
@@ -445,9 +455,7 @@ private:
         return error;
     }
 
-public:
-    //write modified file
-    void writeFile(std::string filename)
+    void combineNewKeys()
     {
         content_ = "";
         //rescan the file to modify existing keys
@@ -503,8 +511,14 @@ public:
                 content_ += line + line_break_;
             }
         }
-        content_.pop_back();    // an extra char was appended when splitting
+        content_.pop_back();    // an extra char was appended when splitting}
+    }
 
+public:
+    //write modified file
+    void writeFile(std::string filename)
+    {
+        combineNewKeys();
         FILE* fp = fopen(filename.c_str(), "wb");
         int length = content_.length();
         fwrite(content_.c_str(), length, 1, fp);
