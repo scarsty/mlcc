@@ -101,11 +101,6 @@ public:
             }
         }
         error_ = ini_parse_content(content);
-        content_ = content;
-        for (auto& section : getAllSections())
-        {
-            new_values_[section] = {};
-        }
     }
 
     // Return the result of ini_parse(), i.e., 0 on success, line number of
@@ -216,10 +211,7 @@ public:
 
     void setKey(std::string section, std::string key, std::string value)
     {
-        if (valueHandler(section, key, value) == 0)
-        {
-            new_values_[section][key] = value;
-        }
+        valueHandler(section, key, value);
     }
 
     void eraseKey(std::string section, std::string key)
@@ -238,6 +230,10 @@ public:
             }
             fprintf(stdout, "\n");
         }
+        for (int i = 0; i < lines_.size(); i++)
+        {
+            fprintf(stdout, "%s %s\n", lines_section_[i].c_str(), lines_[i].c_str());
+        }
     }
 
 private:
@@ -247,11 +243,11 @@ private:
         WRITE = 1,
     };
 
-    std::string content_, line_break_;
+    std::string line_break_;
     std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
     typedef std::map<std::string, std::map<std::string, std::string, COM2>, COM1> values_type;
     int error_ = 0;
-    values_type values_, new_values_;
+    values_type values_;
 
     //return value: the key has existed, 0 means it is a new key
     int valueHandler(const std::string& section, const std::string& key, const std::string& value)
@@ -259,11 +255,6 @@ private:
         int ret = values_[section].count(key);
         values_[section][key] = value;
         return ret;
-    }
-
-    void eraseKeyFromNew(std::string section, std::string key)
-    {
-        new_values_[section].erase(key);
     }
 
 private:
@@ -298,7 +289,6 @@ private:
             return result;
         };
         lines_ = splitString(content, "\n\r");
-        lines_section_.resize(lines_.size());
         return ini_parse_lines(lines_, lines_section_, READ);
     }
 
@@ -337,11 +327,13 @@ private:
         std::string prev_key = "";
         int lineno = 0;
         int error = 0;
-        std::map<int, std::string> insert_line;
+        lines_section.clear();
         /* Scan all lines */
-        for (auto line : lines)
+        auto it = lines.begin();
+        while (it != lines.end())
         {
             lineno++;
+            std::string line = *it;
 #if INI_ALLOW_BOM
             if (lineno == 1 && line.size() >= 3 && (unsigned char)line[0] == 0xEF && (unsigned char)line[1] == 0xBB && (unsigned char)line[2] == 0xBF)
             {
@@ -352,11 +344,8 @@ private:
 
             if (line.size() < 2)    //a line should contains at least two letters such as "a=", "[]"
             {
-                lines_section[lineno - 1] = section;
-                continue;
             }
-
-            if (line[0] == ';' || line[0] == '#')
+            else if (line[0] == ';' || line[0] == '#')
             {
                 /* Per Python configparser, allow both ; and # comments at the start of a line */
             }
@@ -422,15 +411,15 @@ private:
                             if (value1 != value)
                             {
                                 //rewrite the line
-                                lines[lineno - 1] = key + " = " + value + blanks + comment;
+                                lines[lineno - 1] = key + " = " + value1 + blanks + comment;
                             }
-                            eraseKeyFromNew(section, key);
+                            eraseKey(section, key);
                         }
                         else
                         {
-                            //key has been erased, a unusual string is assigned
-                            lines[lineno - 1] = "";
-                            lines[lineno - 1].resize(1, '\0');
+                            //key has been erased
+                            it = lines.erase(it);
+                            continue;
                         }
                     }
                     if (!error)
@@ -444,7 +433,8 @@ private:
                     error = lineno;
                 }
             }
-            lines_section[lineno - 1] = section;
+            lines_section.push_back(section);
+            it++;
 #if INI_STOP_ON_FIRST_ERROR
             if (error)
             {
@@ -455,13 +445,13 @@ private:
         return error;
     }
 
-    void combineNewKeys()
+    void resetLines()
     {
-        content_ = "";
+        auto values0 = values_;
         //rescan the file to modify existing keys
         ini_parse_lines(lines_, lines_section_, WRITE);
 
-        for (auto& skv : new_values_)
+        for (auto& skv : values_)
         {
             if (skv.second.size() > 0)
             {
@@ -490,6 +480,11 @@ private:
                 if (pos == 0 && section != "")
                 {
                     //append new lines
+                    while (!lines_.empty() && lines_.back() == "")
+                    {
+                        lines_.pop_back();    //remove blank line first
+                        lines_section_.pop_back();
+                    }
                     lines_.push_back("");
                     lines_.push_back("[" + section + "]");
                     lines_section_.push_back(lines_section_.back());
@@ -502,27 +497,29 @@ private:
                 }
             }
         }
-        new_values_.clear();
-
-        for (auto& line : lines_)
-        {
-            if (!(line.size() == 1 && line[0] == '\0'))
-            {
-                content_ += line + line_break_;
-            }
-        }
-        content_.pop_back();    // an extra char was appended when splitting}
+        values_ = values0;
     }
 
 public:
     //write modified file
-    void writeFile(std::string filename)
+    void writeToFile(std::string filename)
     {
-        combineNewKeys();
+        auto content = writeToString();
         FILE* fp = fopen(filename.c_str(), "wb");
-        int length = content_.length();
-        fwrite(content_.c_str(), length, 1, fp);
+        int length = content.length();
+        fwrite(content.c_str(), length, 1, fp);
         fclose(fp);
+    }
+
+    std::string writeToString()
+    {
+        resetLines();
+        std::string content;
+        for (auto& line : lines_)
+        {
+            content += line + line_break_;
+        }
+        return content;
     }
 };
 
