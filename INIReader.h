@@ -63,10 +63,9 @@ template <class COM1, class COM2>
 class INIReader
 {
 public:
-    // Construct INIReader and parse given filename. See ini.h for more info
-    // about the parsing.
     INIReader() {}
 
+    // parse a given filename
     void loadFile(std::string filename)
     {
         FILE* fp = fopen(filename.c_str(), "rb");
@@ -85,9 +84,28 @@ public:
         load(str);
     }
 
+    // parse an ini string
     void load(std::string content)
     {
+        line_break_ = "\n";
+        int pos = content.find(line_break_, 1);
+        if (pos != std::string::npos && pos < content.size())
+        {
+            if (content[pos - 1] = '\r')
+            {
+                line_break_ = "\r\n";
+            }
+            else if (content[pos + 1] = '\r')
+            {
+                line_break_ = "\n\r";
+            }
+        }
         error_ = ini_parse_content(content);
+        content_ = content;
+        for (auto& section : getAllSections())
+        {
+            new_values_[section] = {};
+        }
     }
 
     // Return the result of ini_parse(), i.e., 0 on success, line number of
@@ -98,7 +116,6 @@ public:
     }
 
     // Get a string value from INI file, returning default_value if not found.
-
     std::string getString(std::string section, std::string key, std::string default_value) const
     {
         if (values_.count(section) == 0)
@@ -199,7 +216,10 @@ public:
 
     void setKey(std::string section, std::string key, std::string value)
     {
-        values_[section][key] = value;
+        if (valueHandler(section, key, value) == 0)
+        {
+            new_values_[section][key] = value;
+        }
     }
 
     void eraseKey(std::string section, std::string key)
@@ -221,66 +241,63 @@ public:
     }
 
 private:
+    std::string content_, line_break_;
+    std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
     typedef std::map<std::string, std::map<std::string, std::string, COM2>, COM1> values_type;
     int error_ = 0;
-    values_type values_;
+    values_type values_, new_values_;
+
+    //return value: the key has existed, 0 means it is a new key
     int valueHandler(const std::string& section, const std::string& key, const std::string& value)
     {
+        int ret = values_[section].count(key);
         values_[section][key] = value;
-        return 0;
+        return ret;
     }
 
 private:
-    int ini_parse_content(const std::string& content)
+    int ini_parse_content(std::string& content)
     {
-        //copied from libconvert with little modification
-        auto splitString = [](std::string str, std::string pattern, bool ignore_psspace)
+        //split the content into lines
+        auto splitString = [](std::string str, std::string pattern)
         {
             std::string::size_type pos;
             std::vector<std::string> result;
-            if (pattern.empty())
-            {
-                pattern = ",;| ";
-            }
             str += pattern[0];
-            bool have_space = pattern.find(" ") != std::string::npos;
             int size = str.size();
+            char pre_pattern = '\0';
             for (int i = 0; i < size; i++)
             {
-                if (have_space)
-                {
-                    while (str[i] == ' ')
-                    {
-                        i++;
-                    }
-                }
                 pos = str.find_first_of(pattern, i);
                 if (pos < size)
                 {
                     std::string s = str.substr(i, pos - i);
-                    if (ignore_psspace)
+                    if (s.empty() && pre_pattern != '\0' && pre_pattern != str[i])    //a pair of different patterns are omitted,
                     {
-                        auto pre = s.find_first_not_of(" ");
-                        auto suf = s.find_last_not_of(" ");
-                        if (pre != std::string::npos && suf != std::string::npos)
-                        {
-                            s = s.substr(pre, suf - pre + 1);
-                        }
+                        pre_pattern = '\0';
                     }
-                    if (s != "")
+                    else
                     {
-                        result.push_back(s);    //strip blank lines
+                        result.push_back(s);
+                        pre_pattern = str[i];
                     }
                     i = pos;
                 }
             }
             return result;
         };
-        auto lines = splitString(content, "\n\r\0", false);
-        return ini_parse_lines(lines);
+        lines_ = splitString(content, "\n\r");
+        lines_section_.resize(lines_.size());
+        return ini_parse_lines(lines_, lines_section_, READ);
     }
 
-    int ini_parse_lines(std::vector<std::string>& lines)
+    enum
+    {
+        READ = 0,
+        WRITE = 1,
+    };
+
+    int ini_parse_lines(std::vector<std::string>& lines, std::vector<std::string>& lines_section, int mode)
     {
         /* Return pointer to first non-whitespace char in given string. */
         auto lskip = [](std::string s) -> std::string
@@ -315,7 +332,7 @@ private:
         std::string prev_key = "";
         int lineno = 0;
         int error = 0;
-
+        std::map<int, std::string> insert_line;
         /* Scan all lines */
         for (auto line : lines)
         {
@@ -327,8 +344,10 @@ private:
             }
 #endif
             line = lskip(rstrip(line));    //remove spaces on two sides
-            if (line == "")
+
+            if (line.size() < 2)    //a line should contains at least two letters such as "a=", "[]"
             {
+                lines_section[lineno - 1] = section;
                 continue;
             }
 
@@ -340,9 +359,11 @@ private:
             else if (prev_key != "" && line[0] == ' ')
             {
                 /* Non-blank line with leading whitespace, treat as continuation of previous name's value (as per Python config parser). */
-                if (valueHandler(section, prev_key, line) && !error)
+                std::string value = getString(section, prev_key, "") + rstrip(lskip(line));
+                int key_exist = valueHandler(section, prev_key, value);
+                if (error == 0)
                 {
-                    error = lineno;
+                    //error = lineno;
                 }
             }
 #endif
@@ -352,10 +373,10 @@ private:
                 auto end = line.find_first_of("]");
                 if (end != std::string::npos)
                 {
-                    section = line.substr(1, end - 1);
+                    section = line.substr(1, end - 1);    //found a new section
                     prev_key = "";
                 }
-                else if (!error)
+                else if (error == 0)
                 {
                     /* No ']' found on section line */
                     error = lineno;
@@ -369,29 +390,51 @@ private:
                 {
                     auto key = rstrip(line.substr(0, assign_char));
                     auto value = lskip(line.substr(assign_char + 1));
+                    std::string comment = "";
 #if INI_ALLOW_INLINE_COMMENTS
                     auto end = value.find_first_of(INI_INLINE_COMMENT_PREFIXES);
                     if (end != std::string::npos)
                     {
+                        comment = value.substr(end);
                         value = value.substr(0, end);
                     }
 #endif
+                    auto blanks = value.substr(value.find_last_not_of(" ") + 1);
                     value = rstrip(value);
 
                     /* Valid name[=:]value pair found, call handler */
                     prev_key = key;
-                    if (valueHandler(section, key, value) && !error)
+
+                    if (mode == READ)
                     {
-                        error = lineno;
+                        int key_exist = valueHandler(section, key, value);
+                    }
+                    else if (mode == WRITE)
+                    {
+                        if (hasKey(section, key))
+                        {
+                            value = getString(section, key, value);
+                            lines[lineno - 1] = key + " = " + value + blanks + comment;
+                        }
+                        else
+                        {
+                            //key has been erased
+                            lines[lineno - 1] = "";
+                            lines[lineno - 1].resize(1, '\0');
+                        }
+                    }
+                    if (!error)
+                    {
+                        //error = lineno;
                     }
                 }
-                else if (!error)
+                else if (error == 0)
                 {
                     /* No '=' or ':' found on name[=:]value line */
                     error = lineno;
                 }
             }
-
+            lines_section[lineno - 1] = section;
 #if INI_STOP_ON_FIRST_ERROR
             if (error)
             {
@@ -400,6 +443,72 @@ private:
 #endif
         }
         return error;
+    }
+
+public:
+    //write modified file
+    void writeFile(std::string filename)
+    {
+        content_ = "";
+        //rescan the file to modify existing keys
+        ini_parse_lines(lines_, lines_section_, WRITE);
+
+        for (auto& skv : new_values_)
+        {
+            if (skv.second.size() > 0)
+            {
+                auto section = skv.first;
+
+                int pos = 0;
+                if (section != "")
+                {
+                    for (int i = 0; i < lines_section_.size(); i++)
+                    {
+                        if (lines_section_[i] == section && lines_[i] != "")
+                        {
+                            pos = i + 1;
+                        }
+                    }
+                }
+                if (section == "" || pos > 0 && section != "")
+                {
+                    //insert key into sections
+                    for (auto kv : skv.second)
+                    {
+                        lines_.insert(lines_.begin() + pos, 1, kv.first + " = " + kv.second);
+                        lines_section_.insert(lines_section_.begin() + pos, 1, section);
+                    }
+                }
+                if (pos == 0 && section != "")
+                {
+                    //append new lines
+                    lines_.push_back("");
+                    lines_.push_back("[" + section + "]");
+                    lines_section_.push_back(lines_section_.back());
+                    lines_section_.push_back(section);
+                    for (auto kv : skv.second)
+                    {
+                        lines_.push_back(kv.first + " = " + kv.second);
+                        lines_section_.push_back(section);
+                    }
+                }
+            }
+        }
+        new_values_.clear();
+
+        for (auto& line : lines_)
+        {
+            if (!(line.size() == 1 && line[0] == '\0'))
+            {
+                content_ += line + line_break_;
+            }
+        }
+        content_.pop_back();    // an extra char was appended when splitting
+
+        FILE* fp = fopen(filename.c_str(), "wb");
+        int length = content_.length();
+        fwrite(content_.c_str(), length, 1, fp);
+        fclose(fp);
     }
 };
 
