@@ -1,6 +1,10 @@
 # Common Library
 
+All libraries are of standard C++ 11 and of cross platforms.
+
 ## INIReader
+
+This library contains only one header file.
 
 Read and write ini file. Modified from <https://github.com/benhoyt/inih>.
 
@@ -26,7 +30,7 @@ Then declare the ini object:
 INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare> ini;
 ```
 
-Sometimes, if you want to ignore the underlines in the key string, you should declare a new class like this:
+Sometimes, if you want to ignore the underlines in the key string, you should declare a new class like this first:
 
 ```c++
 struct NoUnderlineCompare
@@ -133,28 +137,97 @@ file="payroll.dat"
 password = ***
 
 ```
-This library does not support to modify the comments.
+This library does not support modifying the comments.
 
 ## libconvert
 
-常用字串函数。
+This library contains two files.
 
-Timer
+example.txt:
 
-计时。
+```
+abc_def_;dddd.
+```
 
-Random
+Some examples:
 
-随机数。
+```c++
+std::string str = readStringFromFile("example.txt");    //str = "abc_def_;dddd."
+replaceAllString(str, "_", ".");    //str = "abc.def.;dddd."
 
-DynamicLibrary
+str = "123,467,222;44";
+std::vector<int> numbers = findNumbers<int>(str);    //numbers = {123, 467, 222, 44}, scientific notation is supported 
+std::vector<std::string> strs = splitString(str, ",;");    //strs = {"123", "467", "222", "44"}
+```
 
-载入动态库。
+"splitString" also supports treating continuous spaces as one pattern.
 
-ConsoleControl
+## Timer
 
-终端控制。改变字符颜色，控制光标位置等。
+This library contains only one header file.
 
-File
+A timer.
 
-文件相关，读取文件，文件名处理等。
+```c++
+Timer t;
+// do something...
+double elapsed_second = t.getElapsedTime();    //you can check how long the program spent
+```
+
+## Random
+
+This library contains only one header file.
+
+An Mersenne twister random number generator.
+
+```c++
+Random<double> rand;
+rand.set_type(RANDOM_NORMAL);
+double d = rand.rand();    //Gaussian(0, 1)
+rand.set_type(RANDOM_UNIFORM);
+int i = rand.rand_int(100);    //[0, 100)
+```
+
+## DynamicLibrary
+
+This library contains two files.
+
+This library is a static class and is of single instance.
+
+Get the C-style function pointer like this:
+
+```c++
+void* func = DynamicLibrary::getFunction("xxx.dll", "xxx");
+```
+The loaded libraries will be unload automatically when the program exits.
+
+## ConsoleControl
+
+This library contains two files.
+
+This library can change the color of the output characters on the console, or change the position of the cursor to format the output.
+
+```c++
+ConsoleControl::setColor(CONSOLE_COLOR_LIGHT_RED);    //change the color of printf, fprintf...
+ConsoleControl::moveUp(2);    //move up the cursor for 2 lines
+```
+## File
+
+This library contains two files.
+
+This class can read and write file, and can extract  path, main name or extension from a filename string.
+
+Some functions are similar to libconvert.
+
+```c++
+std::string filename = R"(C:\Windows\system32\xxx.exe.1)";
+std::string result; 
+result = File::getFilePath(filename);    // C:\Windows\system32
+result = File::getFileMainname(filename);    // C:\Windows\system32\xxx.exe
+result = File::getFilenameWithoutPath(filename);    // xxx.exe.1
+result = File::changeFileExt(filename, "dll");    // C:\Windows\system32\xxx.exe.dll
+```
+
+On windows, "\\" and "/" are both supported. A mixed style string (such as "C:\Windows\system32/xxx.exe.1") can also be treated correctly. It can treat ANSI string correctly, but for UTF8 string the result may be not right. But Windows cannot open a file with a UTF8 string file name directly, so this problem is not serious.
+
+On Linux and other Unix-like systems, "\\" is not a path pattern, only "/" is effective and it is a single byte character, so the result should always be correct.

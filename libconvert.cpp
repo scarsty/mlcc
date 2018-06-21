@@ -176,10 +176,11 @@ std::vector<std::string> convert::splitString(std::string str, std::string patte
     {
         if (have_space)
         {
+            //当空格作为分隔符时，连续空格视为一个
             while (str[i] == ' ')
             {
                 i++;
-            }    //当空格作为分隔符时，连续空格视为一个
+            }
         }
         pos = str.find_first_of(pattern, i);
         if (pos < size)
