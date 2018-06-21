@@ -111,7 +111,7 @@ public:
     }
 
     // Get a string value from INI file, returning default_value if not found.
-    std::string getString(std::string section, std::string key, std::string default_value) const
+    std::string getString(std::string section, std::string key, std::string default_value = "") const
     {
         if (values_.count(section) == 0)
         {
@@ -129,7 +129,7 @@ public:
 
     // Get an integer (long) value from INI file, returning default_value if
     // not found or not a valid integer (decimal "1234", "-1234", or hex "0x4d2").
-    long getInt(std::string section, std::string key, long default_value) const
+    long getInt(std::string section, std::string key, long default_value = 0) const
     {
         auto valstr = getString(section, key, "");
         const char* value = valstr.c_str();
@@ -142,7 +142,7 @@ public:
     // Get a real (floating point double) value from INI file, returning
     // default_value if not found or not a valid floating point value
     // according to strtod().
-    double getReal(std::string section, std::string key, double default_value) const
+    double getReal(std::string section, std::string key, double default_value = 0.0) const
     {
         auto valstr = getString(section, key, "");
         const char* value = valstr.c_str();
@@ -502,16 +502,16 @@ private:
 
 public:
     //write modified file
-    void writeToFile(std::string filename)
+    void saveFile(std::string filename)
     {
-        auto content = writeToString();
+        auto content = toString();
         FILE* fp = fopen(filename.c_str(), "wb");
         int length = content.length();
         fwrite(content.c_str(), length, 1, fp);
         fclose(fp);
     }
 
-    std::string writeToString()
+    std::string toString()
     {
         resetLines();
         std::string content;
