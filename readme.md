@@ -1,10 +1,12 @@
-# Common Library
+# Common Libraries
+
+These libraries are parts of Will.
 
 All libraries are of standard C++ 11 and of cross platforms.
 
 ## INIReader
 
-This library contains only one header file.
+INIReader.h
 
 Read and write ini file. Modified from <https://github.com/benhoyt/inih>.
 
@@ -84,15 +86,15 @@ server=192.0.2.62
 port=143
 file="payroll.dat"
 ```
-c++ code:
+C++ code:
 
 ```c++
 int main()
 {
     INIReader<CaseInsensitivityCompare, NoUnderlineCompare> ini;
     ini.loadFile("example.ini");
-    int port = ini.getInt("database", "port", 0);    // port = 143
-    int port_ = ini.getInt("database", "port_", 0);    // port_ = 143
+    int port = ini.getInt("database", "port", 0);    //port = 143
+    int port_ = ini.getInt("database", "port_", 0);    //port_ = 143
     std::string name = ini.getString("owner", "name", "");    //name = Joha Doe
     std::string file = ini.getString("database", "file");    //file = "payroll.dat" (the quotation mark will be kept)
     return 0;
@@ -101,14 +103,14 @@ int main()
 
 ### Modify an ini file
 
-Use setKey and eraseKey after loaded the file, then use saveFile to write it.
+Use setKey and eraseKey after loading the file, then use saveFile to write results to a file.
 
 An example:
 
 ```c++
 int main()
 {
-    INIReader<CaseInsensitivityCompare, NoUnderlineCompare> ini;
+    INIReaderNormal ini;
     ini.loadFile("example.ini");
     ini.setKey("", "head", "nothing");
     ini.setKey("owner", "age", "30");
@@ -137,11 +139,11 @@ file="payroll.dat"
 password = ***
 
 ```
-This library does not support modifying the comments.
+This library does not support operating the comments.
 
 ## libconvert
 
-This library contains two files.
+libconvert.h, libconvert.cpp
 
 example.txt:
 
@@ -164,7 +166,7 @@ std::vector<std::string> strs = splitString(str, ",;");    //strs = {"123", "467
 
 ## Timer
 
-This library contains only one header file.
+Timer.h
 
 A timer.
 
@@ -176,7 +178,7 @@ double elapsed_second = t.getElapsedTime();    //you can check how long the prog
 
 ## Random
 
-This library contains only one header file.
+Random.h
 
 An Mersenne twister random number generator.
 
@@ -190,7 +192,7 @@ int i = rand.rand_int(100);    //[0, 100)
 
 ## DynamicLibrary
 
-This library contains two files.
+DynamicLibrary.h, DynamicLibrary.cpp
 
 This library is a static class and is of single instance.
 
@@ -203,7 +205,7 @@ The loaded libraries will be unload automatically when the program exits.
 
 ## ConsoleControl
 
-This library contains two files.
+ConsoleControl.h, ConsoleControl.cpp
 
 This library can change the color of the output characters on the console, or change the position of the cursor to format the output.
 
@@ -213,7 +215,7 @@ ConsoleControl::moveUp(2);    //move up the cursor for 2 lines
 ```
 ## File
 
-This library contains two files.
+Fie.h, File.cpp
 
 This class can read and write file, and can extract  path, main name or extension from a filename string.
 
@@ -228,6 +230,6 @@ result = File::getFilenameWithoutPath(filename);    // xxx.exe.1
 result = File::changeFileExt(filename, "dll");    // C:\Windows\system32\xxx.exe.dll
 ```
 
-On windows, "\\" and "/" are both supported. A mixed style string (such as "C:\Windows\system32/xxx.exe.1") can also be treated correctly. It can treat ANSI string correctly, but for UTF8 string the result may be not right. But Windows cannot open a file with a UTF8 string file name directly, so this problem is not serious.
+On Windows, "\\" and "/" are both supported. A mixed style string (such as "C:\Windows\system32/xxx.exe.1") can also be treated correctly. It can treat ANSI string correctly, but for UTF8 string the result may be not right. In fact Windows cannot open a file with a UTF8 string file name directly, so this problem is not serious.
 
-On Linux and other Unix-like systems, "\\" is not a path pattern, only "/" is effective and it is a single byte character, so the result should always be correct.
+On Linux and other Unix-like systems, "\\" is not a path pattern, only "/" is effective and it is a single byte character in UTF8 coding, so the result should always be correct.

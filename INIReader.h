@@ -468,7 +468,7 @@ private:
                         }
                     }
                 }
-                if (section == "" || pos > 0 && section != "")
+                if (section == "" || (pos > 0 && section != ""))
                 {
                     //insert key into sections
                     for (auto kv : skv.second)
