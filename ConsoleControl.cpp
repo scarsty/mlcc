@@ -49,7 +49,7 @@ void ConsoleControl::setColor(int c)
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), console_control_.old_color_);
     }
 #else
-    fprintf(stdout, console_control_.color_map_[c].c_str());
+    fprintf(stderr, console_control_.color_map_[c].c_str());
 #endif
 }
 
@@ -61,6 +61,6 @@ void ConsoleControl::moveUp(int l)
     info.dwCursorPosition.Y -= l;
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), info.dwCursorPosition);
 #else
-    fprintf(stdout, "\e[%dA", l);
+    fprintf(stderr, "\e[%dA", l);
 #endif
 }
