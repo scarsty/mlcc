@@ -5,9 +5,16 @@
 class DynamicLibrary
 {
 private:
-    static DynamicLibrary dl_;
+    static DynamicLibrary* getInstance()
+    {
+        static DynamicLibrary dl;
+        return &dl;
+    }
 
-public:
+    DynamicLibrary(DynamicLibrary&) = delete;
+    DynamicLibrary& operator=(DynamicLibrary&) = delete;
+
+private:
     DynamicLibrary();
     ~DynamicLibrary();
 

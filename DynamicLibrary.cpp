@@ -8,8 +8,6 @@
 #include <dlfcn.h>
 #endif
 
-DynamicLibrary DynamicLibrary::dl_;
-
 DynamicLibrary::DynamicLibrary()
 {
 }
@@ -29,6 +27,7 @@ DynamicLibrary::~DynamicLibrary()
 
 void* DynamicLibrary::loadDynamicLibrary(std::string library_name)
 {
+    auto dl = getInstance();
     std::string dl_ext;
 #ifdef _WIN32
     dl_ext = "dll";
@@ -47,7 +46,7 @@ void* DynamicLibrary::loadDynamicLibrary(std::string library_name)
     {
         return nullptr;
     }
-    if (dl_.dynamic_libraries_.count(library_name) <= 0)
+    if (dl->dynamic_libraries_.count(library_name) <= 0)
     {
         void* hlib = nullptr;
 #ifdef _WIN32
@@ -55,18 +54,18 @@ void* DynamicLibrary::loadDynamicLibrary(std::string library_name)
 #else
         hlib = dlopen(library_name.c_str(), RTLD_LAZY);
 #endif
-        dl_.dynamic_libraries_[library_name] = hlib;
+        dl->dynamic_libraries_[library_name] = hlib;
         if (hlib)
         {
             fprintf(stdout, "Load dynamic library: %s\n", library_name.c_str());
         }
     }
-    return dl_.dynamic_libraries_[library_name];
+    return dl->dynamic_libraries_[library_name];
 }
 
 void* DynamicLibrary::getFunction(std::string library_name, std::string function_name)
 {
-    auto h_dl = dl_.loadDynamicLibrary(library_name);
+    auto h_dl = getInstance()->loadDynamicLibrary(library_name);
     void* func = nullptr;
     if (h_dl)
     {
