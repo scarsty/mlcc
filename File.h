@@ -17,6 +17,7 @@ public:
 
     static bool readFile(const std::string& filename, char** s, int* len);
     static void readFile(const std::string& filename, void* s, int len);
+    static std::vector<char> readFileVecChar(const std::string& filename);
     static int writeFile(const std::string& filename, void* s, int len);
 
     template <class T>
@@ -39,11 +40,8 @@ public:
     template <class T>
     static void readFileToVector(std::string filename, std::vector<T>& v)
     {
-        char* buffer;
-        int length;
-        readFile(filename, &buffer, &length);
-        readDataToVector(buffer, length, v);
-        delete[] buffer;
+        auto buffer = readFileVecChar(filename);
+        readDataToVector(buffer.data(), buffer.size(), v);
     }
 
     template <class T>
