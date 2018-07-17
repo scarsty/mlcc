@@ -40,11 +40,8 @@ public:
     template <class T>
     static void readFileToVector(std::string filename, std::vector<T>& v)
     {
-        char* buffer;
-        int length;
-        readFile(filename, &buffer, &length);
-        readDataToVector(buffer, length, v);
-        delete[] buffer;
+        auto buffer = readFileVecChar(filename);
+        readDataToVector(buffer.data(), buffer.size(), v);
     }
 
     template <class T>
