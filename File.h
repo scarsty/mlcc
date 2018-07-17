@@ -15,9 +15,9 @@ public:
     static void deleteBuffer(unsigned char* buffer);
     static void reverse(unsigned char* c, int n);
 
-    static bool readFile(const std::string& filename, char** s, int* len);
+    //static bool readFile(const std::string& filename, char** s, int* len);
     static void readFile(const std::string& filename, void* s, int len);
-    static std::vector<char> readFileVecChar(const std::string& filename);
+    static std::vector<char> readFileToVectorChar(const std::string& filename);
     static int writeFile(const std::string& filename, void* s, int len);
 
     template <class T>
@@ -40,7 +40,7 @@ public:
     template <class T>
     static void readFileToVector(std::string filename, std::vector<T>& v)
     {
-        auto buffer = readFileVecChar(filename);
+        auto buffer = readFileToVectorChar(filename);
         readDataToVector(buffer.data(), buffer.size(), v);
     }
 

@@ -7,8 +7,6 @@
 
 #endif
 
-ConsoleControl ConsoleControl::console_control_;
-
 ConsoleControl::ConsoleControl()
 {
     if (color_map_.empty())
@@ -39,6 +37,7 @@ ConsoleControl::~ConsoleControl()
 
 void ConsoleControl::setColor(int c)
 {
+    auto cc = getInstance();
 #ifdef _MSC_VER
     if (c != CONSOLE_COLOR_NONE)
     {
@@ -46,10 +45,10 @@ void ConsoleControl::setColor(int c)
     }
     else
     {
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), console_control_.old_color_);
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), cc->old_color_);
     }
 #else
-    fprintf(stderr, console_control_.color_map_[c].c_str());
+    fprintf(stderr, cc->color_map_[c].c_str());
 #endif
 }
 

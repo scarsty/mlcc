@@ -21,12 +21,18 @@ private:
     ConsoleControl();
     virtual ~ConsoleControl();
 
-    static ConsoleControl console_control_;
-
     unsigned short old_color_;
     std::map<int, std::string> color_map_;
 
-    static ConsoleControl* instance() { return &console_control_; }
+    static ConsoleControl* getInstance()
+    {
+        static ConsoleControl console_control;
+        return &console_control;
+    }
+
+private:
+    ConsoleControl(ConsoleControl&) = delete;
+    ConsoleControl& operator=(ConsoleControl&) = delete;
 
 public:
     static void setColor(int c);
