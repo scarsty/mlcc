@@ -55,6 +55,15 @@ public:
         }
     }
 
+    //other file operations
+    static std::vector<std::string> getFilesInPath(std::string dirname);
+    static bool isPath(const std::string& name);
+    static std::string getFileTime(std::string filename);
+    static void changePath(const std::string& path);
+
+
+    //functions about filename
+
 private:
     static int getLastPathCharPos(const std::string& filename);
 
@@ -70,10 +79,4 @@ public:
     static std::string getFilenameWithoutPath(const std::string& fileName);
     static std::string changeFileExt(const std::string& filename, const std::string& ext);
     static std::string getFilePath(const std::string& filename);
-
-    //others
-    static std::vector<std::string> getFilesInPath(std::string dirname);
-    static bool isPath(const std::string& name);
-    static std::string getFileTime(std::string filename);
-    static void changePath(const std::string& path);
 };

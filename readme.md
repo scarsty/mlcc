@@ -203,6 +203,8 @@ void* func = DynamicLibrary::getFunction("xxx.dll", "xxx");
 ```
 The loaded libraries will be unload automatically when the program exits.
 
+Note: relies on **File**.
+
 ## ConsoleControl
 
 ConsoleControl.h, ConsoleControl.cpp
@@ -215,11 +217,13 @@ ConsoleControl::moveUp(2);    //move up the cursor for 2 lines
 ```
 ## File
 
-Fie.h, File.cpp
+File.h, File.cpp
 
-This class can read and write file, and can extract  path, main name or extension from a filename string.
+This class can read and write file as a vector of any class.
 
-Some functions are similar to libconvert.
+Some functions are very similar to those of libconvert.
+
+This class can also extract  path, main name or extension from a filename string, examples:
 
 ```c++
 std::string filename = R"(C:\Windows\system32\xxx.exe.1)";
@@ -233,3 +237,4 @@ result = File::changeFileExt(filename, "dll");    // C:\Windows\system32\xxx.exe
 On Windows, "\\" and "/" are both supported. A mixed style string (such as "C:\Windows\system32/xxx.exe.1") can also be treated correctly. It can treat ANSI string correctly, but for UTF8 string the result may be not right. In fact Windows cannot open a file with a UTF8 string file name directly, so this problem is not serious.
 
 On Linux and other Unix-like systems, "\\" is not a path pattern, only "/" is effective and it is a single byte character in UTF8 coding, so the result should always be correct.
+
