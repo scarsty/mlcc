@@ -65,14 +65,14 @@ void* DynamicLibrary::loadDynamicLibrary(std::string library_name)
 
 void* DynamicLibrary::getFunction(std::string library_name, std::string function_name)
 {
-    auto h_dl = getInstance()->loadDynamicLibrary(library_name);
+    auto dl = getInstance()->loadDynamicLibrary(library_name);
     void* func = nullptr;
-    if (h_dl)
+    if (dl)
     {
 #ifdef _WIN32
-        func = GetProcAddress((HINSTANCE)h_dl, function_name.c_str());
+        func = GetProcAddress((HINSTANCE)dl, function_name.c_str());
 #else
-        func = dlsym(h_dl, function_name.c_str());
+        func = dlsym(dl, function_name.c_str());
 #endif
     }
     return func;
