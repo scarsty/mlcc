@@ -165,6 +165,10 @@ std::vector<std::string> convert::splitString(std::string str, std::string patte
 {
     std::string::size_type pos;
     std::vector<std::string> result;
+    if (str.empty())
+    {
+        return result;
+    }
     if (pattern.empty())
     {
         pattern = ",;| ";
