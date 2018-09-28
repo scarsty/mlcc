@@ -12,7 +12,7 @@ std::string convert::readStringFromFile(const std::string& filename)
     FILE* fp = fopen(filename.c_str(), "rb");
     if (!fp)
     {
-        fprintf(stderr, "Cannot open file %s\n", filename.c_str());
+        fprintf(stderr, "Cannot open file %s!\n", filename.c_str());
         return "";
     }
     fseek(fp, 0, SEEK_END);
@@ -35,7 +35,11 @@ int convert::writeStringToFile(const std::string& str, const std::string& filena
         fclose(fp);
         return length;
     }
-    return -1;
+    else
+    {
+        fprintf(stderr, "Cannot write file %s!\n", filename.c_str());
+        return -1;
+    }
 }
 
 void convert::writeStringAppendToFile(const std::string& str, FILE* fp)
