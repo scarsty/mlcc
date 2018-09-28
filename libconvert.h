@@ -8,7 +8,7 @@ namespace convert
 {
 //string functions
 std::string readStringFromFile(const std::string& filename);
-void writeStringToFile(const std::string& str, const std::string& filename);
+int writeStringToFile(const std::string& str, const std::string& filename);
 void writeStringAppendToFile(const std::string& str, FILE* fp);
 std::string replaceString(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 = 0);    //this function will change original string
 std::string replaceAllString(std::string& s, const std::string& oldstring, const std::string& newstring);               //this function will change original string
