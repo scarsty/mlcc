@@ -25,12 +25,17 @@ std::string convert::readStringFromFile(const std::string& filename)
     return str;
 }
 
-void convert::writeStringToFile(const std::string& str, const std::string& filename)
+int convert::writeStringToFile(const std::string& str, const std::string& filename)
 {
     FILE* fp = fopen(filename.c_str(), "wb");
-    int length = str.length();
-    fwrite(str.c_str(), length, 1, fp);
-    fclose(fp);
+    if (fp)
+    {
+        int length = str.length();
+        fwrite(str.c_str(), length, 1, fp);
+        fclose(fp);
+        return length;
+    }
+    return -1;
 }
 
 void convert::writeStringAppendToFile(const std::string& str, FILE* fp)
