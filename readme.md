@@ -234,7 +234,7 @@ result = File::getFilenameWithoutPath(filename);    // xxx.exe.1
 result = File::changeFileExt(filename, "dll");    // C:\Windows\system32\xxx.exe.dll
 ```
 
-On Windows, "\\" and "/" are both supported. A mixed style string (such as "C:\Windows\system32/xxx.exe.1") can also be treated correctly. It can treat ANSI string correctly, but for UTF8 string the result may be not right. In fact Windows cannot open a file with a UTF8 string file name directly, so this problem is not serious.
+On Windows, "\\" and "/" are both supported. A mixed style string (such as "C:\Windows\system32/xxx.exe.1") can also be treated correctly. It can treat ANSI string correctly, but for UTF8 string the result may be not right. In fact Windows cannot open a file with a UTF8 string file name directly, so this problem is not serious (**NOTE: it will fail when the filename is very complicated, waiting repaired**).
 
 On Linux and other Unix-like systems, "\\" is not a path pattern, only "/" is effective and it is a single byte character in UTF8 coding, so the result should always be correct.
 
