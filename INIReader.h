@@ -62,6 +62,27 @@ struct CaseInsensitivityCompare
 template <class COM1, class COM2>
 class INIReader
 {
+private:
+    enum
+    {
+        READ = 0,
+        WRITE = 1,
+    };
+
+    std::string line_break_;
+    std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
+    typedef std::map<std::string, std::map<std::string, std::string, COM2>, COM1> values_type;
+    int error_ = 0;
+    values_type values_;
+
+    //return value: the key has existed, 0 means it is a new key
+    int valueHandler(const std::string& section, const std::string& key, const std::string& value)
+    {
+        int ret = values_[section].count(key);
+        values_[section][key] = value;
+        return ret;
+    }
+
 public:
     INIReader() {}
 
@@ -236,26 +257,7 @@ public:
         }
     }
 
-private:
-    enum
-    {
-        READ = 0,
-        WRITE = 1,
-    };
 
-    std::string line_break_;
-    std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
-    typedef std::map<std::string, std::map<std::string, std::string, COM2>, COM1> values_type;
-    int error_ = 0;
-    values_type values_;
-
-    //return value: the key has existed, 0 means it is a new key
-    int valueHandler(const std::string& section, const std::string& key, const std::string& value)
-    {
-        int ret = values_[section].count(key);
-        values_[section][key] = value;
-        return ret;
-    }
 
 private:
     int ini_parse_content(std::string& content)
@@ -402,6 +404,10 @@ private:
                     if (mode == READ)
                     {
                         int key_exist = valueHandler(section, key, value);
+                        if (key_exist > 0)
+                        {
+                            //repeat defined, how to deal it?
+                        }
                     }
                     else if (mode == WRITE)
                     {
@@ -411,7 +417,7 @@ private:
                             if (value1 != value)
                             {
                                 //rewrite the line
-                                lines[lineno - 1] = key + " = " + value1 + blanks + comment;
+                                *it = key + " = " + value1 + blanks + comment;
                             }
                             eraseKey(section, key);
                         }
