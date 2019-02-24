@@ -320,4 +320,3 @@ std::string File::getFilePath(const std::string& filename)
     }
     return "";
 }
-

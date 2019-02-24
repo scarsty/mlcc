@@ -257,8 +257,6 @@ public:
         }
     }
 
-
-
 private:
     int ini_parse_content(std::string& content)
     {

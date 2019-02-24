@@ -147,9 +147,9 @@ A case insensitivity type "INIReaderNormal" has been defined in the head file, y
 typedef INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare> INIReaderNormal;
 ```
 
-## libconvert
+## convert
 
-libconvert.h, libconvert.cpp
+convert.h, convert.cpp
 
 example.txt:
 
