@@ -28,11 +28,10 @@ File::~File()
 
 bool File::fileExist(const std::string& filename)
 {
-    if (filename.length() <= 0)
+    if (filename.empty())
     {
         return false;
     }
-
     std::fstream file;
     bool ret = false;
     file.open(filename.c_str(), std::ios::in);
