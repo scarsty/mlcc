@@ -66,7 +66,7 @@ public:
     //functions about filename
 
 private:
-    static int getLastPathCharPos(const std::string& filename);
+    static size_t getLastPathCharPos(const std::string& filename);
 
 public:
     //functions about file name

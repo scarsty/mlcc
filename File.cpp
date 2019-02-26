@@ -241,9 +241,9 @@ void File::changePath(const std::string& path)
     chdir(path.c_str());
 }
 
-int File::getLastPathCharPos(const std::string& filename)
+size_t File::getLastPathCharPos(const std::string& filename)
 {
-    int pos = std::string::npos;
+    size_t pos = std::string::npos;
 #ifdef _WIN32
     //ansi
     for (int i = 0; i < filename.size(); i++)
@@ -265,8 +265,8 @@ int File::getLastPathCharPos(const std::string& filename)
 
 std::string File::getFileExt(const std::string& filename)
 {
-    int pos_p = getLastPathCharPos(filename);
-    int pos_d = filename.find_last_of('.');
+    size_t pos_p = getLastPathCharPos(filename);
+    size_t pos_d = filename.find_last_of('.');
     if (pos_p < pos_d)
     {
         return filename.substr(pos_d + 1);
@@ -277,8 +277,8 @@ std::string File::getFileExt(const std::string& filename)
 //find the last point as default, and find the first when mode is 1
 std::string File::getFileMainname(const std::string& filename, FindMode mode)
 {
-    int pos_p = getLastPathCharPos(filename);
-    int pos_d = filename.find_last_of('.');
+    size_t pos_p = getLastPathCharPos(filename);
+    size_t pos_d = filename.find_last_of('.');
     if (mode == FINDFIRST)
     {
         pos_d = filename.find_first_of('.', pos_p + 1);
@@ -292,7 +292,7 @@ std::string File::getFileMainname(const std::string& filename, FindMode mode)
 
 std::string File::getFilenameWithoutPath(const std::string& filename)
 {
-    int pos_p = getLastPathCharPos(filename);
+    size_t pos_p = getLastPathCharPos(filename);
     if (pos_p != std::string::npos)
     {
         return filename.substr(pos_p + 1);
@@ -312,7 +312,7 @@ std::string File::changeFileExt(const std::string& filename, const std::string& 
 
 std::string File::getFilePath(const std::string& filename)
 {
-    int pos_p = getLastPathCharPos(filename);
+    size_t pos_p = getLastPathCharPos(filename);
     if (pos_p != std::string::npos)
     {
         return filename.substr(0, pos_p);
