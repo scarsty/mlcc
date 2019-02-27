@@ -515,6 +515,7 @@ public:
         fclose(fp);
     }
 
+    //make a string with trying to keep the original style
     std::string toString()
     {
         resetLines();
@@ -522,6 +523,21 @@ public:
         for (auto& line : lines_)
         {
             content += line + line_break_;
+        }
+        return content;
+    }
+
+    //a pure string without comments or blank lines
+    std::string toPureString()
+    {
+        std::string content;
+        for (auto& section : getAllSections())
+        {
+            content += "[" + section + "]" + line_break_;
+            for (auto& key : getAllKeys(section))
+            {
+                content += key + "=" + getString(section, key, "") + line_break_;
+            }
         }
         return content;
     }
