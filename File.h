@@ -22,13 +22,13 @@ public:
     static int writeFile(const std::string& filename, void* s, int len);
 
     template <class T>
-    static void readDataToVector(char* data, int length, std::vector<T>& v)
+    static void readDataToVector(const char* data, int length, std::vector<T>& v)
     {
         readDataToVector(data, length, v, sizeof(T));
     }
 
     template <class T>
-    static void readDataToVector(char* data, int length, std::vector<T>& v, int length_one)
+    static void readDataToVector(const char* data, int length, std::vector<T>& v, int length_one)
     {
         int count = length / length_one;
         v.resize(count);
@@ -39,7 +39,7 @@ public:
     }
 
     template <class T>
-    static void readFileToVector(std::string filename, std::vector<T>& v)
+    static void readFileToVector(const std::string& filename, std::vector<T>& v)
     {
         auto buffer = readFileToVectorChar(filename);
         readDataToVector(buffer.data(), buffer.size(), v);
@@ -57,7 +57,7 @@ public:
     }
 
     //other file operations
-    static std::vector<std::string> getFilesInPath(std::string dirname);
+    static std::vector<std::string> getFilesInPath(const std::string& dirname);
     static bool isPath(const std::string& name);
     static std::string getFileTime(std::string filename);
     static void changePath(const std::string& path);

@@ -148,7 +148,7 @@ int File::writeFile(const std::string& filename, void* s, int len)
     return len;
 }
 
-std::vector<std::string> File::getFilesInPath(std::string dirname)
+std::vector<std::string> File::getFilesInPath(const std::string& dirname)
 {
 #ifdef _WIN32
     WIN32_FIND_DATAA ffd;
