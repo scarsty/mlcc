@@ -69,11 +69,12 @@ public:
 
     int rand_int(int n)
     {
-        if (n <= 0)
-        {
-            return 0;
-        }
         return int(rand() * n);
+    }
+
+    int rand_int(int n1, int n2)
+    {
+        return n1 + int(rand() * (n2 - n1));
     }
 };
 
