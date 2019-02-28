@@ -63,7 +63,7 @@ void* DynamicLibrary::loadDynamicLibrary(std::string library_name)
     return dl->dynamic_libraries_[library_name];
 }
 
-void* DynamicLibrary::getFunction(std::string library_name, std::string function_name)
+void* DynamicLibrary::getFunction(const std::string& library_name, const std::string& function_name)
 {
     auto dl = getInstance()->loadDynamicLibrary(library_name);
     void* func = nullptr;

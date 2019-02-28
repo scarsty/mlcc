@@ -87,7 +87,7 @@ public:
     INIReader() {}
 
     // parse a given filename
-    void loadFile(std::string filename)
+    void loadFile(const std::string& filename)
     {
         FILE* fp = fopen(filename.c_str(), "rb");
         if (!fp)
@@ -106,7 +106,7 @@ public:
     }
 
     // parse an ini string
-    void load(std::string content)
+    void load(const std::string& content)
     {
         line_break_ = "\n";
         int pos = content.find(line_break_, 1);
@@ -132,7 +132,7 @@ public:
     }
 
     // Get a string value from INI file, returning default_value if not found.
-    std::string getString(std::string section, std::string key, std::string default_value = "") const
+    std::string getString(const std::string& section, const std::string& key, const std::string& default_value = "") const
     {
         if (values_.count(section) == 0)
         {
@@ -150,7 +150,7 @@ public:
 
     // Get an integer (long) value from INI file, returning default_value if
     // not found or not a valid integer (decimal "1234", "-1234", or hex "0x4d2").
-    long getInt(std::string section, std::string key, long default_value = 0) const
+    long getInt(const std::string& section, const std::string& key, long default_value = 0) const
     {
         auto valstr = getString(section, key, "");
         const char* value = valstr.c_str();
@@ -163,7 +163,7 @@ public:
     // Get a real (floating point double) value from INI file, returning
     // default_value if not found or not a valid floating point value
     // according to strtod().
-    double getReal(std::string section, std::string key, double default_value = 0.0) const
+    double getReal(const std::string& section, const std::string& key, double default_value = 0.0) const
     {
         auto valstr = getString(section, key, "");
         const char* value = valstr.c_str();
@@ -175,7 +175,7 @@ public:
     // Get a boolean value from INI file, returning default_value if not found or if
     // not a valid true/false value. Valid true values are "true", "yes", "on", "1",
     // and valid false values are "false", "no", "off", "0" (not case sensitive).
-    bool getBoolean(std::string section, std::string key, bool default_value) const
+    bool getBoolean(const std::string& section, const std::string& key, bool default_value) const
     {
         auto valstr = getString(section, key, "");
         // Convert to lower case to make string comparisons case-insensitive
@@ -195,13 +195,13 @@ public:
     }
 
     //check one section exist or not
-    int hasSection(std::string section)
+    int hasSection(const std::string& section)
     {
         return values_.count(section);
     }
 
     //check one section and one key exist or not
-    int hasKey(std::string section, std::string key)
+    int hasKey(const std::string& section, const std::string& key)
     {
         return values_.count(section) > 0 ? values_.at(section).count(key) : 0;
     }
@@ -216,7 +216,7 @@ public:
         return ret;
     }
 
-    std::vector<std::string> getAllKeys(std::string section)
+    std::vector<std::string> getAllKeys(const std::string& section)
     {
         std::vector<std::string> ret;
         if (values_.count(section) == 0)
@@ -230,12 +230,12 @@ public:
         return ret;
     }
 
-    void setKey(std::string section, std::string key, std::string value)
+    void setKey(const std::string& section, const std::string& key, const std::string& value)
     {
         valueHandler(section, key, value);
     }
 
-    void eraseKey(std::string section, std::string key)
+    void eraseKey(const std::string& section, const std::string& key)
     {
         values_[section].erase(key);
     }
@@ -258,7 +258,7 @@ public:
     }
 
 private:
-    int ini_parse_content(std::string& content)
+    int ini_parse_content(const std::string& content)
     {
         //split the content into lines
         auto splitString = [](std::string str, std::string pattern)
@@ -295,7 +295,7 @@ private:
     int ini_parse_lines(std::vector<std::string>& lines, std::vector<std::string>& lines_section, int mode)
     {
         /* Return pointer to first non-whitespace char in given string. */
-        auto lskip = [](std::string s) -> std::string
+        auto lskip = [](const std::string& s) -> std::string
         {
             auto pre = s.find_first_not_of(" ");
             if (pre != std::string::npos)
@@ -309,7 +309,7 @@ private:
         };
 
         /* Strip whitespace chars off end of given string, in place. Return s. */
-        auto rstrip = [](std::string s) -> std::string
+        auto rstrip = [](const std::string& s) -> std::string
         {
             auto suf = s.find_last_not_of(" ");
             if (suf != std::string::npos)
@@ -506,7 +506,7 @@ private:
 
 public:
     //write modified file
-    void saveFile(std::string filename)
+    void saveFile(const std::string& filename)
     {
         auto content = toString();
         FILE* fp = fopen(filename.c_str(), "wb");
