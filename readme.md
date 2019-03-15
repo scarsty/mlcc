@@ -244,3 +244,36 @@ On Windows, "\\" and "/" are both supported. A mixed style string (such as "C:\W
 
 On Linux and other Unix-like systems, "\\" is not a path pattern, only "/" is effective and it is a single byte character in UTF8 coding, so the result should always be correct.
 
+# cmdline
+
+cmdline.h.
+
+Modified from <https://github.com/tanakh/cmdline>. Please read the instruction on the original project.
+
+A bug when prasing a full command line string has been corrected.
+
+You'd better to use it like this:
+
+```c++
+
+#ifdef _WIN32    // or _MSC_VER, as you wish
+#include <windows.h>
+#endif
+
+int main(int argc, char* argv[])
+{
+...
+#ifdef _WIN32
+    cmd.parse_check(GetCommandLineA());
+#else
+    cmd.parse_check(argc, argv);
+#endif
+...
+}
+```
+or a command line mixing backslash and quote cannot be prase right on Windows. For an example:
+```shell
+something.exe --path "C:\Windows\system32\" --other-option values
+```
+In fact, standard method with "argc" and "argv" cannot prase this line rightly, is it a bug of Windows?
+
