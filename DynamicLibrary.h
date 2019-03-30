@@ -58,12 +58,12 @@ public:
             dl->dynamic_libraries_[library_name] = hlib;
             if (hlib)
             {
-                fprintf(stdout, "Loaded dynamic library: %s\n", library_name.c_str());
+                fprintf(stdout, "Loaded dynamic library %s\n", library_name.c_str());
             }
-			else
-			{
-				fprintf(stdout, "Failed to load dynamic library: %s\n", library_name.c_str());
-			}
+            else
+            {
+                fprintf(stdout, "Failed to load dynamic library %s\n", library_name.c_str());
+            }
         }
         return dl->dynamic_libraries_[library_name];
     }
@@ -78,11 +78,12 @@ public:
 #else
             func = dlsym(dl, function_name.c_str());
 #endif
+            fprintf(stdout, "Loaded function %s\n", function_name.c_str());
         }
-		else
-		{
-			fprintf(stdout, "Failed to load function %s\n", function_name.c_str());
-		}
+        else
+        {
+            fprintf(stdout, "Failed to load function %s\n", function_name.c_str());
+        }
         return func;
     }
 };
