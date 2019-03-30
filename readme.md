@@ -198,7 +198,7 @@ int i = rand.rand_int(100);    //[0, 100)
 
 ## DynamicLibrary
 
-DynamicLibrary.h, DynamicLibrary.cpp
+DynamicLibrary.h
 
 This library is a static class and is of single instance.
 
@@ -207,13 +207,14 @@ Get the C-style function pointer like this:
 ```c++
 void* func = DynamicLibrary::getFunction("xxx.dll", "xxx");
 ```
-The loaded libraries will be unload automatically when the program exits.
 
-Note: relies on **File**.
+You have to give the full name of the library include the path.
+
+The loaded libraries will be unload automatically when the program exits.
 
 ## ConsoleControl
 
-ConsoleControl.h, ConsoleControl.cpp
+ConsoleControl.h
 
 This library can change the color of the output characters on the console, or change the position of the cursor to format the output.
 
