@@ -272,7 +272,7 @@ int main(int argc, char* argv[])
 ...
 }
 ```
-or a command line mixing backslash and quote cannot be prase right on Windows. For an example:
+or a command line mixing backslash and quote cannot be parse right on Windows. For an example:
 ```shell
 something.exe --path "C:\Windows\system32\" --other-option values
 ```
