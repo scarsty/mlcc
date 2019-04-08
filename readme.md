@@ -251,7 +251,7 @@ cmdline.h.
 
 Modified from <https://github.com/tanakh/cmdline>. Please read the instruction on the original project.
 
-A bug when prasing a full command line string has been corrected.
+A bug when parsing a full command line string has been corrected.
 
 You'd better to use it like this:
 
@@ -272,9 +272,9 @@ int main(int argc, char* argv[])
 ...
 }
 ```
-or a command line mixing backslash and quote cannot be parse right on Windows. For an example:
+or a command line mixing backslash and quote cannot be correctly parsed on Windows. For an example:
 ```shell
 something.exe --path "C:\Windows\system32\" --other-option values
 ```
-In fact, standard method with "argc" and "argv" cannot prase this line rightly, is it a bug of Windows?
+In this case, "argc" and "argv" in the program are NOT right with CMD, but are right with Power Shell, is it a bug of Windows?
 
