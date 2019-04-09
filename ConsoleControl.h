@@ -81,7 +81,7 @@ public:
             SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), cc->old_color_);
         }
 #else
-        fprintf(stderr, cc->color_map_[c].c_str());
+        fprintf(stderr, "%s", cc->color_map_[c].c_str());
 #endif
     }
     static void moveUp(int l = 1)
