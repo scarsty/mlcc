@@ -382,15 +382,41 @@ private:
                 auto assign_char = line.find_first_of("=:");
                 if (assign_char != std::string::npos)
                 {
-                    auto key = rstrip(line.substr(0, assign_char));
-                    auto value = lskip(line.substr(assign_char + 1));
+                    std::string key = rstrip(line.substr(0, assign_char));
+                    std::string value = lskip(line.substr(assign_char + 1));
+                    int quote = 0;    //0: no quote, 1: single quote, 2: double quote
+                    int quote_end_pos = value.size() - 1;
+                    if (value.find_first_of("\'") == 0)
+                    {
+                        quote = 1;
+                        quote_end_pos = value.find_first_of("\'", 1);
+                    }
+                    else if (value.find_first_of("\"") == 0)
+                    {
+                        quote = 2;
+                        quote_end_pos = value.find_first_of("\"", 1);
+                    }
+                    if (quote)
+                    {
+                        if (quote_end_pos >= 0)
+                        {
+                            value = value.substr(1, quote_end_pos - 1);
+                        }
+                        else
+                        {
+                            value = value.substr(1);
+                        }
+                    }
                     std::string comment = "";
 #if INI_ALLOW_INLINE_COMMENTS
-                    auto end = value.find_first_of(INI_INLINE_COMMENT_PREFIXES);
-                    if (end != std::string::npos)
+                    if (quote == 0)
                     {
-                        comment = value.substr(end);
-                        value = value.substr(0, end);
+                        int comment_pos = value.find_first_of(INI_INLINE_COMMENT_PREFIXES);
+                        if (comment_pos != std::string::npos)
+                        {
+                            comment = value.substr(comment_pos);
+                            value = value.substr(0, comment_pos);
+                        }
                     }
 #endif
                     auto blanks = value.substr(value.find_last_not_of(" ") + 1);
