@@ -49,7 +49,7 @@ void convert::writeStringAppendToFile(const std::string& str, FILE* fp)
     fputc('\n', fp);
 }
 
-std::string convert::replaceString(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*=0*/)
+void convert::replaceOneSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*=0*/)
 {
     int pos = s.find(oldstring, pos0);
     if (pos >= 0)
@@ -57,10 +57,9 @@ std::string convert::replaceString(std::string& s, const std::string& oldstring,
         s.erase(pos, oldstring.length());
         s.insert(pos, newstring);
     }
-    return s;
 }
 
-std::string convert::replaceAllString(std::string& s, const std::string& oldstring, const std::string& newstring)
+void convert::replaceAllSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring)
 {
     int pos = s.find(oldstring);
     while (pos >= 0)
@@ -69,17 +68,30 @@ std::string convert::replaceAllString(std::string& s, const std::string& oldstri
         s.insert(pos, newstring);
         pos = s.find(oldstring, pos + newstring.length());
     }
-    return s;
 }
 
-void convert::replaceStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring)
+std::string convert::replaceOneSubString(const std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*= 0*/)
+{
+    std::string s1 = s;
+    replaceOneSubStringRef(s1, oldstring, newstring, pos0);
+    return s1;
+}
+
+std::string convert::replaceAllSubString(const std::string& s, const std::string& oldstring, const std::string& newstring)
+{
+    std::string s1 = s;
+    replaceAllSubStringRef(s1, oldstring, newstring);
+    return s1;
+}
+
+void convert::replaceOneStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring)
 {
     std::string s = readStringFromFile(oldfilename);
     if (s.length() <= 0)
     {
         return;
     }
-    replaceString(s, oldstring, newstring);
+    replaceOneSubStringRef(s, oldstring, newstring);
     writeStringToFile(s, newfilename);
 }
 
@@ -90,7 +102,7 @@ void convert::replaceAllStringInFile(const std::string& oldfilename, const std::
     {
         return;
     }
-    replaceAllString(s, oldstring, newstring);
+    replaceAllSubStringRef(s, oldstring, newstring);
     writeStringToFile(s, newfilename);
 }
 

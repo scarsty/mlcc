@@ -161,7 +161,7 @@ Some examples:
 
 ```c++
 std::string str = readStringFromFile("example.txt");    //str = "abc_def_;dddd."
-replaceAllString(str, "_", ".");    //str = "abc.def.;dddd."
+replaceAllSubStringRef(str, "_", ".");    //str = "abc.def.;dddd."
 
 str = "123,467,222;44";
 std::vector<int> numbers = findNumbers<int>(str);    //numbers = {123, 467, 222, 44}, scientific notation is supported 
