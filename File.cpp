@@ -1,7 +1,7 @@
 #include "File.h"
+#include <cstdio>
+#include <ctime>
 #include <fstream>
-#include <stdio.h>
-#include <time.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -175,7 +175,8 @@ std::vector<std::string> File::getFilesInPath(const std::string& dirname)
             std::string filedir = filename;
             ret.push_back(filedir);
         }
-    } while (FindNextFileA(hFind, &ffd) != 0);
+    }
+    while (FindNextFileA(hFind, &ffd) != 0);
 
     dwError = GetLastError();
     if (dwError != ERROR_NO_MORE_FILES)

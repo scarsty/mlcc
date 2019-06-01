@@ -1,6 +1,6 @@
 #include "convert.h"
 #include <algorithm>
-#include <stdio.h>
+#include <cstdio>
 
 #ifdef _MSC_VER
 #define vsprintf vsprintf_s

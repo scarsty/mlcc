@@ -71,7 +71,7 @@ private:
 
     std::string line_break_;
     std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
-    typedef std::map<std::string, std::map<std::string, std::string, COM2>, COM1> values_type;
+    using values_type = std::map<std::string, std::map<std::string, std::string, COM2>, COM1>;
     int error_ = 0;
     values_type values_;
 
