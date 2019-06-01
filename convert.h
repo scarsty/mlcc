@@ -1,6 +1,7 @@
 #pragma once
 #include <cassert>
 #include <cstdlib>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -93,6 +94,7 @@ private:
         }
         check_format1(strs, i + 1, args...);
     }
+
 public:
     template <typename... Args>
     static void checkFormatStr(const std::string& format_str, Args... args)
@@ -107,7 +109,7 @@ public:
                 p2 = format_str.find_first_of("diuoxXfFeEgGaAcspn", p1 + 1);
                 if (p2 != std::string::npos)
                 {
-                    if (format_str.substr(p1 + 1, p2 - p1 - 1).find_first_not_of("0123456789.+-*#") == std::string::npos)
+                    if (format_str.substr(p1 + 1, p2 - p1 - 1).find_first_not_of("0123456789.+-*#l") == std::string::npos)
                     {
                         format_strs.push_back(format_str.substr(p1, p2 - p1 + 1));
                         p0 = p2 + 1;
@@ -118,7 +120,7 @@ public:
         }
         if (format_strs.size() != sizeof...(args))
         {
-            auto error_str = "need " + std::to_string(format_strs.size()) + " parameters, but " + std::to_string(sizeof...(args)) + " supplied!";
+            auto error_str = "need " + std::to_string(format_strs.size()) + " parameter(s), but " + std::to_string(sizeof...(args)) + " supplied!";
             std::cerr << error_str << std::endl;
             throw std::runtime_error(error_str);
         }
@@ -129,29 +131,21 @@ public:
     }
 
     template <typename... Args>
-    static void formatAppendString(std::string& str, const char* format_str, Args... args)
+    static std::string formatString(Args... args)
     {
 #ifdef _DEBUG
-        checkFormatStr(format_str, args...);
+        checkFormatStr(args...);
 #endif
         char c[1024];
-        int len = snprintf(c, sizeof(c), format_str, args...);
+        int len = snprintf(c, sizeof(c), args...);
         std::string s(c);
         if (len >= sizeof(c))
         {
             auto c1 = new char[len + 1];
-            snprintf(c1, len, format_str, args...);
+            snprintf(c1, len, args...);
             s = c1;
             delete c1;
         }
-        str += std::string(s);
-    }
-
-    template <typename... Args>
-    static std::string formatString(Args... args)
-    {
-        std::string s;
-        formatAppendString(s, args...);
         return s;
     }
 };
