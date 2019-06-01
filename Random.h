@@ -78,5 +78,5 @@ public:
     }
 };
 
-typedef Random<double> RandomDouble;    //use this in usual
-typedef Random<float> RandomFloat;      //use this in usual
+using RandomDouble = Random<double>;    //use this in usual
+using RandomFloat = Random<float>;      //use this in usual

@@ -1,6 +1,6 @@
 #pragma once
-#include <stdarg.h>
-#include <stdlib.h>
+#include <cstdarg>
+#include <cstdlib>
 #include <string>
 #include <vector>
 

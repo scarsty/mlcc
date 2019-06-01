@@ -1,7 +1,7 @@
 #pragma once
+#include <cstring>
 #include <string>
 #include <vector>
-#include <string.h>
 
 class File
 {
@@ -61,7 +61,6 @@ public:
     static bool isPath(const std::string& name);
     static std::string getFileTime(std::string filename);
     static void changePath(const std::string& path);
-
 
     //functions about filename
 
