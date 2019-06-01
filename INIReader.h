@@ -569,6 +569,6 @@ public:
     }
 };
 
-typedef INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare> INIReaderNormal;
+using INIReaderNormal = INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare>;
 
 #endif    // __INIREADER_H__
