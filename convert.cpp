@@ -51,8 +51,8 @@ void convert::writeStringAppendToFile(const std::string& str, FILE* fp)
 
 void convert::replaceOneSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*=0*/)
 {
-    int pos = s.find(oldstring, pos0);
-    if (pos >= 0)
+    auto pos = s.find(oldstring, pos0);
+    if (pos != std::string::npos)
     {
         s.erase(pos, oldstring.length());
         s.insert(pos, newstring);
@@ -61,8 +61,8 @@ void convert::replaceOneSubStringRef(std::string& s, const std::string& oldstrin
 
 void convert::replaceAllSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring)
 {
-    int pos = s.find(oldstring);
-    while (pos >= 0)
+    auto pos = s.find(oldstring);
+    while (pos != std::string::npos)
     {
         s.erase(pos, oldstring.length());
         s.insert(pos, newstring);
@@ -104,26 +104,6 @@ void convert::replaceAllStringInFile(const std::string& oldfilename, const std::
     }
     replaceAllSubStringRef(s, oldstring, newstring);
     writeStringToFile(s, newfilename);
-}
-
-std::string convert::formatString(const char* format, ...)
-{
-    char s[1000];
-    va_list arg_ptr;
-    va_start(arg_ptr, format);
-    vsprintf(s, format, arg_ptr);
-    va_end(arg_ptr);
-    return s;
-}
-
-void convert::formatAppendString(std::string& str, const char* format, ...)
-{
-    char s[1000];
-    va_list arg_ptr;
-    va_start(arg_ptr, format);
-    vsprintf(s, format, arg_ptr);
-    va_end(arg_ptr);
-    str += s;
 }
 
 std::string convert::findANumber(const std::string& s)
@@ -172,8 +152,8 @@ std::string convert::findANumber(const std::string& s)
 
 unsigned convert::findTheLast(const std::string& s, const std::string& content)
 {
-    int pos = 0, prepos = 0;
-    while (pos >= 0)
+    size_t pos = 0, prepos = 0;
+    while (pos != std::string::npos)
     {
         prepos = pos;
         pos = s.find(content, prepos + 1);
@@ -232,16 +212,16 @@ bool convert::isProChar(char c)
     return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'z') || (c >= '(' && c <= ')');
 }
 
-std::string convert::convertCase(const std::string& s, int mode)
+std::string convert::toLowerCase(const std::string& s)
 {
     std::string s1 = s;
-    if (mode > 0)
-    {
-        std::transform(s1.begin(), s1.end(), s1.begin(), ::toupper);
-    }
-    else
-    {
-        std::transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
-    }
+    std::transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
+    return s1;
+}
+
+std::string convert::toUpperCase(const std::string& s)
+{
+    std::string s1 = s;
+    std::transform(s1.begin(), s1.end(), s1.begin(), ::toupper);
     return s1;
 }
