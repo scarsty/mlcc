@@ -134,8 +134,16 @@ public:
 #ifdef _DEBUG
         checkFormatStr(format_str, args...);
 #endif
-        char s[1024];
-        snprintf(s, sizeof(s), format_str, args...);
+        char c[1024];
+        int len = snprintf(c, sizeof(c), format_str, args...);
+        std::string s(c);
+        if (len >= sizeof(c))
+        {
+            auto c1 = new char[len + 1];
+            snprintf(c1, len, format_str, args...);
+            s = c1;
+            delete c1;
+        }
         str += std::string(s);
     }
 
