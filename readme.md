@@ -144,7 +144,7 @@ INIReader<CaseInsensitivityCompare, NoUnderlineCompare> ini;
 A case insensitivity type "INIReaderNormal" has been defined in the head file, you can use it directly for convenience:
 
 ```c++
-typedef INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare> INIReaderNormal;
+using INIReaderNormal = INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare>;
 ```
 
 ## convert
