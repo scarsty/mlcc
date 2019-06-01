@@ -244,6 +244,8 @@ void File::changePath(const std::string& path)
 
 int File::getLastPathCharPos(const std::string& filename)
 {
+    //here use std::string::npos == (decltype(std::string::npos))(-1)
+    //it seems right
     int pos = std::string::npos;
 #ifdef _WIN32
     //ansi
