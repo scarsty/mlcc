@@ -115,7 +115,7 @@ public:
                         p0 = p2 + 1;
                     }
                 }
-                p1++;
+                p1 += 2;
             }
         }
         if (format_strs.size() != sizeof...(args))
