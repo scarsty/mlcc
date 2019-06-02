@@ -65,17 +65,12 @@ public:
     //functions about filename
 
 private:
-    static int getLastPathCharPos(const std::string& filename);
+    static size_t getLastPathCharPos(const std::string& filename);
 
 public:
     //functions about file name
-    enum FindMode
-    {
-        FINDLAST = 0,
-        FINDFIRST = 1,
-    };
     static std::string getFileExt(const std::string& filename);
-    static std::string getFileMainname(const std::string& fileName, FindMode mode = FINDLAST);
+    static std::string getFileMainname(const std::string& fileName);
     static std::string getFilenameWithoutPath(const std::string& fileName);
     static std::string changeFileExt(const std::string& filename, const std::string& ext);
     static std::string getFilePath(const std::string& filename);
