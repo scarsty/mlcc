@@ -78,19 +78,39 @@ private:
     template <typename T, typename... Args>
     static void check_format1(std::vector<std::string>& strs, int i, T t, Args... args)
     {
-        switch (strs[i].back())
+        auto& s = strs[i];
+        switch (s.back())
         {
+        case 'd':
+        case 'i':
+        case 'u':
+        case 'o':
+        case 'x':
+        case 'X':
+            //if (s.find("l") == std::string::npos && sizeof(T) > sizeof(int))
+            //{
+            //    auto error_str = std::string("Check format: too long data has been supplied!");
+            //    std::cerr << error_str << std::endl;
+            //    throw std::runtime_error(error_str);
+            //}
+            break;
+        case 'c':
+            break;
         case 's':
+            //only check %s because it is dangerous
             if (std::is_same<const char*, T>::value || std::is_same<char*, T>::value)
             {
 
             }
             else
             {
-                auto error_str = std::string("need %s, but ") + typeid(T).name() + " supplied!";
+                auto error_str = std::string("Check format: need %s, but ") + typeid(T).name() + " supplied!";
                 std::cerr << error_str << std::endl;
                 throw std::runtime_error(error_str);
             }
+            break;
+        default:
+            break;
         }
         check_format1(strs, i + 1, args...);
     }
@@ -100,7 +120,7 @@ public:
     static void checkFormatStr(const std::string& format_str, Args... args)
     {
         std::vector<std::string> format_strs;
-        size_t p0 = 0, p1 = 0, p2 = 0;
+        size_t p1 = 0, p2 = 0;
         while (p1 != std::string::npos)
         {
             p1 = format_str.find_first_of("%", p1);
@@ -111,16 +131,30 @@ public:
                 {
                     if (format_str.substr(p1 + 1, p2 - p1 - 1).find_first_not_of("0123456789.+-*#l") == std::string::npos)
                     {
+                        //find one format string
                         format_strs.push_back(format_str.substr(p1, p2 - p1 + 1));
-                        p0 = p2 + 1;
+                        p1 = p2 + 1;
+                    }
+                    else
+                    {
+                        //not a format string, jump 2 char
+                        p1 += 2;
                     }
                 }
-                p1 += 2;
+                else
+                {
+                    //not a format string, jump 2 char
+                    p1 += 2;
+                }
+            }
+            if (p1 >= format_str.size())
+            {
+                break;
             }
         }
         if (format_strs.size() != sizeof...(args))
         {
-            auto error_str = "need " + std::to_string(format_strs.size()) + " parameter(s), but " + std::to_string(sizeof...(args)) + " supplied!";
+            auto error_str = "Check format: need " + std::to_string(format_strs.size()) + " parameter(s), but " + std::to_string(sizeof...(args)) + " supplied!";
             std::cerr << error_str << std::endl;
             throw std::runtime_error(error_str);
         }
