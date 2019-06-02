@@ -76,6 +76,11 @@ public:
     {
         return n1 + int(rand() * (n2 - n1));
     }
+
+    std::mt19937& get_generator()
+    {
+        return generator_;
+    }
 };
 
 using RandomDouble = Random<double>;    //use this in usual
