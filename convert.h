@@ -178,7 +178,7 @@ public:
             auto c1 = new char[len + 1];
             snprintf(c1, len, args...);
             s = c1;
-            delete c1;
+            delete[] c1;
         }
         return s;
     }
