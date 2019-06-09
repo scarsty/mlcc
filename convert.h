@@ -182,4 +182,44 @@ public:
         }
         return s;
     }
+
+    template <typename T>
+    static std::string vectorToString(const std::vector<T>& v, const std::string format = "", const std::string& split = ", ", const std::string end = "")
+    {
+        std::string s;
+        std::string format1 = format;
+        if (format1 == "")
+        {
+            if (std::is_same<const char*, T>::value || std::is_same<char*, T>::value)
+            {
+                format1 = "%s";
+            }
+            else if (std::is_same<float, T>::value || std::is_same<double, T>::value || std::is_same<long double, T>::value)
+            {
+                format1 = "%g";
+            }
+            else
+            {
+                format1 = "%d";
+            }
+        }
+
+        for (size_t i = 0; i < v.size(); i++)
+        {
+            if (std::is_same<std::string, T>::value)
+            {
+                s += v[i];
+            }
+            else
+            {
+                s += formatString(format1.c_str(), v[i]);
+            }
+            if (i < v.size() - 1)
+            {
+                s += split;
+            }
+        }
+        s += end;
+        return s;
+    }
 };
