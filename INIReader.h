@@ -68,8 +68,11 @@ private:
         READ = 0,
         WRITE = 1,
     };
-
-    std::string line_break_;
+#ifdef _WIN32
+    std::string line_break_ = "\r\n";
+#else
+    std::string line_break_ = "\n";
+#endif
     std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
     using values_type = std::map<std::string, std::map<std::string, std::string, COM2>, COM1>;
     int error_ = 0;
@@ -515,9 +518,15 @@ private:
                         lines_.pop_back();    //remove blank line first
                         lines_section_.pop_back();
                     }
-                    lines_.push_back("");
+                    if (!lines_.empty())
+                    {
+                        lines_.push_back("");
+                    }
                     lines_.push_back("[" + section + "]");
-                    lines_section_.push_back(lines_section_.back());
+                    if (!lines_section_.empty())
+                    {
+                        lines_section_.push_back(lines_section_.back());
+                    }
                     lines_section_.push_back(section);
                     for (auto kv : skv.second)
                     {
