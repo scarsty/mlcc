@@ -117,7 +117,7 @@ private:
 
 public:
     template <typename... Args>
-    static void checkFormatStr(const std::string& format_str, Args... args)
+    static void checkFormatString(const std::string& format_str, Args... args)
     {
         std::vector<std::string> format_strs;
         size_t p1 = 0, p2 = 0;
@@ -168,7 +168,7 @@ public:
     static std::string formatString(Args... args)
     {
 #ifdef _DEBUG
-        checkFormatStr(args...);
+        checkFormatString(args...);
 #endif
         char c[1024];
         int len = snprintf(c, sizeof(c), args...);
