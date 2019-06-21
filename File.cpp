@@ -43,36 +43,7 @@ bool File::fileExist(const std::string& filename)
     return ret;
 }
 
-unsigned char* File::readFile(const char* filename, int length /*= 0*/)
-{
-    FILE* fp = fopen(filename, "rb");
-    if (!fp)
-    {
-        fprintf(stderr, "Cannot open file %s\n", filename);
-        return nullptr;
-    }
-    fseek(fp, 0, SEEK_END);
-    if (length <= 0)
-    {
-        length = ftell(fp);
-    }
-    fseek(fp, 0, 0);
-    auto s = new unsigned char[length + 1];
-    memset(s, '\0', length);
-    fread(s, length, 1, fp);
-    fclose(fp);
-    return s;
-}
-
-void File::deleteBuffer(unsigned char* buffer)
-{
-    if (buffer)
-    {
-        delete[] buffer;
-    }
-}
-
-void File::reverse(unsigned char* c, int n)
+void File::reverse(char* c, int n)
 {
     for (int i = 0; i < n / 2; i++)
     {
@@ -84,39 +55,7 @@ void File::reverse(unsigned char* c, int n)
     }
 }
 
-//bool File::readFile(const std::string& filename, char** s, int* len)
-//{
-//    FILE* fp = fopen(filename.c_str(), "rb");
-//    if (!fp)
-//    {
-//        fprintf(stderr, "Cannot open file %s\n", filename.c_str());
-//        return false;
-//    }
-//    fseek(fp, 0, SEEK_END);
-//    int length = ftell(fp);
-//    *len = length;
-//    fseek(fp, 0, 0);
-//    *s = new char[length + 1];
-//    memset(*s, '\0', length);
-//    fread(*s, length, 1, fp);
-//    fclose(fp);
-//    return true;
-//}
-
-void File::readFile(const std::string& filename, void* s, int len)
-{
-    FILE* fp = fopen(filename.c_str(), "rb");
-    if (!fp)
-    {
-        fprintf(stderr, "Cannot open file %s\n", filename.c_str());
-        return;
-    }
-    fseek(fp, 0, 0);
-    fread(s, len, 1, fp);
-    fclose(fp);
-}
-
-std::vector<char> File::readFileToVectorChar(const std::string& filename)
+std::vector<char> File::readFile(const std::string& filename, int length)
 {
     std::vector<char> s;
     FILE* fp = fopen(filename.c_str(), "rb");
@@ -125,27 +64,43 @@ std::vector<char> File::readFileToVectorChar(const std::string& filename)
         fprintf(stderr, "Cannot open file %s\n", filename.c_str());
         return s;
     }
-    fseek(fp, 0, SEEK_END);
-    int length = ftell(fp);
-    fseek(fp, 0, 0);
+    if (length <= 0)
+    {
+        fseek(fp, 0, SEEK_END);
+        length = ftell(fp);
+        fseek(fp, 0, 0);
+    }
     s.resize(length);
-    fread(s.data(), length, 1, fp);
+    fread(s.data(), 1, length, fp);
     fclose(fp);
     return s;
 }
 
-int File::writeFile(const std::string& filename, void* s, int len)
+int File::readFile(const std::string& filename, void* s, int length)
 {
-    FILE* fp = fopen(filename.c_str(), "wb");
+    FILE* fp = fopen(filename.c_str(), "rb");
     if (!fp)
     {
         fprintf(stderr, "Cannot open file %s\n", filename.c_str());
         return 0;
     }
-    fseek(fp, 0, 0);
-    fwrite(s, len, 1, fp);
+    int r = fread(s, 1, length, fp);
     fclose(fp);
-    return len;
+    return r;
+}
+
+int File::writeFile(const std::string& filename, void* s, int length)
+{
+    FILE* fp = fopen(filename.c_str(), "wb");
+    if (!fp)
+    {
+        fprintf(stderr, "Cannot write file %s\n", filename.c_str());
+        return 0;
+    }
+    fseek(fp, 0, 0);
+    fwrite(s, 1, length, fp);
+    fclose(fp);
+    return length;
 }
 
 std::vector<std::string> File::getFilesInPath(const std::string& dirname)
