@@ -1,6 +1,7 @@
 #include "convert.h"
 #include <algorithm>
 #include <cstdio>
+#include <fstream>
 
 #ifdef _MSC_VER
 #define vsprintf vsprintf_s
@@ -9,44 +10,28 @@
 
 std::string convert::readStringFromFile(const std::string& filename)
 {
-    FILE* fp = fopen(filename.c_str(), "rb");
-    if (!fp)
+    std::ifstream fs(filename, std::ios::binary);
+    if (fs.is_open())
     {
-        fprintf(stderr, "Cannot open file %s!\n", filename.c_str());
-        return "";
+        auto content = std::string(std::istreambuf_iterator<char>(fs), std::istreambuf_iterator<char>());
+        fs.close();
+        return content;
     }
-    fseek(fp, 0, SEEK_END);
-    int length = ftell(fp);
-    fseek(fp, 0, 0);
-    std::string str;
-    str.resize(length, '\0');
-    fread((void*)str.c_str(), length, 1, fp);
-    fclose(fp);
-    return str;
+    fprintf(stderr, "Cannot open file %s!\n", filename.c_str());
+    return "";
 }
 
 int convert::writeStringToFile(const std::string& str, const std::string& filename)
 {
-    FILE* fp = fopen(filename.c_str(), "wb");
-    if (fp)
+    std::ofstream fs(filename, std::ios::binary);
+    if (fs.is_open())
     {
-        int length = str.length();
-        fwrite(str.c_str(), length, 1, fp);
-        fclose(fp);
-        return length;
+        fs.write(str.c_str(), str.size());
+        fs.close();
+        return str.size();
     }
-    else
-    {
-        fprintf(stderr, "Cannot write file %s!\n", filename.c_str());
-        return -1;
-    }
-}
-
-void convert::writeStringAppendToFile(const std::string& str, FILE* fp)
-{
-    int length = str.length();
-    fwrite(str.c_str(), length, 1, fp);
-    fputc('\n', fp);
+    fprintf(stderr, "Cannot write file %s!\n", filename.c_str());
+    return -1;
 }
 
 void convert::replaceOneSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*=0*/)
