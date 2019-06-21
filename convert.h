@@ -12,7 +12,6 @@ public:
     //string functions
     static std::string readStringFromFile(const std::string& filename);
     static int writeStringToFile(const std::string& str, const std::string& filename);
-    static void writeStringAppendToFile(const std::string& str, FILE* fp);
     static void replaceOneSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 = 0);
     static void replaceAllSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring);
     static std::string replaceOneSubString(const std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 = 0);
