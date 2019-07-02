@@ -5,8 +5,7 @@
 //
 // https://github.com/benhoyt/inih
 
-#ifndef __INIREADER_H__
-#define __INIREADER_H__
+#pragma once
 
 //Nonzero to allow multi-line value parsing, in the style of Python's
 //configparser. If allowed, ini_parse() will call the handler with the same
@@ -580,4 +579,3 @@ public:
 
 using INIReaderNormal = INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare>;
 
-#endif    // __INIREADER_H__
