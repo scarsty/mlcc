@@ -76,7 +76,12 @@ public:
     {
         return n1 + int(rand() * (n2 - n1));
     }
+
+    std::mt19937& get_generator()
+    {
+        return generator_;
+    }
 };
 
-typedef Random<double> RandomDouble;    //use this in usual
-typedef Random<float> RandomFloat;      //use this in usual
+using RandomDouble = Random<double>;    //use this in usual
+using RandomFloat = Random<float>;      //use this in usual

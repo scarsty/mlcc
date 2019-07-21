@@ -1,7 +1,7 @@
 #include "File.h"
+#include <cstdio>
+#include <ctime>
 #include <fstream>
-#include <stdio.h>
-#include <time.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -43,36 +43,7 @@ bool File::fileExist(const std::string& filename)
     return ret;
 }
 
-unsigned char* File::readFile(const char* filename, int length /*= 0*/)
-{
-    FILE* fp = fopen(filename, "rb");
-    if (!fp)
-    {
-        fprintf(stderr, "Cannot open file %s\n", filename);
-        return nullptr;
-    }
-    fseek(fp, 0, SEEK_END);
-    if (length <= 0)
-    {
-        length = ftell(fp);
-    }
-    fseek(fp, 0, 0);
-    auto s = new unsigned char[length + 1];
-    memset(s, '\0', length);
-    fread(s, length, 1, fp);
-    fclose(fp);
-    return s;
-}
-
-void File::deleteBuffer(unsigned char* buffer)
-{
-    if (buffer)
-    {
-        delete[] buffer;
-    }
-}
-
-void File::reverse(unsigned char* c, int n)
+void File::reverse(char* c, int n)
 {
     for (int i = 0; i < n / 2; i++)
     {
@@ -84,39 +55,7 @@ void File::reverse(unsigned char* c, int n)
     }
 }
 
-//bool File::readFile(const std::string& filename, char** s, int* len)
-//{
-//    FILE* fp = fopen(filename.c_str(), "rb");
-//    if (!fp)
-//    {
-//        fprintf(stderr, "Cannot open file %s\n", filename.c_str());
-//        return false;
-//    }
-//    fseek(fp, 0, SEEK_END);
-//    int length = ftell(fp);
-//    *len = length;
-//    fseek(fp, 0, 0);
-//    *s = new char[length + 1];
-//    memset(*s, '\0', length);
-//    fread(*s, length, 1, fp);
-//    fclose(fp);
-//    return true;
-//}
-
-void File::readFile(const std::string& filename, void* s, int len)
-{
-    FILE* fp = fopen(filename.c_str(), "rb");
-    if (!fp)
-    {
-        fprintf(stderr, "Cannot open file %s\n", filename.c_str());
-        return;
-    }
-    fseek(fp, 0, 0);
-    fread(s, len, 1, fp);
-    fclose(fp);
-}
-
-std::vector<char> File::readFileToVectorChar(const std::string& filename)
+std::vector<char> File::readFile(const std::string& filename, int length)
 {
     std::vector<char> s;
     FILE* fp = fopen(filename.c_str(), "rb");
@@ -125,27 +64,43 @@ std::vector<char> File::readFileToVectorChar(const std::string& filename)
         fprintf(stderr, "Cannot open file %s\n", filename.c_str());
         return s;
     }
-    fseek(fp, 0, SEEK_END);
-    int length = ftell(fp);
-    fseek(fp, 0, 0);
+    if (length <= 0)
+    {
+        fseek(fp, 0, SEEK_END);
+        length = ftell(fp);
+        fseek(fp, 0, 0);
+    }
     s.resize(length);
-    fread(s.data(), length, 1, fp);
+    fread(s.data(), 1, length, fp);
     fclose(fp);
     return s;
 }
 
-int File::writeFile(const std::string& filename, void* s, int len)
+int File::readFile(const std::string& filename, void* s, int length)
 {
-    FILE* fp = fopen(filename.c_str(), "wb");
+    FILE* fp = fopen(filename.c_str(), "rb");
     if (!fp)
     {
         fprintf(stderr, "Cannot open file %s\n", filename.c_str());
         return 0;
     }
-    fseek(fp, 0, 0);
-    fwrite(s, len, 1, fp);
+    int r = fread(s, 1, length, fp);
     fclose(fp);
-    return len;
+    return r;
+}
+
+int File::writeFile(const std::string& filename, void* s, int length)
+{
+    FILE* fp = fopen(filename.c_str(), "wb");
+    if (!fp)
+    {
+        fprintf(stderr, "Cannot write file %s\n", filename.c_str());
+        return 0;
+    }
+    fseek(fp, 0, 0);
+    fwrite(s, 1, length, fp);
+    fclose(fp);
+    return length;
 }
 
 std::vector<std::string> File::getFilesInPath(const std::string& path_name)
@@ -266,9 +221,11 @@ void File::changePath(const std::string& path)
     chdir(path.c_str());
 }
 
-int File::getLastPathCharPos(const std::string& filename)
+size_t File::getLastPathCharPos(const std::string& filename)
 {
-    int pos = std::string::npos;
+    //here use std::string::npos == (decltype(std::string::npos))(-1)
+    //it seems right
+    size_t pos = std::string::npos;
 #ifdef _WIN32
     //ansi
     for (int i = 0; i < filename.size(); i++)
@@ -290,9 +247,9 @@ int File::getLastPathCharPos(const std::string& filename)
 
 std::string File::getFileExt(const std::string& filename)
 {
-    int pos_p = getLastPathCharPos(filename);
-    int pos_d = filename.find_last_of('.');
-    if (pos_p < pos_d)
+    auto pos_p = getLastPathCharPos(filename);
+    auto pos_d = filename.find_last_of('.');
+    if (pos_d != std::string::npos && (pos_p < pos_d || pos_p == std::string::npos))
     {
         return filename.substr(pos_d + 1);
     }
@@ -300,15 +257,11 @@ std::string File::getFileExt(const std::string& filename)
 }
 
 //find the last point as default, and find the first when mode is 1
-std::string File::getFileMainname(const std::string& filename, FindMode mode)
+std::string File::getFileMainname(const std::string& filename)
 {
-    int pos_p = getLastPathCharPos(filename);
-    int pos_d = filename.find_last_of('.');
-    if (mode == FINDFIRST)
-    {
-        pos_d = filename.find_first_of('.', pos_p + 1);
-    }
-    if (pos_p < pos_d)
+    auto pos_p = getLastPathCharPos(filename);
+    auto pos_d = filename.find_last_of('.');
+    if (pos_d != std::string::npos && (pos_p < pos_d || pos_p == std::string::npos))
     {
         return filename.substr(0, pos_d);
     }
@@ -317,7 +270,7 @@ std::string File::getFileMainname(const std::string& filename, FindMode mode)
 
 std::string File::getFilenameWithoutPath(const std::string& filename)
 {
-    int pos_p = getLastPathCharPos(filename);
+    auto pos_p = getLastPathCharPos(filename);
     if (pos_p != std::string::npos)
     {
         return filename.substr(pos_p + 1);
@@ -328,7 +281,7 @@ std::string File::getFilenameWithoutPath(const std::string& filename)
 std::string File::changeFileExt(const std::string& filename, const std::string& ext)
 {
     auto e = ext;
-    if (e != "" && e[0] != '.')
+    if (!e.empty() && e[0] != '.')
     {
         e = "." + e;
     }
@@ -337,7 +290,7 @@ std::string File::changeFileExt(const std::string& filename, const std::string& 
 
 std::string File::getFilePath(const std::string& filename)
 {
-    int pos_p = getLastPathCharPos(filename);
+    auto pos_p = getLastPathCharPos(filename);
     if (pos_p != std::string::npos)
     {
         return filename.substr(0, pos_p);

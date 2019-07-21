@@ -1,7 +1,7 @@
 #pragma once
+#include <cstring>
 #include <string>
 #include <vector>
-#include <string.h>
 
 class File
 {
@@ -12,14 +12,11 @@ private:
 public:
     //read and write file
     static bool fileExist(const std::string& filename);
-    static unsigned char* readFile(const char* filename, int length = 0);
-    static void deleteBuffer(unsigned char* buffer);
-    static void reverse(unsigned char* c, int n);
+    static void reverse(char* c, int n);
 
-    //static bool readFile(const std::string& filename, char** s, int* len);
-    static void readFile(const std::string& filename, void* s, int len);
-    static std::vector<char> readFileToVectorChar(const std::string& filename);
-    static int writeFile(const std::string& filename, void* s, int len);
+    static std::vector<char> readFile(const std::string& filename, int length = -1);
+    static int readFile(const std::string& filename, void* s, int length);
+    static int writeFile(const std::string& filename, void* s, int length);
 
     template <class T>
     static void readDataToVector(const char* data, int length, std::vector<T>& v)
@@ -41,7 +38,7 @@ public:
     template <class T>
     static void readFileToVector(const std::string& filename, std::vector<T>& v)
     {
-        auto buffer = readFileToVectorChar(filename);
+        auto buffer = readFile(filename);
         readDataToVector(buffer.data(), buffer.size(), v);
     }
 
@@ -63,21 +60,15 @@ public:
     static std::string getFileTime(std::string filename);
     static void changePath(const std::string& path);
 
-
     //functions about filename
 
 private:
-    static int getLastPathCharPos(const std::string& filename);
+    static size_t getLastPathCharPos(const std::string& filename);
 
 public:
     //functions about file name
-    enum FindMode
-    {
-        FINDLAST = 0,
-        FINDFIRST = 1,
-    };
     static std::string getFileExt(const std::string& filename);
-    static std::string getFileMainname(const std::string& fileName, FindMode mode = FINDLAST);
+    static std::string getFileMainname(const std::string& fileName);
     static std::string getFilenameWithoutPath(const std::string& fileName);
     static std::string changeFileExt(const std::string& filename, const std::string& ext);
     static std::string getFilePath(const std::string& filename);

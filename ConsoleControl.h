@@ -1,6 +1,6 @@
 #pragma once
+#include <cstdio>
 #include <map>
-#include <stdio.h>
 #include <string>
 
 #ifdef _WIN32
@@ -8,7 +8,6 @@
 #include <windows.h>
 #undef NOMINMAX
 #else
-#include <stdio.h>
 #endif
 
 enum ConsoleColor
