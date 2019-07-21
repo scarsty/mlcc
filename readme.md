@@ -144,7 +144,7 @@ INIReader<CaseInsensitivityCompare, NoUnderlineCompare> ini;
 A case insensitivity type "INIReaderNormal" has been defined in the head file, you can use it directly for convenience:
 
 ```c++
-typedef INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare> INIReaderNormal;
+using INIReaderNormal = INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare>;
 ```
 
 ## convert
@@ -169,6 +169,19 @@ std::vector<std::string> strs = splitString(str, ",;");    //strs = {"123", "467
 ```
 
 "splitString" also supports treating continuous spaces as one pattern.
+
+checkFormatString can check a format string and the arguments are match or not for printf, fprintf, and sprintf. An example:
+
+```c++
+std::string s;
+checkFormatString("%s", s.c_str());    //nothing happen
+checkFormatString("%s", s);    //a runtime error "type not match" will be threw
+checkFormatString("%s%d", s.c_str());    //a runtime error "number of arguments" will be threw
+```
+Now it can only check %s, it is very easy to miss "c_str()" when using std::string.
+
+
+vectorToString can convert a std::vector<T> to a std::string, it is too bother to deal with the last splitting char manually.
 
 ## Timer
 
