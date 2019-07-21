@@ -148,7 +148,7 @@ int File::writeFile(const std::string& filename, void* s, int len)
     return len;
 }
 
-std::vector<std::string> File::getFilesInPath(const std::string& dirname)
+std::vector<std::string> File::getFilesInPath(const std::string& path_name)
 {
 #ifdef _WIN32
     WIN32_FIND_DATAA ffd;
@@ -159,7 +159,7 @@ std::vector<std::string> File::getFilesInPath(const std::string& dirname)
     DWORD dwError = 0;
     std::vector<std::string> ret;
 
-    szDir = dirname + "\\*";
+    szDir = path_name + "\\*";
     hFind = FindFirstFileA(szDir.c_str(), &ffd);
 
     if (INVALID_HANDLE_VALUE == hFind)
@@ -169,11 +169,12 @@ std::vector<std::string> File::getFilesInPath(const std::string& dirname)
     }
     do
     {
-        if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+        //f (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+        std::string filename = ffd.cFileName;    //(const char*)
+        if (!(filename == "." || filename == ".."))
         {
             std::string filename = ffd.cFileName;    //(const char*)
-            std::string filedir = filename;
-            ret.push_back(filedir);
+            ret.push_back(filename);
         }
     } while (FindNextFileA(hFind, &ffd) != 0);
 
@@ -188,7 +189,7 @@ std::vector<std::string> File::getFilesInPath(const std::string& dirname)
 #else
     DIR* dir;
     struct dirent* ptr;
-    dir = opendir(dirname.c_str());
+    dir = opendir(path_name.c_str());
     std::vector<std::string> ret;
     while ((ptr = readdir(dir)) != NULL)
     {
@@ -199,6 +200,30 @@ std::vector<std::string> File::getFilesInPath(const std::string& dirname)
     //std::sort(ret.begin(), ret.end());
     return ret;
 #endif
+}
+
+std::vector<std::string> File::getFilesRecursiveInPath(const std::string& path_name)
+{
+    std::vector<std::string> files, paths;
+    paths.push_back(path_name);
+    while (!paths.empty())
+    {
+        auto p =  paths.back();
+        paths.pop_back();
+        if (isPath(p))
+        {
+            auto new_paths = getFilesInPath(p);
+            for (auto& np : new_paths)
+            {
+                paths.push_back(p + "/" + np);
+            }
+        }
+        else
+        {
+            files.push_back(p);
+        }
+    }
+    return files;
 }
 
 bool File::isPath(const std::string& name)
