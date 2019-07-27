@@ -126,9 +126,8 @@ std::vector<std::string> File::getFilesInPath(const std::string& path_name)
     {
         //f (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
         std::string filename = ffd.cFileName;    //(const char*)
-        if (!(filename == "." || filename == ".."))
+        if (filename != "." && filename != "..")
         {
-            std::string filename = ffd.cFileName;    //(const char*)
             ret.push_back(filename);
         }
     } while (FindNextFileA(hFind, &ffd) != 0);
@@ -149,7 +148,10 @@ std::vector<std::string> File::getFilesInPath(const std::string& path_name)
     while ((ptr = readdir(dir)) != NULL)
     {
         std::string path = std::string(ptr->d_name);
-        ret.push_back(path);
+        if (path != "." && path != "..")
+        {
+            ret.push_back(path);
+        }
     }
     closedir(dir);
     //std::sort(ret.begin(), ret.end());
@@ -163,7 +165,7 @@ std::vector<std::string> File::getFilesRecursiveInPath(const std::string& path_n
     paths.push_back(path_name);
     while (!paths.empty())
     {
-        auto p =  paths.back();
+        auto p = paths.back();
         paths.pop_back();
         if (isPath(p))
         {
