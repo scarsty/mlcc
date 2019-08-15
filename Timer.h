@@ -50,13 +50,16 @@ public:
     {
         const int size = 80;
         char buffer[size];
-        if (s > 3600)
+        int h = s / 3600;
+        int m = (s - h * 3600) / 60;
+        s = s - h * 3600 - m * 60;
+        if (h > 0 && m > 0)
         {
-            snprintf(buffer, size, "%.2f h", s / 3600);
+            snprintf(buffer, size, "%d%02d%05.2f s", h, m, s);
         }
-        else if (s > 60)
+        else if (m > 0)
         {
-            snprintf(buffer, size, "%.2f m", s / 60);
+            snprintf(buffer, size, "d%05.2f s", m, s);
         }
         else
         {
