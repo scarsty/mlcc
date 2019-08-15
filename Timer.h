@@ -52,15 +52,15 @@ public:
         char buffer[size];
         if (s > 3600)
         {
-            snprintf(buffer, size, "%g h", s / 3600);
+            snprintf(buffer, size, "%.2g h", s / 3600);
         }
         else if (s > 60)
         {
-            snprintf(buffer, size, "%g m", s / 60);
+            snprintf(buffer, size, "%.2g m", s / 60);
         }
         else
         {
-            snprintf(buffer, size, "%g s", s);
+            snprintf(buffer, size, "%.2g s", s);
         }
         return std::string(buffer);
     }
