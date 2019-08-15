@@ -46,23 +46,22 @@ public:
         return s.count();
     }
 
-    struct TimeInHMS
+    static std::string getAutoTime(double s)
     {
-        int h;
-        int m;
-        double s;
-        TimeInHMS(double seconds)
+        const int size = 80;
+        char buffer[size];
+        if (s > 3600)
         {
-            h = seconds / 3600;
-            m = (seconds - 3600 * h) / 60;
-            s = seconds - 3600 * h - 60 * m;
+            snprintf(buffer, size, "%g h", s / 3600);
         }
-        static std::string StringInHMS(double seconds)
+        else if (s > 60)
         {
-            TimeInHMS t(seconds);
-            char buffer[80];
-            snprintf(buffer, 80, "%d:%02d:%g", t.h, t.m, t.s);
-            return std::string(buffer);
+            snprintf(buffer, size, "%g m", s / 60);
         }
-    };
+        else
+        {
+            snprintf(buffer, size, "%g s", s);
+        }
+        return std::string(buffer);
+    }
 };
