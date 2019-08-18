@@ -55,15 +55,15 @@ public:
         s = s - h * 3600 - m * 60;
         if (h > 0 && m > 0)
         {
-            snprintf(buffer, size, "%d:%02d:%05.2f s", h, m, s);
+            snprintf(buffer, size, "%d:%02d:%05.2f", h, m, s);
         }
         else if (m > 0)
         {
-            snprintf(buffer, size, "%d:%05.2f s", m, s);
+            snprintf(buffer, size, "%d:%05.2f", m, s);
         }
         else
         {
-            snprintf(buffer, size, "%.2f s", s);
+            snprintf(buffer, size, "%.2f", s);
         }
         return std::string(buffer);
     }
