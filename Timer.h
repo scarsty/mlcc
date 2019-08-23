@@ -46,7 +46,7 @@ public:
         return s.count();
     }
 
-    static std::string getAutoTime(double s)
+    static std::string autoFormatTime(double s)
     {
         const int size = 80;
         char buffer[size];
