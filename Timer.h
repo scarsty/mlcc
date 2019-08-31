@@ -46,23 +46,25 @@ public:
         return s.count();
     }
 
-    struct TimeInHMS
+    static std::string autoFormatTime(double s)
     {
-        int h;
-        int m;
-        double s;
-        TimeInHMS(double seconds)
+        const int size = 80;
+        char buffer[size];
+        int h = s / 3600;
+        int m = (s - h * 3600) / 60;
+        s = s - h * 3600 - m * 60;
+        if (h > 0 && m > 0)
         {
-            h = seconds / 3600;
-            m = (seconds - 3600 * h) / 60;
-            s = seconds - 3600 * h - 60 * m;
+            snprintf(buffer, size, "%d:%02d:%05.2f", h, m, s);
         }
-        static std::string StringInHMS(double seconds)
+        else if (m > 0)
         {
-            TimeInHMS t(seconds);
-            char buffer[80];
-            snprintf(buffer, 80, "%d:%02d:%g", t.h, t.m, t.s);
-            return std::string(buffer);
+            snprintf(buffer, size, "%d:%05.2f", m, s);
         }
-    };
+        else
+        {
+            snprintf(buffer, size, "%.2f s", s);
+        }
+        return std::string(buffer);
+    }
 };
