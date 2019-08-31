@@ -44,18 +44,6 @@
 #include <string>
 #include <vector>
 
-struct CaseInsensitivityCompare
-{
-    bool operator()(const std::string& l, const std::string& r) const
-    {
-        auto l1 = l;
-        auto r1 = r;
-        std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-        std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-        return l1 < r1;
-    }
-};
-
 // Read an INI file into easy-to-access name/value pairs. (Note that I've gone
 // for simplicity here rather than speed, but it should be pretty decent.)
 template <class COM1, class COM2>
@@ -104,11 +92,11 @@ public:
         str.resize(length, '\0');
         fread((void*)str.c_str(), length, 1, fp);
         fclose(fp);
-        load(str);
+        loadString(str);
     }
 
     // parse an ini string
-    void load(const std::string& content)
+    void loadString(const std::string& content)
     {
         line_break_ = "\n";
         int pos = content.find(line_break_, 1);
@@ -577,5 +565,68 @@ public:
     }
 };
 
-using INIReaderNormal = INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare>;
+struct CompareCaseInsensitivity
+{
+    bool operator()(const std::string& l, const std::string& r) const
+    {
+        auto l1 = l;
+        auto r1 = r;
+        std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+        std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
+        return l1 < r1;
+    }
+};
+
+struct CompareNoUnderline
+{
+    bool operator()(const std::string& l, const std::string& r) const
+    {
+        auto l1 = l;
+        auto r1 = r;
+        auto replace = [](std::string& s, const std::string& oldstring, const std::string& newstring)
+        {
+            int pos = s.find(oldstring);
+            while (pos >= 0)
+            {
+                s.erase(pos, oldstring.length());
+                s.insert(pos, newstring);
+                pos = s.find(oldstring, pos + newstring.length());
+            }
+        };
+        replace(l1, "_", "");
+        replace(r1, "_", "");
+        std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+        std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
+        return l1 < r1;
+    }
+};
+
+template <const char default_value[]>
+struct CompareDefaultValue
+{
+    bool operator()(const std::string& l, const std::string& r) const
+    {
+        auto l1 = l;
+        auto r1 = r;
+        if (l1.empty())
+        {
+            l1 = default_value;
+        }
+        if (r1.empty())
+        {
+            r1 = default_value;
+        }
+        std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+        std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
+        return l1 < r1;
+    }
+};
+
+/*
+usage:
+    extern const char s[] = "something";    //should placed outside of a function
+    INIReader<CompareDefaultValue<s>, CompareNoUnderline> ini;
+*/
+
+using INIReaderNormal = INIReader<CompareCaseInsensitivity, CompareCaseInsensitivity>;
 

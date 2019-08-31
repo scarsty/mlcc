@@ -31,7 +31,7 @@ C++ code:
 ```c++
 int main()
 {
-    INIReader<CaseInsensitivityCompare, NoUnderlineCompare> ini;
+    INIReader<CompareCaseInsensitivity, CompareNoUnderline> ini;
     ini.loadFile("example.ini");
     int port = ini.getInt("database", "port", 0);    //port = 143
     int port_ = ini.getInt("database", "port_", 0);    //port_ = 143
@@ -88,7 +88,7 @@ If a key has been multi-defined, the last value should be taken. **Please note a
 You have to declare a new class which describes how to deal the key string at the beginning. For an example:
 
 ```c++
-struct CaseInsensitivityCompare
+struct CompareCaseInsensitivity
 {
     bool operator()(const std::string& l, const std::string& r) const
     {
@@ -110,7 +110,7 @@ INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare> ini;
 Sometimes, if you want to ignore the underlines in the key string, you should declare a new class like this first:
 
 ```c++
-struct NoUnderlineCompare
+struct CompareNoUnderline
 {
     bool operator()(const std::string& l, const std::string& r) const
     {
@@ -138,13 +138,13 @@ struct NoUnderlineCompare
 Then declare the ini object like this:
 
 ```c++
-INIReader<CaseInsensitivityCompare, NoUnderlineCompare> ini;
+INIReader<CompareCaseInsensitivity, CompareNoUnderline> ini;
 ```
 
 A case insensitivity type "INIReaderNormal" has been defined in the head file, you can use it directly for convenience:
 
 ```c++
-using INIReaderNormal = INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare>;
+using INIReaderNormal = INIReader<CompareCaseInsensitivity, CompareCaseInsensitivity>;
 ```
 
 ## convert
