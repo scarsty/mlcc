@@ -622,11 +622,5 @@ struct CompareDefaultValue
     }
 };
 
-/*
-usage:
-    extern const char s[] = "something";    //should placed outside of a function
-    INIReader<CompareDefaultValue<s>, CompareNoUnderline> ini;
-*/
-
+// The most widely used
 using INIReaderNormal = INIReader<CompareCaseInsensitivity, CompareCaseInsensitivity>;
-
