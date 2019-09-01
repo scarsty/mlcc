@@ -141,11 +141,39 @@ Then declare the ini object like this:
 INIReader<CompareCaseInsensitivity, CompareNoUnderline> ini;
 ```
 
-A case insensitivity type "INIReaderNormal" has been defined in the head file, you can use it directly for convenience:
+A case insensitivity type "INIReaderNormal" which is the most widely used has been defined in the head file, you can use it directly for convenience:
 
 ```c++
 using INIReaderNormal = INIReader<CompareCaseInsensitivity, CompareCaseInsensitivity>;
 ```
+
+"CompareDefaultValue" allows the file has a default section, the usage is like this:
+```c++
+extern const char s[] = "database";    //should be outside of any function:
+...
+INIReader<CompareDefaultValue<s>, CompareNoUnderline> ini;    //anywhere is OK
+
+ini.loadFile("example.ini");
+ini.getString("", "server");    //192.0.2.62
+ini.getString("database", "server");    //192.0.2.62
+```
+
+ In this case, keys inside no sections, blank section ("[]"), or default section will be treat as having the same section name.
+
+To use it in class, declare the string (const char[]) like a static value:
+
+```c++
+// h file:
+class ClassName
+{
+    static const char s[];
+    INIReader<CompareDefaultValue<s>, CompareNoUnderline> ini;
+};
+
+// cpp file:
+const chat ClassName::s[] = "database";
+```
+*/
 
 ## convert
 
