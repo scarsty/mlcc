@@ -147,10 +147,10 @@ std::vector<std::string> File::getFilesInPath(const std::string& path_name)
     std::vector<std::string> ret;
     while ((ptr = readdir(dir)) != NULL)
     {
-        std::string path = std::string(ptr->d_name);
-        if (path != "." && path != "..")
+        std::string filename = std::string(ptr->d_name);
+        if (filename != "." && filename != "..")
         {
-            ret.push_back(path);
+            ret.push_back(filename);
         }
     }
     closedir(dir);
@@ -185,6 +185,10 @@ std::vector<std::string> File::getFilesRecursiveInPath(const std::string& path_n
 
 bool File::isPath(const std::string& name)
 {
+    if (!fileExist(name))
+    {
+        return false;
+    }
 #ifdef _WIN32
     return GetFileAttributesA(name.c_str()) & FILE_ATTRIBUTE_DIRECTORY;
 #else
