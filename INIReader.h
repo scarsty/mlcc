@@ -344,7 +344,6 @@ private:
             {
                 /* Non-blank line with leading whitespace, treat as continuation of previous name's value (as per Python config parser). */
                 std::string value = getString(section, prev_key, "") + rstrip(lskip(line));
-                int key_exist = valueHandler(section, prev_key, value);
                 if (error == 0)
                 {
                     //error = lineno;
