@@ -54,8 +54,7 @@ public:
     }
 
     //other file operations
-    static std::vector<std::string> getFilesInPath(const std::string& path_name);
-    static std::vector<std::string> getFilesRecursiveInPath(const std::string& path_name);
+    static std::vector<std::string> getFilesInPath(const std::string& path_name, int recursive = 0, int include_path = 0);
     static bool isPath(const std::string& name);
     static std::string getFileTime(std::string filename);
     static void changePath(const std::string& path);
