@@ -1,6 +1,7 @@
 #include "convert.h"
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 
 #ifdef _MSC_VER
 #define vsprintf vsprintf_s
@@ -36,11 +37,15 @@ int convert::writeStringToFile(const std::string& str, const std::string& filena
         return length;
     }
     fprintf(stderr, "Cannot write file %s!\n", filename.c_str());
-    return -1;    
+    return -1;
 }
 
 void convert::replaceOneSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*=0*/)
 {
+    if (oldstring.empty() || oldstring == newstring)
+    {
+        return;
+    }
     auto pos = s.find(oldstring, pos0);
     if (pos != std::string::npos)
     {
@@ -51,11 +56,31 @@ void convert::replaceOneSubStringRef(std::string& s, const std::string& oldstrin
 
 void convert::replaceAllSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring)
 {
+    if (oldstring.empty() || oldstring == newstring)
+    {
+        return;
+    }
     auto pos = s.find(oldstring);
     while (pos != std::string::npos)
     {
-        s.erase(pos, oldstring.length());
-        s.insert(pos, newstring);
+        if (newstring == "")
+        {
+            s.erase(pos, oldstring.length());
+        }
+        else if (oldstring.length() == newstring.length())
+        {
+            memcpy((void*)(s.data() + pos), newstring.data(), newstring.length());
+        }
+        else if (oldstring.length() < newstring.length())
+        {
+            memcpy((void*)(s.data() + pos), newstring.data(), oldstring.length());
+            s.insert(pos + oldstring.length(), newstring.substr(oldstring.length()));
+        }
+        else
+        {
+            memcpy((void*)(s.data() + pos), newstring.data(), newstring.length());
+            s.erase(pos + newstring.length(), oldstring.length() - newstring.length());
+        }
         pos = s.find(oldstring, pos + newstring.length());
     }
 }

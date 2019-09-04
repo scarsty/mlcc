@@ -582,18 +582,17 @@ struct CompareNoUnderline
     {
         auto l1 = l;
         auto r1 = r;
-        auto replace = [](std::string& s, const std::string& oldstring, const std::string& newstring)
+        auto erase = [](std::string& s, const std::string& oldstring)
         {
-            int pos = s.find(oldstring);
-            while (pos >= 0)
+            auto pos = s.find(oldstring);
+            while (pos != std::string::npos)
             {
                 s.erase(pos, oldstring.length());
-                s.insert(pos, newstring);
-                pos = s.find(oldstring, pos + newstring.length());
+                pos = s.find(oldstring, pos);
             }
         };
-        replace(l1, "_", "");
-        replace(r1, "_", "");
+        erase(l1, "_");
+        erase(r1, "_");
         std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
         std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
         return l1 < r1;

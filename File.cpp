@@ -1,4 +1,5 @@
 #include "File.h"
+#include <algorithm>
 #include <cstdio>
 #include <ctime>
 #include <fstream>
@@ -103,92 +104,94 @@ int File::writeFile(const std::string& filename, void* s, int length)
     return length;
 }
 
-std::vector<std::string> File::getFilesInPath(const std::string& path_name)
+std::vector<std::string> File::getFilesInPath(const std::string& path, int recursive, int include_path)
 {
+    if (recursive == 0)
+    {
 #ifdef _WIN32
-    WIN32_FIND_DATAA ffd;
-    //LARGE_INTEGER filesize;
-    std::string szDir;
-    //size_t length_of_arg;
-    HANDLE hFind = INVALID_HANDLE_VALUE;
-    DWORD dwError = 0;
-    std::vector<std::string> ret;
+        WIN32_FIND_DATAA ffd;
+        //LARGE_INTEGER filesize;
+        std::string szDir;
+        //size_t length_of_arg;
+        HANDLE hFind = INVALID_HANDLE_VALUE;
+        DWORD dwError = 0;
+        std::vector<std::string> ret;
 
-    szDir = path_name + "\\*";
-    hFind = FindFirstFileA(szDir.c_str(), &ffd);
+        szDir = path + "\\*";
+        hFind = FindFirstFileA(szDir.c_str(), &ffd);
 
-    if (INVALID_HANDLE_VALUE == hFind)
-    {
-        fprintf(stderr, "get file name error\n");
-        return ret;
-    }
-    do
-    {
-        //f (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-        std::string filename = ffd.cFileName;    //(const char*)
-        if (filename != "." && filename != "..")
+        if (INVALID_HANDLE_VALUE == hFind)
         {
-            ret.push_back(filename);
+            fprintf(stderr, "get file name error\n");
+            return ret;
         }
-    } while (FindNextFileA(hFind, &ffd) != 0);
-
-    dwError = GetLastError();
-    if (dwError != ERROR_NO_MORE_FILES)
-    {
-        fprintf(stderr, "FindFirstFile error\n");
-        return ret;
-    }
-    FindClose(hFind);
-    return ret;
-#else
-    DIR* dir;
-    struct dirent* ptr;
-    dir = opendir(path_name.c_str());
-    std::vector<std::string> ret;
-    while ((ptr = readdir(dir)) != NULL)
-    {
-        std::string filename = std::string(ptr->d_name);
-        if (filename != "." && filename != "..")
+        do
         {
-            ret.push_back(filename);
-        }
-    }
-    closedir(dir);
-    //std::sort(ret.begin(), ret.end());
-    return ret;
-#endif
-}
-
-std::vector<std::string> File::getFilesRecursiveInPath(const std::string& path_name)
-{
-    std::vector<std::string> files, paths;
-    paths.push_back(path_name);
-    while (!paths.empty())
-    {
-        auto p = paths.back();
-        paths.pop_back();
-        if (isPath(p))
-        {
-            auto new_paths = getFilesInPath(p);
-            for (auto& np : new_paths)
+            //f (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            std::string filename = ffd.cFileName;    //(const char*)
+            if (filename != "." && filename != ".." && (include_path != 0 || include_path == 0 && !isPath(path + "/" + filename)))
             {
-                paths.push_back(p + "/" + np);
+                ret.push_back(filename);
+            }
+        } while (FindNextFileA(hFind, &ffd) != 0);
+
+        dwError = GetLastError();
+        if (dwError != ERROR_NO_MORE_FILES)
+        {
+            fprintf(stderr, "Find First File error\n");
+            return ret;
+        }
+        FindClose(hFind);
+#else
+        DIR* dir;
+        struct dirent* ptr;
+        dir = opendir(path.c_str());
+        std::vector<std::string> ret;
+        while ((ptr = readdir(dir)) != NULL)
+        {
+            std::string filename = std::string(ptr->d_name);
+            if (filename != "." && filename != ".." && (include_path != 0 || include_path == 0 && !isPath(path + "/" + filename)))
+            {
+                ret.push_back(filename);
             }
         }
-        else
-        {
-            files.push_back(p);
-        }
+        closedir(dir);
+        //std::sort(ret.begin(), ret.end());
+#endif
+        return ret;
     }
-    return files;
+    else
+    {
+        std::vector<std::string> files, paths;
+        paths = getFilesInPath(path, 0, 1);
+        while (!paths.empty())
+        {
+            auto p = paths.back();
+            paths.pop_back();
+            if (isPath(path + "/" + p))
+            {
+                auto new_paths = getFilesInPath(path + "/" + p, 0, 1);
+                for (auto& np : new_paths)
+                {
+                    paths.push_back(p + "/" + np);
+                }
+                if (include_path)
+                {
+                    files.push_back(p);
+                }
+            }
+            else
+            {
+                files.push_back(p);
+            }
+        }
+        std::reverse(files.begin(), files.end());
+        return files;
+    }
 }
 
 bool File::isPath(const std::string& name)
 {
-    if (!fileExist(name))
-    {
-        return false;
-    }
 #ifdef _WIN32
     return GetFileAttributesA(name.c_str()) & FILE_ATTRIBUTE_DIRECTORY;
 #else
