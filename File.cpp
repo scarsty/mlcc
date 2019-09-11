@@ -129,7 +129,7 @@ std::vector<std::string> File::getFilesInPath(const std::string& path, int recur
         {
             //f (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
             std::string filename = ffd.cFileName;    //(const char*)
-            if (filename != "." && filename != ".." && (include_path != 0 || include_path == 0 && !isPath(path + "/" + filename)))
+            if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !isPath(path + "/" + filename))))
             {
                 ret.push_back(filename);
             }
@@ -150,7 +150,7 @@ std::vector<std::string> File::getFilesInPath(const std::string& path, int recur
         while ((ptr = readdir(dir)) != NULL)
         {
             std::string filename = std::string(ptr->d_name);
-            if (filename != "." && filename != ".." && (include_path != 0 || include_path == 0 && !isPath(path + "/" + filename)))
+            if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !isPath(path + "/" + filename))))
             {
                 ret.push_back(filename);
             }
