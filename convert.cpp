@@ -240,3 +240,41 @@ std::string convert::toUpperCase(const std::string& s)
     std::transform(s1.begin(), s1.end(), s1.begin(), ::toupper);
     return s1;
 }
+
+std::vector<std::string> convert::extractFormatString(const std::string& format_str)
+{
+    std::vector<std::string> format_strs;
+    size_t p1 = 0, p2 = 0;
+    while (p1 != std::string::npos)
+    {
+        p1 = format_str.find_first_of("%", p1);
+        if (p1 != std::string::npos)
+        {
+            p2 = format_str.find_first_of("diuoxXfFeEgGaAcspn", p1 + 1);
+            if (p2 != std::string::npos)
+            {
+                if (format_str.substr(p1 + 1, p2 - p1 - 1).find_first_not_of("0123456789.+-*#l") == std::string::npos)
+                {
+                    //find one format string
+                    format_strs.push_back(format_str.substr(p1, p2 - p1 + 1));
+                    p1 = p2 + 1;
+                }
+                else
+                {
+                    //not a format string, jump 2 char
+                    p1 += 2;
+                }
+            }
+            else
+            {
+                //not a format string, jump 2 char
+                p1 += 2;
+            }
+        }
+        if (p1 >= format_str.size())
+        {
+            break;
+        }
+    }
+    return format_strs;
+}

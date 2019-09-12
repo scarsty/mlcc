@@ -115,42 +115,12 @@ private:
     }
 
 public:
+    static std::vector<std::string> extractFormatString(const std::string& format_str);
+
     template <typename... Args>
     static void checkFormatString(const std::string& format_str, Args... args)
     {
-        std::vector<std::string> format_strs;
-        size_t p1 = 0, p2 = 0;
-        while (p1 != std::string::npos)
-        {
-            p1 = format_str.find_first_of("%", p1);
-            if (p1 != std::string::npos)
-            {
-                p2 = format_str.find_first_of("diuoxXfFeEgGaAcspn", p1 + 1);
-                if (p2 != std::string::npos)
-                {
-                    if (format_str.substr(p1 + 1, p2 - p1 - 1).find_first_not_of("0123456789.+-*#l") == std::string::npos)
-                    {
-                        //find one format string
-                        format_strs.push_back(format_str.substr(p1, p2 - p1 + 1));
-                        p1 = p2 + 1;
-                    }
-                    else
-                    {
-                        //not a format string, jump 2 char
-                        p1 += 2;
-                    }
-                }
-                else
-                {
-                    //not a format string, jump 2 char
-                    p1 += 2;
-                }
-            }
-            if (p1 >= format_str.size())
-            {
-                break;
-            }
-        }
+        auto format_strs = extractFormatString(format_str);
         if (format_strs.size() != sizeof...(args))
         {
             auto error_str = "Check format: need " + std::to_string(format_strs.size()) + " parameter(s), but " + std::to_string(sizeof...(args)) + " supplied!";
