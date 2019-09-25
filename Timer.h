@@ -36,14 +36,23 @@ public:
         t1_ = std::chrono::system_clock::now();
     }
 
-    double getElapsedTime()
+    double getElapsedTime(bool restart = false)
     {
         if (running_)
         {
             t1_ = std::chrono::system_clock::now();
         }
         auto s = std::chrono::duration_cast<std::chrono::duration<double>>(t1_ - t0_);
+        if (restart)
+        {
+            t0_ = std::chrono::system_clock::now();
+        }
         return s.count();
+    }
+
+    double getLastPeriod()
+    {
+        return getElapsedTime(true);
     }
 
     static std::string autoFormatTime(double s)
