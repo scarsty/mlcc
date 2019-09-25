@@ -622,3 +622,4 @@ struct CompareDefaultValue
 
 // The most widely used
 using INIReaderNormal = INIReader<CompareCaseInsensitivity, CompareCaseInsensitivity>;
+using INIReaderNoUnderline = INIReader<CompareNoUnderline, CompareNoUnderline>;
