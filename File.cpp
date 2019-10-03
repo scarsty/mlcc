@@ -120,9 +120,9 @@ std::vector<std::string> File::getFilesInPath(const std::string& path, int recur
         szDir = path + "\\*";
         hFind = FindFirstFileA(szDir.c_str(), &ffd);
 
-        if (INVALID_HANDLE_VALUE == hFind)
+        if (hFind == INVALID_HANDLE_VALUE)
         {
-            fprintf(stderr, "get file name error\n");
+            fprintf(stderr, "Get files error in %s\n", path.c_str());
             return ret;
         }
         do
@@ -138,7 +138,7 @@ std::vector<std::string> File::getFilesInPath(const std::string& path, int recur
         dwError = GetLastError();
         if (dwError != ERROR_NO_MORE_FILES)
         {
-            fprintf(stderr, "Find First File error\n");
+            fprintf(stderr, "Find first file error\n");
             return ret;
         }
         FindClose(hFind);
@@ -147,7 +147,12 @@ std::vector<std::string> File::getFilesInPath(const std::string& path, int recur
         struct dirent* ptr;
         dir = opendir(path.c_str());
         std::vector<std::string> ret;
-        while ((ptr = readdir(dir)) != NULL)
+        if (dir == nullptr)
+        {
+            fprintf(stderr, "Get files error in %s\n", path.c_str());
+            return ret;
+        }
+        while ((ptr = readdir(dir)) != nullptr)
         {
             std::string filename = std::string(ptr->d_name);
             if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !isPath(path + "/" + filename))))
