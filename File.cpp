@@ -109,61 +109,59 @@ std::vector<std::string> File::getFilesInPath(const std::string& path, int recur
     if (recursive == 0)
     {
 #ifdef _WIN32
-        WIN32_FIND_DATAA ffd;
+        WIN32_FIND_DATAA find_data;
         //LARGE_INTEGER filesize;
-        std::string szDir;
-        //size_t length_of_arg;
-        HANDLE hFind = INVALID_HANDLE_VALUE;
-        DWORD dwError = 0;
-        std::vector<std::string> ret;
+        std::string dir;
+        HANDLE h_find = INVALID_HANDLE_VALUE;
+        DWORD error = 0;
+        std::vector<std::string> files;
 
-        szDir = path + "\\*";
-        hFind = FindFirstFileA(szDir.c_str(), &ffd);
+        dir = path + "\\*";
+        h_find = FindFirstFileA(dir.c_str(), &find_data);
 
-        if (hFind == INVALID_HANDLE_VALUE)
+        if (h_find == INVALID_HANDLE_VALUE)
         {
             fprintf(stderr, "Get files error in %s\n", path.c_str());
-            return ret;
+            return files;
         }
         do
         {
-            //f (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-            std::string filename = ffd.cFileName;    //(const char*)
+            std::string filename = find_data.cFileName;    //(const char*)
             if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !isPath(path + "/" + filename))))
             {
-                ret.push_back(filename);
+                files.push_back(filename);
             }
-        } while (FindNextFileA(hFind, &ffd) != 0);
+        } while (FindNextFileA(h_find, &find_data) != 0);
 
-        dwError = GetLastError();
-        if (dwError != ERROR_NO_MORE_FILES)
+        error = GetLastError();
+        if (error != ERROR_NO_MORE_FILES)
         {
             fprintf(stderr, "Find first file error\n");
-            return ret;
+            return files;
         }
-        FindClose(hFind);
+        FindClose(h_find);
 #else
         DIR* dir;
         struct dirent* ptr;
         dir = opendir(path.c_str());
-        std::vector<std::string> ret;
+        std::vector<std::string> files;
         if (dir == nullptr)
         {
             fprintf(stderr, "Get files error in %s\n", path.c_str());
-            return ret;
+            return files;
         }
         while ((ptr = readdir(dir)) != nullptr)
         {
             std::string filename = std::string(ptr->d_name);
             if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !isPath(path + "/" + filename))))
             {
-                ret.push_back(filename);
+                files.push_back(filename);
             }
         }
         closedir(dir);
         //std::sort(ret.begin(), ret.end());
 #endif
-        return ret;
+        return files;
     }
     else
     {
