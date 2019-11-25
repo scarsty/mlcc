@@ -541,9 +541,14 @@ public:
     {
         resetLines();
         std::string content;
-        for (auto& line : lines_)
+        for (int i = 0; i < lines_.size(); i++)
         {
-            content += line + line_break_;
+            auto& line = lines_[i];
+            content += line;
+            if (i != lines_.size() - 1)
+            {
+                content += line_break_;
+            }
         }
         return content;
     }
