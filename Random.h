@@ -44,19 +44,6 @@ public:
         return 0;
     }
 
-    T rand_fast()
-    {
-        if (type_ == RANDOM_UNIFORM)
-        {
-            return uniform_dist_(generator_fast_);
-        }
-        else if (type_ == RANDOM_NORMAL)
-        {
-            return normal_dist_(generator_fast_);
-        }
-        return 0;
-    }
-
     void set_seed()
     {
         generator_ = std::mt19937(device_());
