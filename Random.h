@@ -10,7 +10,7 @@ enum RandomType
 template <typename T = float>
 class Random
 {
-private:
+protected:
     RandomType type_ = RANDOM_UNIFORM;
     std::random_device device_;
     std::mt19937 generator_;
