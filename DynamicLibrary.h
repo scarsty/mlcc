@@ -32,11 +32,14 @@ private:
     {
         for (auto dl : dynamic_libraries_)
         {
+            if (dl.second)
+            {
 #ifdef _WIN32
-            FreeLibrary((HINSTANCE)dl.second);
+                FreeLibrary((HINSTANCE)dl.second);
 #else
-            dlclose(dl.second);
+                dlclose(dl.second);
 #endif
+            }
         }
     }
 
