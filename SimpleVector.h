@@ -25,6 +25,7 @@ struct SimpleVector
         delete[] data_;
         data_ = nullptr;
         size_ = 0;
+        capacity_ = 0;
     }
     T*& data() { return data_; }
     int size() { return size_; }
