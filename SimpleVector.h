@@ -6,7 +6,7 @@ struct SimpleVector
 {
     SimpleVector() {}
     ~SimpleVector() { clear(); }
-    void resize(int n)
+    void resize(size_t n)
     {
         if (n > capacity_)
         {
@@ -28,11 +28,11 @@ struct SimpleVector
         capacity_ = 0;
     }
     T*& data() { return data_; }
-    int size() { return size_; }
-    T& operator[](const int i) { return data_[i]; }
+    size_t size() { return size_; }
+    T& operator[](const size_t i) { return data_[i]; }
 
 private:
     T* data_ = nullptr;
-    int size_ = 0;
-    int capacity_ = 0;
+    size_t size_ = 0;
+    size_t capacity_ = 0;
 };
