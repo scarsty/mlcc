@@ -1,4 +1,5 @@
 #pragma once
+#include <stddef.h>
 
 //replace vector when you only need a buffer
 template <typename T>
