@@ -19,14 +19,6 @@
 #include <sys/types.h>
 #endif
 
-File::File()
-{
-}
-
-File::~File()
-{
-}
-
 bool File::fileExist(const std::string& filename)
 {
     if (filename.empty())
@@ -233,7 +225,7 @@ void File::changePath(const std::string& path)
     chdir(path.c_str());
 }
 
-size_t File::getLastPathCharPos(const std::string& filename)
+static size_t getLastPathCharPos(const std::string& filename)
 {
     //here use std::string::npos == (decltype(std::string::npos))(-1)
     //it seems right
