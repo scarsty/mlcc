@@ -132,18 +132,18 @@ void checkFormatString(const std::string& format_str, Args... args)
 }
 
 template <typename... Args>
-std::string formatString(Args... args)
+std::string formatString(const std::string format, Args... args)
 {
 #ifdef _DEBUG
-    checkFormatString(args...);
+    checkFormatString(format, args...);
 #endif
     char c[1024];
-    int len = snprintf(c, sizeof(c), args...);
+    int len = snprintf(c, sizeof(c), format.c_str(), args...);
     std::string s(c);
     if (len >= sizeof(c))
     {
         auto c1 = new char[len + 1];
-        snprintf(c1, len, args...);
+        snprintf(c1, len, format.c_str(), args...);
         s = c1;
         delete[] c1;
     }
