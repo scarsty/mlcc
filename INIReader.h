@@ -330,7 +330,7 @@ private:
                 line = line.substr(3);
             }
 #endif
-            line = lskip(rstrip(line));    //remove spaces on two sides
+            line = rstrip(line);    //remove spaces on two sides
 
             if (line.size() < 2)    //a line should contains at least two letters such as "a=", "[]"
             {
@@ -343,7 +343,8 @@ private:
             else if (prev_key != "" && line[0] == ' ')
             {
                 /* Non-blank line with leading whitespace, treat as continuation of previous name's value (as per Python config parser). */
-                std::string value = getString(section, prev_key, "") + rstrip(lskip(line));
+                std::string value = getString(section, prev_key, "") + line_break_ + rstrip(line);
+                valueHandler(section, prev_key, value);
                 if (error == 0)
                 {
                     //error = lineno;
@@ -450,6 +451,7 @@ private:
                 {
                     /* No '=' or ':' found on name[=:]value line */
                     error = lineno;
+                    prev_key = "";
                 }
             }
             lines_section.push_back(section);

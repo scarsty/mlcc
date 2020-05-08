@@ -12,7 +12,6 @@ private:
 
 public:
     Timer() { start(); }
-    ~Timer() {}
 
     //以字符串返回当前时间
     static std::string getNowAsString(const std::string format = "%F %a %T")
@@ -75,5 +74,10 @@ public:
             snprintf(buffer, size, "%.2f s", s);
         }
         return std::string(buffer);
+    }
+
+    static int64_t getNanoTime()
+    {
+        return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     }
 };
