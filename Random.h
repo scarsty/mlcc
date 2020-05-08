@@ -21,8 +21,6 @@ protected:
 public:
     Random() { set_seed(); }
 
-    virtual ~Random() {}
-
     void set_random_type(RandomType t) { type_ = t; }
 
     void set_parameter(T a, T b)

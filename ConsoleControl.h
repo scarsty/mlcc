@@ -49,9 +49,6 @@ private:
 #endif
         }
     }
-    virtual ~ConsoleControl()
-    {
-    }
 
     unsigned short old_color_;
     std::map<int, std::string> color_map_;
