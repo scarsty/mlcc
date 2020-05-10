@@ -66,6 +66,14 @@ public:
     {
         return generator_;
     }
+
+    void rand_data(T* data, size_t size)
+    {
+        for (int i = 0; i < size; i++)
+        {
+            data[i] = rand();
+        }
+    }
 };
 
 using RandomDouble = Random<double>;    //use this in usual
