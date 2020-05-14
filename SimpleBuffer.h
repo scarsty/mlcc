@@ -3,10 +3,10 @@
 
 //replace vector when you only need a buffer
 template <typename T>
-struct SimpleVector
+struct SimpleBuffer
 {
-    SimpleVector() {}
-    ~SimpleVector() { clear(); }
+    SimpleBuffer() {}
+    ~SimpleBuffer() { clear(); }
     void resize(size_t n)
     {
         if (n > capacity_)
