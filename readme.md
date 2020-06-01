@@ -1,7 +1,5 @@
 # Common Libraries
 
-These libraries are parts of Will.
-
 All libraries are of standard C++ 11 and of cross platforms.
 
 ## INIReader
