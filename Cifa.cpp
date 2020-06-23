@@ -988,11 +988,14 @@ Object Cifa::run_script(std::string str)
     }
     else
     {
-        std::sort(errors.begin(), errors.end(), [](const ErrorMessage& l, const ErrorMessage& r) -> bool
-            { return l.line * 1024 + l.col < r.line * 1024 + r.col; });
-        for (auto& e : errors)
+        if (output_error)
         {
-            std::cerr << "Error (" << e.line << ", " << e.col << "): " << e.message << "\n";
+            std::sort(errors.begin(), errors.end(), [](const ErrorMessage& l, const ErrorMessage& r) -> bool
+                { return l.line * 1024 + l.col < r.line * 1024 + r.col; });
+            for (auto& e : errors)
+            {
+                std::cerr << "Error (" << e.line << ", " << e.col << "): " << e.message << "\n";
+            }
         }
     }
     return result;
