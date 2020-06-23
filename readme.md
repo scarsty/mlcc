@@ -2,6 +2,10 @@
 
 All libraries are of standard C++ 11 and of cross platforms.
 
+## Cifa
+
+A simple c-style script, synchronize from <https://github.com/scarsty/cifa>.
+
 ## INIReader
 
 INIReader.h
