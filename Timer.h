@@ -61,7 +61,7 @@ public:
         int h = s / 3600;
         int m = (s - h * 3600) / 60;
         s = s - h * 3600 - m * 60;
-        if (h > 0 && m > 0)
+        if (h > 0)
         {
             snprintf(buffer, size, "%d:%02d:%05.2f", h, m, s);
         }
