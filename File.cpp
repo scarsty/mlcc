@@ -225,7 +225,7 @@ void File::changePath(const std::string& path)
     chdir(path.c_str());
 }
 
-static size_t getLastPathCharPos(const std::string& filename)
+static size_t getLastPathCharPos(const std::string& filename, int utf8 = 0)
 {
     //here use std::string::npos == (decltype(std::string::npos))(-1)
     //it seems right
@@ -234,7 +234,7 @@ static size_t getLastPathCharPos(const std::string& filename)
     //ansi
     for (int i = 0; i < filename.size(); i++)
     {
-        if (uint8_t(filename[i]) >= 128)
+        if (utf8 == 0 && uint8_t(filename[i]) >= 128)
         {
             i++;
         }
