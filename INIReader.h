@@ -368,8 +368,8 @@ private:
             }
             else
             {
-                /* Not a comment, must be a name[=:]value pair */
-                auto assign_char = line.find_first_of("=:");
+                /* Not a comment, must be a name[=]value pair */
+                auto assign_char = line.find_first_of("=");
                 if (assign_char != std::string::npos)
                 {
                     std::string key = rstrip(line.substr(0, assign_char));
