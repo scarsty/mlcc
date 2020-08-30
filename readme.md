@@ -4,7 +4,7 @@ All libraries are of standard C++ 11 and of cross platforms.
 
 ## Cifa
 
-A simple c-style script, synchronize from <https://github.com/scarsty/cifa>.
+A simple c-style script, please see <https://github.com/scarsty/common/tree/master/cifa>. The old develop brach is <https://github.com/scarsty/cifa>, now it has been moved here.
 
 ## INIReader
 
