@@ -956,10 +956,20 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
                 }
             }
         }
-        //if (c.str == "[]")
-        //{}
-        //if (c.str == "()")
-        //{}
+        if (c.str == "[]")
+        {
+            if (c.v.size() != 1)
+            {
+                add_error(c, "wrong parameters inside []");
+            }
+        }
+        if (c.str == "()")
+        {
+            if (c.v.size() > 1)
+            {
+                add_error(c, "wrong parameters inside ()");
+            }
+        }
     }
     for (auto& c1 : c.v)
     {
@@ -997,6 +1007,7 @@ Object Cifa::run_script(std::string str)
                 std::cerr << "Error (" << e.line << ", " << e.col << "): " << e.message << "\n";
             }
         }
+        result.type = "Error";
     }
     return result;
 }
