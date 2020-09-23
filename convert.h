@@ -113,7 +113,6 @@ template <typename T, typename... Args>
     check_format1(strs, i + 1, args...);
 }
 
-[[deprecated]]
 std::vector<std::string> extractFormatString(const std::string& format_str);
 
 template <typename... Args>
