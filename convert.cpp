@@ -49,8 +49,7 @@ void convert::replaceOneSubStringRef(std::string& s, const std::string& oldstrin
     auto pos = s.find(oldstring, pos0);
     if (pos != std::string::npos)
     {
-        s.erase(pos, oldstring.length());
-        s.insert(pos, newstring);
+        s.replace(pos, oldstring.length(), newstring);
     }
 }
 
@@ -63,24 +62,7 @@ void convert::replaceAllSubStringRef(std::string& s, const std::string& oldstrin
     auto pos = s.find(oldstring);
     while (pos != std::string::npos)
     {
-        if (newstring == "")
-        {
-            s.erase(pos, oldstring.length());
-        }
-        else if (oldstring.length() == newstring.length())
-        {
-            memcpy((void*)(s.data() + pos), newstring.data(), newstring.length());
-        }
-        else if (oldstring.length() < newstring.length())
-        {
-            memcpy((void*)(s.data() + pos), newstring.data(), oldstring.length());
-            s.insert(pos + oldstring.length(), newstring.substr(oldstring.length()));
-        }
-        else
-        {
-            memcpy((void*)(s.data() + pos), newstring.data(), newstring.length());
-            s.erase(pos + newstring.length(), oldstring.length() - newstring.length());
-        }
+        s.replace(pos, oldstring.length(), newstring);
         pos = s.find(oldstring, pos + newstring.length());
     }
 }
