@@ -75,7 +75,7 @@ std::vector<T> findNumbers(const std::string& s)
 inline void check_format1(std::vector<std::string>& strs, int i) {}
 
 template <typename T, typename... Args>
-void check_format1(std::vector<std::string>& strs, int i, T t, Args... args)
+void check_format1(std::vector<std::string>& strs, int i, T t, Args&&... args)
 {
     auto& s = strs[i];
     switch (s.back())
@@ -116,7 +116,7 @@ void check_format1(std::vector<std::string>& strs, int i, T t, Args... args)
 std::vector<std::string> extractFormatString(const std::string& format_str);
 
 template <typename... Args>
-void checkFormatString(const std::string& format_str, Args... args)
+void checkFormatString(const std::string& format_str, Args&&... args)
 {
     auto format_strs = extractFormatString(format_str);
     if (format_strs.size() != sizeof...(args))
@@ -132,7 +132,7 @@ void checkFormatString(const std::string& format_str, Args... args)
 }
 
 template <typename... Args>
-std::string formatString(const std::string format, Args... args)
+std::string formatString(const std::string format, Args&&... args)
 {
 #ifdef _DEBUG
     checkFormatString(format, args...);
