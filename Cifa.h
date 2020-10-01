@@ -13,12 +13,12 @@ namespace cifa
 struct Object
 {
     Object() {}
-    Object(double v, const std::string ty = "")
+    Object(double v, const std::string& ty = "")
     {
         value = v;
         type = ty;
     }
-    Object(const std::string& str, const std::string ty = "string")
+    Object(const std::string& str, const std::string& ty = "string")
     {
         content = str;
         type = ty;
