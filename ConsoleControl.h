@@ -88,7 +88,14 @@ public:
         info.dwCursorPosition.Y -= l;
         SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), info.dwCursorPosition);
 #else
-        fprintf(stderr, "\e[%dA", l);
+        if (l > 0)
+        {
+            fprintf(stderr, "\e[%dA", l);
+        }
+        else if (l < 0)
+        {
+             fprintf(stderr, "\e[%dB", -l);
+        }
 #endif
     }
 };
