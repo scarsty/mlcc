@@ -94,7 +94,7 @@ public:
         }
         else if (l < 0)
         {
-             fprintf(stderr, "\e[%dB", -l);
+            for (int i = 0; i < -l; i++) { fprintf(stderr, "\n"); }
         }
 #endif
     }
