@@ -242,7 +242,7 @@ CalUnitType Cifa::guess_char(char c)
     {
         return CalUnitType::Operator;
     }
-    if (std::string("_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ").find(c) != std::string::npos)
+    if (std::string("_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:").find(c) != std::string::npos)
     {
         return CalUnitType::Parameter;
     }
