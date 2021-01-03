@@ -986,7 +986,10 @@ Object Cifa::run_script(std::string str)
     str += ";";    //方便处理仅有一行的情况
     auto rv = split(str);
     auto c = combine_all_cal(rv);    //结果必定是一个Union
-    check_cal_unit(c, nullptr);
+    if (errors.empty())
+    {
+        check_cal_unit(c, nullptr);
+    }
     if (errors.empty())
     {
         auto o = eval(c);
