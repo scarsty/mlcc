@@ -14,6 +14,8 @@
 #include <sys/io.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#define _mkdir mkdir
+#define _access access
 #endif
 
 #ifdef __GNUC__
