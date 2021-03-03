@@ -14,8 +14,7 @@
 #include <sys/io.h>
 #include <sys/uio.h>
 #include <unistd.h>
-#define _mkdir mkdir
-#define _access access
+#define _mkdir(p) mkdir(p, S_IRWXU)
 #endif
 
 #ifdef __GNUC__
@@ -31,7 +30,7 @@ bool File::fileExist(const std::string& filename)
 
 bool File::pathExist(const std::string& pathname)
 {
-    return _access(pathname.c_str(), 0) != -1;
+    return access(pathname.c_str(), 0) != -1;
 }
 
 void File::reverse(char* c, int n)
