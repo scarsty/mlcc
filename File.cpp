@@ -7,14 +7,14 @@
 #ifdef _WIN32
 #include <Windows.h>
 #include <direct.h>
+#include <io.h>
 #include <strsafe.h>
 #else
 #include "dirent.h"
+#include <sys/io.h>
 #include <sys/uio.h>
 #include <unistd.h>
 #endif
-
-#include "io.h"
 
 #ifdef __GNUC__
 #include <sys/stat.h>
