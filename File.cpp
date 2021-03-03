@@ -14,6 +14,8 @@
 #include <unistd.h>
 #endif
 
+#include "io.h"
+
 #ifdef __GNUC__
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -21,19 +23,13 @@
 
 bool File::fileExist(const std::string& filename)
 {
-    if (filename.empty())
-    {
-        return false;
-    }
-    std::fstream file;
-    bool ret = false;
-    file.open(filename.c_str(), std::ios::in);
-    if (file)
-    {
-        ret = true;
-        file.close();
-    }
-    return ret;
+    struct stat buffer;
+    return (stat(filename.c_str(), &buffer) == 0);
+}
+
+bool File::pathExist(const std::string& pathname)
+{
+    return _access(pathname.c_str(), 0) != -1;
 }
 
 void File::reverse(char* c, int n)
@@ -96,7 +92,7 @@ int File::writeFile(const std::string& filename, void* s, int length)
     return length;
 }
 
-std::vector<std::string> File::getFilesInPath(const std::string& path, int recursive, int include_path)
+std::vector<std::string> File::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/)
 {
     if (recursive == 0)
     {
@@ -108,18 +104,18 @@ std::vector<std::string> File::getFilesInPath(const std::string& path, int recur
         DWORD error = 0;
         std::vector<std::string> files;
 
-        dir = path + "\\*";
+        dir = pathname + "\\*";
         h_find = FindFirstFileA(dir.c_str(), &find_data);
 
         if (h_find == INVALID_HANDLE_VALUE)
         {
-            fprintf(stderr, "Get files error in %s\n", path.c_str());
+            fprintf(stderr, "Get files error in %s\n", pathname.c_str());
             return files;
         }
         do
         {
             std::string filename = find_data.cFileName;    //(const char*)
-            if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !isPath(path + "/" + filename))))
+            if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !isPath(pathname + "/" + filename))))
             {
                 files.push_back(filename);
             }
@@ -135,17 +131,17 @@ std::vector<std::string> File::getFilesInPath(const std::string& path, int recur
 #else
         DIR* dir;
         struct dirent* ptr;
-        dir = opendir(path.c_str());
+        dir = opendir(pathname.c_str());
         std::vector<std::string> files;
         if (dir == nullptr)
         {
-            fprintf(stderr, "Get files error in %s\n", path.c_str());
+            fprintf(stderr, "Get files error in %s\n", pathname.c_str());
             return files;
         }
         while ((ptr = readdir(dir)) != nullptr)
         {
             std::string filename = std::string(ptr->d_name);
-            if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !isPath(path + "/" + filename))))
+            if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !isPath(pathname + "/" + filename))))
             {
                 files.push_back(filename);
             }
@@ -158,14 +154,14 @@ std::vector<std::string> File::getFilesInPath(const std::string& path, int recur
     else
     {
         std::vector<std::string> files, paths;
-        paths = getFilesInPath(path, 0, 1);
+        paths = getFilesInPath(pathname, 0, 1);
         while (!paths.empty())
         {
             auto p = paths.back();
             paths.pop_back();
-            if (isPath(path + "/" + p))
+            if (isPath(pathname + "/" + p))
             {
-                auto new_paths = getFilesInPath(path + "/" + p, 0, 1);
+                auto new_paths = getFilesInPath(pathname + "/" + p, 0, 1);
                 for (auto& np : new_paths)
                 {
                     paths.push_back(p + "/" + np);
@@ -223,6 +219,25 @@ std::string File::getFileTime(std::string filename)
 void File::changePath(const std::string& path)
 {
     chdir(path.c_str());
+}
+
+void File::makePath(const std::string& path)
+{
+    std::vector<std::string> paths;
+    auto p = path;
+    while (true)
+    {
+        if (pathExist(p) || p == "")
+        {
+            break;
+        }
+        paths.push_back(p);
+        p = getFilePath(p);
+    }
+    for (auto it = paths.rbegin(); it != paths.rend(); it++)
+    {
+        _mkdir(it->c_str());
+    }
 }
 
 static size_t getLastPathCharPos(const std::string& filename, int utf8 = 0)
