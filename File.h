@@ -7,8 +7,8 @@ namespace File
 {
 
 //read and write file
-bool fileExist(const std::string& filename);
-bool pathExist(const std::string& pathname);
+bool isExist(const std::string& name);    //cannot tell is path or file
+bool isPath(const std::string& name);
 
 void reverse(char* c, int n);
 
@@ -53,7 +53,6 @@ void writeVectorToData(char* data, int length, std::vector<T>& v, int length_one
 
 //other file operations
 std::vector<std::string> getFilesInPath(const std::string& pathname, int recursive = 0, int include_path = 0);
-bool isPath(const std::string& name);
 std::string getFileTime(std::string filename);
 void changePath(const std::string& path);
 void makePath(const std::string& path);
