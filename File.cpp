@@ -22,15 +22,28 @@
 #include <sys/types.h>
 #endif
 
-bool File::fileExist(const std::string& filename)
+bool File::isExist(const std::string& name)
 {
-    struct stat buffer;
-    return (stat(filename.c_str(), &buffer) == 0);
+    if (name.empty())
+    {
+        return false;
+    }
+    return access(name.c_str(), 0) != -1;
 }
 
-bool File::pathExist(const std::string& pathname)
+bool File::isPath(const std::string& name)
 {
-    return access(pathname.c_str(), 0) != -1;
+    if (!isExist(name))
+    {
+        return false;
+    }
+#ifdef _WIN32
+    return GetFileAttributesA(name.c_str()) & FILE_ATTRIBUTE_DIRECTORY;
+#else
+    struct stat sb;
+    stat(name.c_str(), &sb);
+    return sb.st_mode & S_IFDIR;
+#endif
 }
 
 void File::reverse(char* c, int n)
@@ -182,15 +195,23 @@ std::vector<std::string> File::getFilesInPath(const std::string& pathname, int r
     }
 }
 
-bool File::isPath(const std::string& name)
+void File::makePath(const std::string& path)
 {
-#ifdef _WIN32
-    return GetFileAttributesA(name.c_str()) & FILE_ATTRIBUTE_DIRECTORY;
-#else
-    struct stat sb;
-    stat(name.c_str(), &sb);
-    return sb.st_mode & S_IFDIR;
-#endif
+    std::vector<std::string> paths;
+    auto p = path;
+    while (true)
+    {
+        if (isExist(p) || p == "")
+        {
+            break;
+        }
+        paths.push_back(p);
+        p = getFilePath(p);
+    }
+    for (auto it = paths.rbegin(); it != paths.rend(); it++)
+    {
+        _mkdir(it->c_str());
+    }
 }
 
 std::string File::getFileTime(std::string filename)
@@ -220,25 +241,6 @@ std::string File::getFileTime(std::string filename)
 void File::changePath(const std::string& path)
 {
     chdir(path.c_str());
-}
-
-void File::makePath(const std::string& path)
-{
-    std::vector<std::string> paths;
-    auto p = path;
-    while (true)
-    {
-        if (pathExist(p) || p == "")
-        {
-            break;
-        }
-        paths.push_back(p);
-        p = getFilePath(p);
-    }
-    for (auto it = paths.rbegin(); it != paths.rend(); it++)
-    {
-        _mkdir(it->c_str());
-    }
 }
 
 static size_t getLastPathCharPos(const std::string& filename, int utf8 = 0)
