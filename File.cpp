@@ -28,12 +28,20 @@ bool File::isExist(const std::string& name)
     {
         return false;
     }
-    return access(name.c_str(), 0) != -1;
+    if (FILE* file = fopen(name.c_str(), "r"))
+    {
+        fclose(file);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool File::isPath(const std::string& name)
 {
-    if (!isExist(name))
+    if (name.empty() && access(name.c_str(), 0) == -1)
     {
         return false;
     }
