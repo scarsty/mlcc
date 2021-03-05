@@ -22,7 +22,7 @@
 #include <sys/types.h>
 #endif
 
-bool File::isExist(const std::string& name)
+bool File::fileExist(const std::string& name)
 {
     if (name.empty())
     {
@@ -39,9 +39,10 @@ bool File::isExist(const std::string& name)
     }
 }
 
-bool File::isPath(const std::string& name)
+
+bool File::pathExist(const std::string& name)
 {
-    if (name.empty() && access(name.c_str(), 0) == -1)
+    if (name.empty() || access(name.c_str(), 0) == -1)
     {
         return false;
     }
@@ -137,7 +138,7 @@ std::vector<std::string> File::getFilesInPath(const std::string& pathname, int r
         do
         {
             std::string filename = find_data.cFileName;    //(const char*)
-            if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !isPath(pathname + "/" + filename))))
+            if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !pathExist(pathname + "/" + filename))))
             {
                 files.push_back(filename);
             }
@@ -163,7 +164,7 @@ std::vector<std::string> File::getFilesInPath(const std::string& pathname, int r
         while ((ptr = readdir(dir)) != nullptr)
         {
             std::string filename = std::string(ptr->d_name);
-            if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !isPath(pathname + "/" + filename))))
+            if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !pathExist(pathname + "/" + filename))))
             {
                 files.push_back(filename);
             }
@@ -181,7 +182,7 @@ std::vector<std::string> File::getFilesInPath(const std::string& pathname, int r
         {
             auto p = paths.back();
             paths.pop_back();
-            if (isPath(pathname + "/" + p))
+            if (pathExist(pathname + "/" + p))
             {
                 auto new_paths = getFilesInPath(pathname + "/" + p, 0, 1);
                 for (auto& np : new_paths)
@@ -209,7 +210,7 @@ void File::makePath(const std::string& path)
     auto p = path;
     while (true)
     {
-        if (isExist(p) || p == "")
+        if (pathExist(p) || p == "")
         {
             break;
         }
