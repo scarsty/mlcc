@@ -7,8 +7,8 @@ namespace File
 {
 
 //read and write file
-bool isExist(const std::string& name);    //cannot tell is path or file
-bool isPath(const std::string& name);
+bool fileExist(const std::string& name);
+bool pathExist(const std::string& name);
 
 void reverse(char* c, int n);
 
