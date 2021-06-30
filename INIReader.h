@@ -140,13 +140,13 @@ public:
 
     // Get an integer (long) value from INI file, returning default_value if
     // not found or not a valid integer (decimal "1234", "-1234", or hex "0x4d2").
-    long getInt(const std::string& section, const std::string& key, long default_value = 0) const
+    int getInt(const std::string& section, const std::string& key, long default_value = 0) const
     {
         auto valstr = getString(section, key, "");
         const char* value = valstr.c_str();
         char* end;
         // This parses "1234" (decimal) and also "0x4D2" (hex)
-        long n = strtol(value, &end, 0);
+        int n = strtol(value, &end, 0);
         return end > value ? n : default_value;
     }
 
@@ -606,7 +606,7 @@ struct CompareNoUnderline
     }
 };
 
-template <const char default_value[]>
+template <const char* default_value>
 struct CompareDefaultValue
 {
     bool operator()(const std::string& l, const std::string& r) const

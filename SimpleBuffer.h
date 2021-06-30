@@ -45,7 +45,6 @@ struct SimpleBuffer
         capacity_ = 0;
     }
     T* data() { return data_; }
-    uint8_t* data_byte() { return (uint8_t*)data_; }
     size_t size() { return size_; }
     T& operator[](const size_t i) { return data_[i]; }
     void set_pointer(void* p)
