@@ -11,7 +11,9 @@
 #include <strsafe.h>
 #else
 #include "dirent.h"
+#ifndef __APPLE__
 #include <sys/io.h>
+#endif
 #include <sys/uio.h>
 #include <unistd.h>
 #define _mkdir(p) mkdir(p, S_IRWXU)
