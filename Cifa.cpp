@@ -845,7 +845,8 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
                 }
             }
             if (c.v.size() == 1 && (c.str == "+" || c.str == "-"))
-            {}
+            {
+            }
             else if (c.v.size() != 2)
             {
                 add_error(c, "operator %s has wrong operands", c.str.c_str());
@@ -965,7 +966,7 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
         }
         if (c.str == "()")
         {
-            if (c.v.size() > 1)
+            if (father->str != "for" && c.v.size() > 1)
             {
                 add_error(c, "wrong parameters inside ()");
             }
