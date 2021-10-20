@@ -966,7 +966,7 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
         }
         if (c.str == "()")
         {
-            if (father->str != "for" && c.v.size() > 1)
+            if ((father == nullptr || (father != nullptr && father->str != "for")) && c.v.size() > 1)
             {
                 add_error(c, "wrong parameters inside ()");
             }
