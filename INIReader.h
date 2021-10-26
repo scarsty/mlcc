@@ -247,6 +247,13 @@ public:
         }
     }
 
+    void clear()
+    {
+        lines_.clear();
+        lines_section_.clear();
+        values_.clear();
+    }
+
 private:
     int ini_parse_content(const std::string& content)
     {
