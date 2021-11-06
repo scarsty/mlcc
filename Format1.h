@@ -64,16 +64,34 @@ inline std::string to_string(const std::string& fmt, const std::vector<T>& t)
 {
     if (t.empty())
     {
-        return "{}";
+        return "[]";
     }
-    std::string res = "{";
+    std::string res = "[";
     for (int i = 0; i < t.size() - 1; i++)
     {
         res += to_string(fmt, t[i]) + ", ";
     }
-    res += to_string(fmt, t.back()) + "}";
+    res += to_string(fmt, t.back()) + "]";
     return res;
 }
+
+// array is conflict with pointer
+//
+//template <typename T, size_t N>
+//inline std::string to_string(const std::string& fmt, const T (&t)[N])
+//{
+//    if (N == 0)
+//    {
+//        return "[]";
+//    }
+//    std::string res = "[";
+//    for (int i = 0; i < N - 1; i++)
+//    {
+//        res += to_string(fmt, t[i]) + ", ";
+//    }
+//    res += to_string(fmt, t[N - 1]) + "]";
+//    return res;
+//}
 
 inline void format2(size_t pos0, std::string& fmt)
 {
