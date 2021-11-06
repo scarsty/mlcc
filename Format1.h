@@ -48,6 +48,10 @@ inline std::string to_string(const std::string& fmt, const float t)
 template <typename T>
 inline std::string to_string(const std::string& fmt, const std::vector<T>& t)
 {
+    if (t.empty())
+    {
+        return "{}";
+    }
     std::string res = "{";
     for (int i = 0; i < t.size() - 1; i++)
     {
@@ -88,7 +92,7 @@ inline void format2(size_t pos0, std::string& fmt, const T& t, Args&&... args)
 }
 
 template <typename... Args>
-inline std::string format1(const std::string& fmt, Args&&... args)
+inline std::string format(const std::string& fmt, Args&&... args)
 {
     auto res = fmt;
     format2(0, res, args...);
@@ -98,8 +102,7 @@ inline std::string format1(const std::string& fmt, Args&&... args)
 template <typename... Args>
 inline void print(FILE* fout, const std::string& fmt, Args&&... args)
 {
-    auto res = fmt;
-    format2(0, res, args...);
+    auto res = format(fmt, args...);
     fprintf(fout, "%s", res.c_str());
 }
 
