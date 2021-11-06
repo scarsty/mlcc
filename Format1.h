@@ -6,9 +6,37 @@ namespace format1
 {
 
 template <typename T>
+inline std::string snprint1(const std::string& fmt1, T& t)
+{
+    char s[128];
+    snprintf(s, 128, fmt1.c_str(), t);
+    return std::string(s);
+}
+
+inline std::string getfmt(const std::string& fmt, const std::string& fmt1)
+{
+    std::string res = fmt1;
+    if (fmt.find_first_of(':') == 0)
+    {
+        res = "%" + fmt.substr(1);
+        if (fmt.back() >= '0' && fmt.back() <= '9')
+        {
+            res += fmt1.substr(1);
+        }
+    }
+    return res;
+}
+
+template <typename T>
 inline std::string to_string(const std::string& fmt, const T& t)
 {
     return std::to_string(t);
+}
+
+template <typename T>
+inline std::string to_string(const std::string& fmt, T* t)
+{
+    return snprint1("%p", t);
 }
 
 inline std::string to_string(const std::string& fmt, const std::string& t)
@@ -23,26 +51,12 @@ inline std::string to_string(const std::string& fmt, const char* t)
 
 inline std::string to_string(const std::string& fmt, const double t)
 {
-    char s[128];
-    std::string fmt1 = "%g";
-    if (fmt.find_first_of(':') == 0)
-    {
-        fmt1 = "%" + fmt.substr(1);
-    }
-    snprintf(s, 128, fmt1.c_str(), t);
-    return std::string(s);
+    return snprint1(getfmt(fmt, "%g"), t);
 }
 
 inline std::string to_string(const std::string& fmt, const float t)
 {
-    char s[128];
-    std::string fmt1 = "%g";
-    if (fmt.find_first_of(':') == 0)
-    {
-        fmt1 = "%" + fmt.substr(1);
-    }
-    snprintf(s, 128, fmt1.c_str(), t);
-    return std::string(s);
+    return snprint1(getfmt(fmt, "%g"), t);
 }
 
 template <typename T>
@@ -61,18 +75,8 @@ inline std::string to_string(const std::string& fmt, const std::vector<T>& t)
     return res;
 }
 
-template <typename T>
-inline void format2(size_t pos0, std::string& fmt, const T& t)
+inline void format2(size_t pos0, std::string& fmt)
 {
-    auto pos = fmt.find_first_of('{', pos0);
-    if (pos != std::string::npos)
-    {
-        auto pos1 = fmt.find_first_of('}', pos + 1);
-        if (pos1 != std::string::npos)
-        {
-            fmt = fmt.substr(0, pos) + to_string(fmt.substr(pos + 1, pos1 - pos - 1), t) + fmt.substr(pos1 + 1);
-        }
-    }
 }
 
 template <typename T, typename... Args>
@@ -109,19 +113,7 @@ inline void print(FILE* fout, const std::string& fmt, Args&&... args)
 template <typename... Args>
 inline void print(const std::string& fmt, Args&&... args)
 {
-    auto res = fmt;
-    format2(0, res, args...);
-    fprintf(stdout, "%s", res.c_str());
-}
-
-inline void print(FILE* fout, const std::string& fmt)
-{
-    fprintf(fout, "%s", fmt.c_str());
-}
-
-inline void print(const std::string& fmt)
-{
-    fprintf(stdout, "%s", fmt.c_str());
+    print(stdout, fmt, args...);
 }
 
 }    // namespace format1
