@@ -1,30 +1,37 @@
 #pragma once
+#include <cctype>
 #include <string>
 #include <vector>
 
 namespace format1
 {
 
-template <typename T>
-inline std::string snprint1(const std::string& fmt1, T& t)
+inline std::string getfmt(const std::string& fmt, const std::string& fmt_s)
 {
-    char s[128];
-    snprintf(s, 128, fmt1.c_str(), t);
-    return std::string(s);
-}
-
-inline std::string getfmt(const std::string& fmt, const std::string& fmt1)
-{
-    std::string res = fmt1;
+    std::string res = fmt_s;
     if (fmt.find_first_of(':') == 0)
     {
         res = "%" + fmt.substr(1);
-        if (fmt.back() >= '0' && fmt.back() <= '9')
+        if (!isalpha(fmt.back()))
         {
-            res += fmt1.substr(1);
+            res += fmt_s.substr(1);
         }
     }
     return res;
+}
+
+template <typename T>
+inline std::string sprintf1(const std::string& fmt, const T& t)
+{
+    char s[128];
+    snprintf(s, 128, fmt.c_str(), t);
+    return std::string(s);
+}
+
+template <typename T>
+inline std::string sprintf2(const std::string& fmt, const std::string& fmt_s, const T& t)
+{
+    return sprintf1(getfmt(fmt, fmt_s), t);
 }
 
 template <typename T>
@@ -36,27 +43,72 @@ inline std::string to_string(const std::string& fmt, const T& t)
 template <typename T>
 inline std::string to_string(const std::string& fmt, T* t)
 {
-    return snprint1("%p", t);
-}
-
-inline std::string to_string(const std::string& fmt, const std::string& t)
-{
-    return t;
+    return sprintf2(fmt, "%p", t);
 }
 
 inline std::string to_string(const std::string& fmt, const char* t)
 {
-    return std::string(t);
+    return sprintf2(fmt, "%s", t);
+}
+
+inline std::string to_string(const std::string& fmt, const char t)
+{
+    return sprintf2(fmt, "%c", t);
+}
+
+inline std::string to_string(const std::string& fmt, const int8_t t)
+{
+    return sprintf2(fmt, "%d", t);
+}
+
+inline std::string to_string(const std::string& fmt, const uint8_t t)
+{
+    return sprintf2(fmt, "%u", t);
+}
+
+inline std::string to_string(const std::string& fmt, const int16_t t)
+{
+    return sprintf2(fmt, "%d", t);
+}
+
+inline std::string to_string(const std::string& fmt, const uint16_t t)
+{
+    return sprintf2(fmt, "%u", t);
+}
+
+inline std::string to_string(const std::string& fmt, const int32_t t)
+{
+    return sprintf2(fmt, "%ld", t);
+}
+
+inline std::string to_string(const std::string& fmt, const uint32_t t)
+{
+    return sprintf2(fmt, "%lu", t);
+}
+
+inline std::string to_string(const std::string& fmt, const int64_t t)
+{
+    return sprintf2(fmt, "%lld", t);
+}
+
+inline std::string to_string(const std::string& fmt, const uint64_t t)
+{
+    return sprintf2(fmt, "%llu", t);
 }
 
 inline std::string to_string(const std::string& fmt, const double t)
 {
-    return snprint1(getfmt(fmt, "%g"), t);
+    return sprintf2(fmt, "%g", t);
 }
 
 inline std::string to_string(const std::string& fmt, const float t)
 {
-    return snprint1(getfmt(fmt, "%g"), t);
+    return sprintf2(fmt, "%g", t);
+}
+
+inline std::string to_string(const std::string& fmt, const std::string& t)
+{
+    return sprintf2(fmt, "%s", t.c_str());
 }
 
 template <typename T>
