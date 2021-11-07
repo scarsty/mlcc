@@ -106,6 +106,7 @@ inline void format2(size_t pos0, std::string& fmt, const T& t, Args&&... args)
         auto pos1 = fmt.find_first_of('}', pos + 1);
         if (pos1 != std::string::npos)
         {
+            pos = fmt.find_last_of('{', pos);
             auto s = to_string(fmt.substr(pos + 1, pos1 - pos - 1), t);
             fmt = fmt.substr(0, pos) + s + fmt.substr(pos1 + 1);
             format2(pos + s.size(), fmt, args...);
