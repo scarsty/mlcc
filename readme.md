@@ -1,4 +1,6 @@
-# Common Libraries
+# NB Library
+
+NB library is very NB.
 
 All libraries are of standard C++ 11 and of cross platforms.
 
