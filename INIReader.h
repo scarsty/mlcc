@@ -46,7 +46,7 @@
 
 // Read an INI file into easy-to-access name/value pairs. (Note that I've gone
 // for simplicity here rather than speed, but it should be pretty decent.)
-template <class COM1, class COM2>
+template <class COMP_SECTION, class COMP_KEY>
 class INIReader
 {
 private:
@@ -60,9 +60,9 @@ private:
 #else
     std::string line_break_ = "\n";
 #endif
-    std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
-    using values_type = std::map<std::string, std::map<std::string, std::string, COM2>, COM1>;
     int error_ = 0;
+    std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
+    using values_type = std::map<std::string, std::map<std::string, std::string, COMP_KEY>, COMP_SECTION>;
     values_type values_;
 
     //return value: the key has existed, 0 means it is a new key
@@ -90,7 +90,10 @@ public:
         fseek(fp, 0, 0);
         std::string str;
         str.resize(length, '\0');
-        fread((void*)str.c_str(), length, 1, fp);
+        if (fread((void*)str.c_str(), length, 1, fp) < length)
+        {
+            fprintf(stderr, "Read file %s unfinished\n", filename.c_str());
+        }
         fclose(fp);
         loadString(str);
     }
@@ -607,27 +610,6 @@ struct CompareNoUnderline
         };
         erase(l1, "_");
         erase(r1, "_");
-        std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-        std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-        return l1 < r1;
-    }
-};
-
-template <const char* default_value>
-struct CompareDefaultValue
-{
-    bool operator()(const std::string& l, const std::string& r) const
-    {
-        auto l1 = l;
-        auto r1 = r;
-        if (l1.empty())
-        {
-            l1 = default_value;
-        }
-        if (r1.empty())
-        {
-            r1 = default_value;
-        }
         std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
         std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
         return l1 < r1;
