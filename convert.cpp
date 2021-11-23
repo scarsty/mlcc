@@ -18,7 +18,10 @@ std::string convert::readStringFromFile(const std::string& filename)
         fseek(fp, 0, 0);
         std::string str;
         str.resize(length, '\0');
-        fread((void*)str.c_str(), 1, length, fp);
+        if (fread((void*)str.c_str(), 1, length, fp) < length)
+        {
+            fprintf(stderr, "Read file %s unfinished!\n", filename.c_str());
+        }
         fclose(fp);
         return str;
     }

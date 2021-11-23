@@ -41,7 +41,6 @@ bool File::fileExist(const std::string& name)
     }
 }
 
-
 bool File::pathExist(const std::string& name)
 {
     if (name.empty() || access(name.c_str(), 0) == -1)
@@ -85,7 +84,11 @@ std::vector<char> File::readFile(const std::string& filename, int length)
         fseek(fp, 0, 0);
     }
     s.resize(length);
-    fread(s.data(), 1, length, fp);
+    if (fread(s.data(), 1, length, fp) < length)
+    {
+
+        fprintf(stderr, "Read file %s unfinished!\n", filename.c_str());
+    }
     fclose(fp);
     return s;
 }
