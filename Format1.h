@@ -58,22 +58,22 @@ inline std::string to_string(const std::string& fmt, const char t)
 
 inline std::string to_string(const std::string& fmt, const int8_t t)
 {
-    return sprintf2(fmt, "%d", t);
+    return sprintf2(fmt, "%hhd", t);
 }
 
 inline std::string to_string(const std::string& fmt, const uint8_t t)
 {
-    return sprintf2(fmt, "%u", t);
+    return sprintf2(fmt, "%hhu", t);
 }
 
 inline std::string to_string(const std::string& fmt, const int16_t t)
 {
-    return sprintf2(fmt, "%d", t);
+    return sprintf2(fmt, "%hd", t);
 }
 
 inline std::string to_string(const std::string& fmt, const uint16_t t)
 {
-    return sprintf2(fmt, "%u", t);
+    return sprintf2(fmt, "%hu", t);
 }
 
 inline std::string to_string(const std::string& fmt, const int32_t t)
