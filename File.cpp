@@ -86,7 +86,6 @@ std::vector<char> File::readFile(const std::string& filename, int length)
     s.resize(length);
     if (fread(s.data(), 1, length, fp) < length)
     {
-
         fprintf(stderr, "Read file %s unfinished!\n", filename.c_str());
     }
     fclose(fp);
@@ -254,7 +253,10 @@ std::string File::getFileTime(std::string filename)
 
 void File::changePath(const std::string& path)
 {
-    chdir(path.c_str());
+    if (chdir(path.c_str()) != 0)
+    {
+        fprintf(stderr, "Failed to change work path %s\n", path.c_str());
+    }
 }
 
 static size_t getLastPathCharPos(const std::string& filename, int utf8 = 0)

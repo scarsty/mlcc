@@ -90,7 +90,7 @@ public:
         fseek(fp, 0, 0);
         std::string str;
         str.resize(length, '\0');
-        if (fread((void*)str.c_str(), length, 1, fp) < 1)
+        if (fread((void*)str.c_str(), 1, length, fp) < length)
         {
             fprintf(stderr, "Read file %s unfinished\n", filename.c_str());
         }
