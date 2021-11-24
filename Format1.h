@@ -1,5 +1,6 @@
 #pragma once
 #include <cctype>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -119,11 +120,29 @@ inline std::string to_string(const std::string& fmt, const std::vector<T>& t)
         return "[]";
     }
     std::string res = "[";
-    for (int i = 0; i < t.size() - 1; i++)
+    for (auto& i : t)
     {
-        res += to_string(fmt, t[i]) + ", ";
+        res += to_string(fmt, i) + ", ";
     }
-    res += to_string(fmt, t.back()) + "]";
+    res.pop_back();
+    res.back() = ']';
+    return res;
+}
+
+template <typename T1, typename T2>
+inline std::string to_string(const std::string& fmt, const std::map<T1, T2>& t)
+{
+    if (t.empty())
+    {
+        return "[]";
+    }
+    std::string res = "[";
+    for (auto& i : t)
+    {
+        res += to_string(fmt, i.first) + ": " + to_string(fmt, i.second) + ", ";
+    }
+    res.pop_back();
+    res.back() = ']';
     return res;
 }
 
