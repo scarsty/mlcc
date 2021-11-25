@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace format1
+namespace fmt1
 {
 
 inline std::string getfmt(const std::string& fmt, const std::string& fmt_s)
@@ -206,4 +206,4 @@ inline void print(const std::string& fmt, Args&&... args)
     print(stdout, fmt, args...);
 }
 
-}    // namespace format1
+}    // namespace fmt1
