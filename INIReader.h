@@ -168,7 +168,7 @@ public:
     // Get a boolean value from INI file, returning default_value if not found or if
     // not a valid true/false value. Valid true values are "true", "yes", "on", "1",
     // and valid false values are "false", "no", "off", "0" (not case sensitive).
-    bool getBoolean(const std::string& section, const std::string& key, bool default_value) const
+    bool getBoolean(const std::string& section, const std::string& key, bool default_value = false) const
     {
         auto valstr = getString(section, key, "");
         // Convert to lower case to make string comparisons case-insensitive
