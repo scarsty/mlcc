@@ -26,7 +26,7 @@ inline std::string sprintf1(const std::string& fmt, const T& t)
 {
     int len = snprintf(nullptr, 0, fmt.c_str(), t);
     std::string res(len + 1, '\0');
-    snprintf((char*)res.data(), len + 1, fmt.c_str(), t);
+    snprintf((char*)res.data(), len + 1, fmt.c_str(), t);    //C++11中尾部含\0的空间，可以不处理此处
     res.pop_back();
     return res;
 }
