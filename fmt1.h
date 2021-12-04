@@ -24,9 +24,11 @@ inline std::string getfmt(const std::string& fmt, const std::string& fmt_s)
 template <typename T>
 inline std::string sprintf1(const std::string& fmt, const T& t)
 {
-    char s[128];
-    snprintf(s, 128, fmt.c_str(), t);
-    return std::string(s);
+    int len = snprintf(nullptr, 0, fmt.c_str(), t);
+    std::string res(len + 1, '\0');
+    snprintf((char*)res.data(), len + 1, fmt.c_str(), t);
+    res.pop_back();
+    return res;
 }
 
 template <typename T>
