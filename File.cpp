@@ -335,3 +335,22 @@ std::string File::getFilePath(const std::string& filename)
     }
     return "";
 }
+
+std::string File::toLegalFileanme(const std::string& filename, int allow_path)
+{
+    std::string f = filename, chars = " *<>?|";
+    if (allow_path)
+    {
+        chars += ":/\\";
+    }
+    for (char i = 31; i >= 0; i--)
+    {
+        chars += i;
+    }
+    size_t pos = 0;
+    while ((pos = f.find_first_of(chars, pos)) != std::string::npos)
+    {
+        f[pos] = '_';
+    }
+    return f;
+}
