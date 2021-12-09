@@ -339,7 +339,7 @@ std::string File::getFilePath(const std::string& filename)
 std::string File::toLegalFileanme(const std::string& filename, int allow_path)
 {
     std::string f = filename, chars = " *<>?|";
-    if (allow_path)
+    if (!allow_path)
     {
         chars += ":/\\";
     }
