@@ -333,7 +333,14 @@ private:
         while (it != lines.end())
         {
             lineno++;
-            std::string line = *it;
+            std::string& line = *it;
+            /* Skip comment */
+            if (lskip(line).find_first_of(INI_INLINE_COMMENT_PREFIXES) == 0)
+            {
+                it++;
+                prev_key = "";
+                continue;
+            }
 #if INI_ALLOW_BOM
             if (lineno == 1 && line.size() >= 3 && (unsigned char)line[0] == 0xEF && (unsigned char)line[1] == 0xBB && (unsigned char)line[2] == 0xBF)
             {
@@ -352,12 +359,21 @@ private:
 #if INI_ALLOW_MULTILINE
             else if (prev_key != "" && line[0] == ' ')
             {
-                /* Non-blank line with leading whitespace, treat as continuation of previous name's value (as per Python config parser). */
-                std::string value = getString(section, prev_key, "") + line_break_ + rstrip(line);
-                valueHandler(section, prev_key, value);
-                if (error == 0)
+                if (mode == READ)
                 {
-                    //error = lineno;
+                    /* Non-blank line with leading whitespace, treat as continuation of previous name's value (as per Python config parser). */
+                    std::string value = getString(section, prev_key, "") + line_break_ + rstrip(line);
+                    valueHandler(section, prev_key, value);
+                    if (error == 0)
+                    {
+                        //error = lineno;
+                    }
+                }
+                else
+                {
+                    /* Ignore this line, WARRNING: comment will be lost! */
+                    it = lines.erase(it);
+                    continue;
                 }
             }
 #endif
@@ -472,9 +488,9 @@ private:
                 break;
             }
 #endif
-        }
+                }
         return error;
-    }
+            }
 
     void resetLines()
     {
@@ -579,7 +595,7 @@ public:
         }
         return content;
     }
-};
+        };
 
 struct CompareCaseInsensitivity
 {
