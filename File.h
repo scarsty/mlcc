@@ -64,5 +64,6 @@ std::string getFilenameWithoutPath(const std::string& filename);
 std::string changeFileExt(const std::string& filename, const std::string& ext);
 std::string getFilePath(const std::string& filename);
 std::string toLegalFileanme(const std::string& filename, int allow_path = 1);
+bool compareNature(const std::string& a, const std::string& b);
 
 }    // namespace File
