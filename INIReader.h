@@ -183,7 +183,7 @@ public:
         }
         else
         {
-            return default_value;
+            return getReal(section, key, default_value);
         }
     }
 
@@ -488,9 +488,9 @@ private:
                 break;
             }
 #endif
-                }
+        }
         return error;
-            }
+    }
 
     void resetLines()
     {
@@ -595,7 +595,7 @@ public:
         }
         return content;
     }
-        };
+};
 
 struct CompareCaseInsensitivity
 {
