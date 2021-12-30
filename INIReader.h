@@ -247,6 +247,11 @@ public:
         values_[section].erase(key);
     }
 
+    void eraseSection(const std::string& section)
+    {
+        values_.erase(section);
+    }
+
     void print()
     {
         for (auto& skv : values_)
