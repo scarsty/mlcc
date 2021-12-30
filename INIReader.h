@@ -63,6 +63,7 @@ private:
     int error_ = 0;
     std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
     using values_type = std::map<std::string, std::map<std::string, std::string, COMP_KEY>, COMP_SECTION>;
+    std::map<std::string, int> section_no_;
     values_type values_;
 
     //return value: the key has existed, 0 means it is a new key
@@ -95,11 +96,11 @@ public:
             fprintf(stderr, "Read file %s unfinished\n", filename.c_str());
         }
         fclose(fp);
-        loadString(str);
+        loadString(str, true);
     }
 
     // parse an ini string
-    void loadString(const std::string& content)
+    void loadString(const std::string& content, bool clear_style = true)
     {
         line_break_ = "\n";
         int pos = content.find(line_break_, 1);
@@ -114,7 +115,7 @@ public:
                 line_break_ = "\n\r";
             }
         }
-        error_ = ini_parse_content(content);
+        error_ = ini_parse_content(content, clear_style);
     }
 
     // Return the result of ini_parse(), i.e., 0 on success, line number of
@@ -193,6 +194,19 @@ public:
         return values_.count(section);
     }
 
+    //return the line no of a section
+    int getSectionNo(const std::string& section)
+    {
+        if (section_no_.count(section))
+        {
+            return section_no_[section];
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
     //check one section and one key exist or not
     int hasKey(const std::string& section, const std::string& key)
     {
@@ -252,13 +266,19 @@ public:
 
     void clear()
     {
-        lines_.clear();
-        lines_section_.clear();
         values_.clear();
     }
 
+    void clearAll()
+    {
+        lines_.clear();
+        lines_section_.clear();
+        values_.clear();
+        section_no_.clear();
+    }
+
 private:
-    int ini_parse_content(const std::string& content)
+    int ini_parse_content(const std::string& content, bool clear_style)
     {
         //split the content into lines
         auto splitString = [](std::string str, std::string pattern)
@@ -288,8 +308,17 @@ private:
             }
             return result;
         };
-        lines_ = splitString(content, "\n\r");
-        return ini_parse_lines(lines_, lines_section_, READ);
+        if (clear_style)
+        {
+            lines_ = splitString(content, "\n\r");
+            return ini_parse_lines(lines_, lines_section_, READ);
+        }
+        else
+        {
+            auto lines = splitString(content, "\n\r");
+            std::vector<std::string> lines_section;
+            return ini_parse_lines(lines, lines_section, READ);
+        }
     }
 
     int ini_parse_lines(std::vector<std::string>& lines, std::vector<std::string>& lines_section, int mode)
@@ -384,6 +413,7 @@ private:
                 if (end != std::string::npos)
                 {
                     section = line.substr(1, end - 1);    //found a new section
+                    section_no_[section] = lineno;
                     prev_key = "";
                 }
                 else if (error == 0)
@@ -489,6 +519,21 @@ private:
             }
 #endif
         }
+        if (mode == WRITE)
+        {
+            for (auto it = lines_section.begin(); it != lines_section.end();)
+            {
+                if (hasSection(*it))
+                {
+                    it++;
+                }
+                else
+                {
+                    it = lines_section.erase(it);
+                    lines.erase(lines.begin() + (it - lines_section.begin()));
+                }
+            }
+        }
         return error;
     }
 
@@ -498,6 +543,7 @@ private:
         //rescan the file to modify existing keys
         ini_parse_lines(lines_, lines_section_, WRITE);
 
+        //add new keys
         for (auto& skv : values_)
         {
             if (skv.second.size() > 0)
