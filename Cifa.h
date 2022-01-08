@@ -153,6 +153,7 @@ public:
     void register_parameter(const std::string& name, Object o);
     void* get_user_data(const std::string& name);
     Object run_function(const std::string& name, std::vector<CalUnit>& vc);
+    Object& get_parameter(CalUnit& c);
 
     void check_cal_unit(CalUnit& c, CalUnit* father);
 
