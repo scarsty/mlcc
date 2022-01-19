@@ -758,9 +758,9 @@ public:
         for (auto& section : getAllSections())
         {
             content += "[" + section + "]" + line_break_;
-            for (auto& key : getAllKeys(section))
+            for (auto& key : values_[section].keys)
             {
-                content += key + "=" + getString(section, key, "") + line_break_;
+                content += key.key + "=" + key.value + line_break_;
             }
         }
         return content;
