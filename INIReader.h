@@ -619,9 +619,9 @@ private:
             if (error)
             {
                 break;
-        }
+            }
 #endif
-    }
+        }
         if (mode == WRITE)
         {
             for (auto it = lines_section.begin(); it != lines_section.end();)
@@ -638,7 +638,7 @@ private:
             }
         }
         return error;
-}
+    }
 
     void resetLines()
     {
@@ -752,22 +752,16 @@ class INIReaderNormal : public INIReader
 public:
     INIReaderNormal()
     {
-        setCompareSection([](const std::string& l, const std::string& r)
+        auto compare_case_insensitivity = [](const std::string& l, const std::string& r)
         {
             auto l1 = l;
             auto r1 = r;
             std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
             std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
             return l1 == r1;
-        });
-        setCompareKey([](const std::string& l, const std::string& r)
-        {
-            auto l1 = l;
-            auto r1 = r;
-            std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-            std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-            return l1 == r1;
-        });
+        };
+        setCompareSection(compare_case_insensitivity);
+        setCompareKey(compare_case_insensitivity);
     }
 };
 class INIReaderNoUnderline : public INIReader

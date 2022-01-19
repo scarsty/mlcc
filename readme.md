@@ -87,97 +87,33 @@ This library does not support operating the comments.
 
 If a key has been multi-defined, the last value should be taken. **Please note all the multi-defined lines EXCLUDE the last one will be ERASED when save!**
 
-### Template Class
-
-You have to declare a new class which describes how to deal the key string at the beginning. For an example:
+You can define how to compare the section or key with setCompareSection and setCompareKey. Such as:
 
 ```c++
-struct CompareCaseInsensitivity
+class INIReaderNormal : public INIReader
 {
-    bool operator()(const std::string& l, const std::string& r) const
+public:
+    INIReaderNormal()
     {
-        auto l1 = l;
-        auto r1 = r;
-        std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-        std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-        return l1 < r1;
-    }
-};
-```
-
-Then declare the ini object:
-
-```c++
-INIReader<CaseInsensitivityCompare, CaseInsensitivityCompare> ini;
-```
-
-Sometimes, if you want to ignore the underlines in the key string, you should declare a new class like this first:
-
-```c++
-struct CompareNoUnderline
-{
-    bool operator()(const std::string& l, const std::string& r) const
-    {
-        auto l1 = l;
-        auto r1 = r;
-        auto replaceAllString = [](std::string& s, const std::string& oldstring, const std::string& newstring)
+        setCompareSection([](const std::string& l, const std::string& r)
         {
-            int pos = s.find(oldstring);
-            while (pos >= 0)
-            {
-                s.erase(pos, oldstring.length());
-                s.insert(pos, newstring);
-                pos = s.find(oldstring, pos + newstring.length());
-            }
-        };
-        replaceAllString(l1, "_", "");
-        replaceAllString(r1, "_", "");
-        std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-        std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-        return l1 < r1;
+            auto l1 = l;
+            auto r1 = r;
+            std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+            std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
+            return l1 == r1;
+        });
+        setCompareKey([](const std::string& l, const std::string& r)
+        {
+            auto l1 = l;
+            auto r1 = r;
+            std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+            std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
+            return l1 == r1;
+        });
     }
 };
 ```
-
-Then declare the ini object like this:
-
-```c++
-INIReader<CompareCaseInsensitivity, CompareNoUnderline> ini;
-```
-
-A case insensitivity type "INIReaderNormal" which is the most widely used has been defined in the head file, you can use it directly for convenience:
-
-```c++
-using INIReaderNormal = INIReader<CompareCaseInsensitivity, CompareCaseInsensitivity>;
-```
-
-"CompareDefaultValue" allows the file has a default section, the usage is like this:
-```c++
-extern const char s[] = "database";    //should be outside of any function:
-...
-INIReader<CompareDefaultValue<s>, CompareNoUnderline> ini;    //anywhere is OK
-
-ini.loadFile("example.ini");
-ini.getString("", "server");    //192.0.2.62
-ini.getString("database", "server");    //192.0.2.62
-```
-
- In this case, keys inside no sections, blank section ("[]"), or default section will be treat as having the same section name.
-
-To use it in class, declare the string (const char[]) like a static value:
-
-```c++
-// h file:
-class ClassName
-{
-    static const char s[];
-    INIReader<CompareDefaultValue<s>, CompareNoUnderline> ini;
-};
-
-// cpp file:
-const chat ClassName::s[] = "database";
-```
-*/
 
 ## convert
 
