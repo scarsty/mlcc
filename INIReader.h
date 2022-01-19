@@ -80,17 +80,6 @@ private:
             keys.back().key = str;
             return keys.back().value;
         }
-        const std::string& operator[](const std::string& str) const
-        {
-            for (auto& k : keys)
-            {
-                if (compare_key_(k.key, str))
-                {
-                    return k.value;
-                }
-            }
-            return "";
-        }
         size_t count(const std::string& str) const
         {
             for (auto& k : keys)
@@ -136,16 +125,6 @@ private:
             sections.back().compare_key_ = compare_key_;
             return sections.back();
         }
-        const SectionType& operator[](const std::string& str) const
-        {
-            for (auto& k : sections)
-            {
-                if (compare_section_(k.section, str))
-                {
-                    return k;
-                }
-            }
-        }
         size_t count(const std::string& str) const
         {
             for (auto& k : sections)
@@ -181,7 +160,7 @@ private:
 #endif
     int error_ = 0;
     std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
-    FileType values_;
+    mutable FileType values_;
 
     //return value: the key has existed, 0 means it is a new key
     int valueHandler(const std::string& section, const std::string& key, const std::string& value)
