@@ -40,13 +40,14 @@
 #endif
 
 #include <algorithm>
+#include <functional>
 #include <map>
 #include <string>
 #include <vector>
 
 // Read an INI file into easy-to-access name/value pairs. (Note that I've gone
 // for simplicity here rather than speed, but it should be pretty decent.)
-template <class COMP_SECTION, class COMP_KEY>
+
 class INIReader
 {
 private:
@@ -55,6 +56,124 @@ private:
         READ = 0,
         WRITE = 1,
     };
+    struct KeyType
+    {
+        std::string key, value;
+        int line_no;
+    };
+    struct SectionType
+    {
+        std::string section;
+        std::vector<KeyType> keys;
+        int line_no;
+        std::function<bool(const std::string&, const std::string&)> compare_key_;
+        std::string& operator[](const std::string& str)
+        {
+            for (auto& k : keys)
+            {
+                if (compare_key_(k.key, str))
+                {
+                    return k.value;
+                }
+            }
+            keys.emplace_back();
+            keys.back().key = str;
+            return keys.back().value;
+        }
+        const std::string& operator[](const std::string& str) const
+        {
+            for (auto& k : keys)
+            {
+                if (compare_key_(k.key, str))
+                {
+                    return k.value;
+                }
+            }
+            return "";
+        }
+        size_t count(const std::string& str) const
+        {
+            for (auto& k : keys)
+            {
+                if (compare_key_(k.key, str))
+                {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+        void erase(const std::string& str)
+        {
+            for (auto it = keys.begin(); it != keys.end(); it++)
+            {
+                if (compare_key_(it->key, str))
+                {
+                    keys.erase(it);
+                    return;
+                }
+            }
+        }
+        void clear()
+        {
+            keys.clear();
+        }
+    };
+    struct FileType
+    {
+        std::vector<SectionType> sections;
+        std::function<bool(const std::string&, const std::string&)> compare_section_, compare_key_;
+        SectionType& operator[](const std::string& str)
+        {
+            for (auto& k : sections)
+            {
+                if (compare_section_(k.section, str))
+                {
+                    return k;
+                }
+            }
+            sections.emplace_back();
+            sections.back().section = str;
+            sections.back().compare_key_ = compare_key_;
+            return sections.back();
+        }
+        const SectionType& operator[](const std::string& str) const
+        {
+            for (auto& k : sections)
+            {
+                if (compare_section_(k.section, str))
+                {
+                    return k;
+                }
+            }
+        }
+        size_t count(const std::string& str) const
+        {
+            for (auto& k : sections)
+            {
+                if (compare_section_(k.section, str))
+                {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+        void erase(const std::string& str)
+        {
+            for (auto it = sections.begin(); it != sections.end(); it++)
+            {
+                if (compare_section_(it->section, str))
+                {
+                    sections.erase(it);
+                    return;
+                }
+            }
+        }
+        void clear()
+        {
+            sections.clear();
+        }
+    };
+
 #ifdef _WIN32
     std::string line_break_ = "\r\n";
 #else
@@ -62,9 +181,7 @@ private:
 #endif
     int error_ = 0;
     std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
-    using values_type = std::map<std::string, std::map<std::string, std::string, COMP_KEY>, COMP_SECTION>;
-    std::map<std::string, int> section_no_;
-    values_type values_;
+    FileType values_;
 
     //return value: the key has existed, 0 means it is a new key
     int valueHandler(const std::string& section, const std::string& key, const std::string& value)
@@ -75,7 +192,24 @@ private:
     }
 
 public:
-    INIReader() {}
+    INIReader()
+    {
+        values_.compare_section_ = [](const std::string& l, const std::string& r) { return l == r; };
+        values_.compare_key_ = values_.compare_section_;
+    }
+
+    void setCompareSection(std::function<bool(const std::string&, const std::string&)> com)
+    {
+        values_.compare_section_ = com;
+    }
+    void setCompareKey(std::function<bool(const std::string&, const std::string&)> com)
+    {
+        values_.compare_key_ = com;
+        for (auto& k : values_.sections)
+        {
+            k.compare_key_ = com;
+        }
+    }
 
     // parse a given filename
     void loadFile(const std::string& filename)
@@ -132,9 +266,9 @@ public:
         {
             return default_value;
         }
-        if (values_.at(section).count(key) > 0)
+        if (values_[section].count(key) > 0)
         {
-            return values_.at(section).at(key);
+            return values_[section][key];
         }
         else
         {
@@ -194,31 +328,18 @@ public:
         return values_.count(section);
     }
 
-    //return the line no of a section
-    int getSectionNo(const std::string& section)
-    {
-        if (section_no_.count(section))
-        {
-            return section_no_[section];
-        }
-        else
-        {
-            return -1;
-        }
-    }
-
     //check one section and one key exist or not
     int hasKey(const std::string& section, const std::string& key)
     {
-        return values_.count(section) > 0 ? values_.at(section).count(key) : 0;
+        return values_.count(section) > 0 ? values_[section].count(key) : 0;
     }
 
     std::vector<std::string> getAllSections()
     {
         std::vector<std::string> ret;
-        for (auto& value : values_)
+        for (auto& value : values_.sections)
         {
-            ret.push_back(value.first);
+            ret.push_back(value.section);
         }
         return ret;
     }
@@ -230,9 +351,9 @@ public:
         {
             return ret;
         }
-        for (auto& kv : values_.at(section))
+        for (auto& kv : values_[section].keys)
         {
-            ret.push_back(kv.first);
+            ret.push_back(kv.key);
         }
         return ret;
     }
@@ -254,12 +375,12 @@ public:
 
     void print()
     {
-        for (auto& skv : values_)
+        for (auto& skv : values_.sections)
         {
-            fprintf(stdout, "[%s]\n", skv.first.c_str());
-            for (auto& kv : skv.second)
+            fprintf(stdout, "[%s]\n", skv.section.c_str());
+            for (auto& kv : skv.keys)
             {
-                fprintf(stdout, "%s = %s\n", kv.first.c_str(), kv.second.c_str());
+                fprintf(stdout, "%s = %s\n", kv.key.c_str(), kv.value.c_str());
             }
             fprintf(stdout, "\n");
         }
@@ -279,7 +400,6 @@ public:
         lines_.clear();
         lines_section_.clear();
         values_.clear();
-        section_no_.clear();
     }
 
 private:
@@ -418,7 +538,6 @@ private:
                 if (end != std::string::npos)
                 {
                     section = line.substr(1, end - 1);    //found a new section
-                    section_no_[section] = lineno;
                     prev_key = "";
                 }
                 else if (error == 0)
@@ -521,9 +640,9 @@ private:
             if (error)
             {
                 break;
-            }
-#endif
         }
+#endif
+    }
         if (mode == WRITE)
         {
             for (auto it = lines_section.begin(); it != lines_section.end();)
@@ -540,7 +659,7 @@ private:
             }
         }
         return error;
-    }
+}
 
     void resetLines()
     {
@@ -549,11 +668,11 @@ private:
         ini_parse_lines(lines_, lines_section_, WRITE);
 
         //add new keys
-        for (auto& skv : values_)
+        for (auto& skv : values_.sections)
         {
-            if (skv.second.size() > 0)
+            if (skv.section.size() > 0)
             {
-                auto section = skv.first;
+                auto section = skv.section;
 
                 int pos = 0;
                 if (section != "")
@@ -569,9 +688,9 @@ private:
                 if (section == "" || (pos > 0 && section != ""))
                 {
                     //insert key into sections
-                    for (auto kv : skv.second)
+                    for (auto kv : skv.keys)
                     {
-                        lines_.insert(lines_.begin() + pos, 1, kv.first + " = " + kv.second);
+                        lines_.insert(lines_.begin() + pos, 1, kv.key + " = " + kv.value);
                         lines_section_.insert(lines_section_.begin() + pos, 1, section);
                     }
                 }
@@ -593,9 +712,9 @@ private:
                         lines_section_.push_back(lines_section_.back());
                     }
                     lines_section_.push_back(section);
-                    for (auto kv : skv.second)
+                    for (auto kv : skv.keys)
                     {
-                        lines_.push_back(kv.first + " = " + kv.second);
+                        lines_.push_back(kv.key + " = " + kv.value);
                         lines_section_.push_back(section);
                     }
                 }
@@ -648,41 +767,62 @@ public:
     }
 };
 
-struct CompareCaseInsensitivity
-{
-    bool operator()(const std::string& l, const std::string& r) const
-    {
-        auto l1 = l;
-        auto r1 = r;
-        std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-        std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-        return l1 < r1;
-    }
-};
-
-struct CompareNoUnderline
-{
-    bool operator()(const std::string& l, const std::string& r) const
-    {
-        auto l1 = l;
-        auto r1 = r;
-        auto erase = [](std::string& s, const std::string& oldstring)
-        {
-            auto pos = s.find(oldstring);
-            while (pos != std::string::npos)
-            {
-                s.erase(pos, oldstring.length());
-                pos = s.find(oldstring, pos);
-            }
-        };
-        erase(l1, "_");
-        erase(r1, "_");
-        std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-        std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-        return l1 < r1;
-    }
-};
-
 // The most widely used
-using INIReaderNormal = INIReader<CompareCaseInsensitivity, CompareCaseInsensitivity>;
-using INIReaderNoUnderline = INIReader<CompareNoUnderline, CompareNoUnderline>;
+class INIReaderNormal : public INIReader
+{
+public:
+    INIReaderNormal()
+    {
+        setCompareSection([](const std::string& l, const std::string& r)
+        {
+            auto l1 = l;
+            auto r1 = r;
+            std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+            std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
+            return l1 == r1;
+        });
+        setCompareKey([](const std::string& l, const std::string& r)
+        {
+            auto l1 = l;
+            auto r1 = r;
+            std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+            std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
+            return l1 == r1;
+        });
+    }
+};
+class INIReaderNoUnderline : public INIReader
+{
+public:
+    INIReaderNoUnderline()
+    {
+        setCompareSection([](const std::string& l, const std::string& r)
+        {
+            auto l1 = l;
+            auto r1 = r;
+            std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+            std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
+            return l1 == r1;
+        });
+        setCompareKey([](const std::string& l, const std::string& r)
+        {
+            auto l1 = l;
+            auto r1 = r;
+            auto erase = [](std::string& s, const std::string& oldstring)
+            {
+                auto pos = s.find(oldstring);
+                while (pos != std::string::npos)
+                {
+                    s.erase(pos, oldstring.length());
+                    pos = s.find(oldstring, pos);
+                }
+            };
+            erase(l1, "_");
+            erase(r1, "_");
+            std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+            std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
+            return l1 == r1;
+        });
+    }
+};
+
