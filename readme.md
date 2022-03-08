@@ -35,7 +35,7 @@ C++ code:
 ```c++
 int main()
 {
-    INIReader<CompareCaseInsensitivity, CompareNoUnderline> ini;
+    INIReaderNoUnderline ini;
     ini.loadFile("example.ini");
     int port = ini.getInt("database", "port", 0);    //port = 143
     int port_ = ini.getInt("database", "port_", 0);    //port_ = 143
@@ -44,6 +44,8 @@ int main()
     return 0;
 }
 ```
+
+Please note that here we use a subclass to ignore the underline in the keys.
 
 ### Modify an ini file
 
