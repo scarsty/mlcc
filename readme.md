@@ -1,6 +1,8 @@
-# NB Library
+# MLCC Library
 
-NB library is very NB.
+MLCC is a set of C++ libraries.
+
+MLCC means Multi-layer Ceramic Capacitors.
 
 All libraries are of standard C++ 11 and of cross platforms.
 
