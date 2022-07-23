@@ -7,6 +7,7 @@ template <typename T>
 struct SimpleBuffer
 {
     SimpleBuffer() {}
+    SimpleBuffer(size_t size) { resize(size); }
     SimpleBuffer(void* p)
     {
         shared = 1;
