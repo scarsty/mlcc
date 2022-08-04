@@ -50,7 +50,7 @@ public:
     static void* loadDynamicLibrary(const std::string& library_name)
     {
         auto dl = getInstance();
-        if (dl->dynamic_libraries_.count(library_name) <= 0)
+        if (dl->dynamic_libraries_.count(library_name) == 0)
         {
             void* hlib = nullptr;
 #ifdef _WIN32
@@ -88,5 +88,19 @@ public:
             //fprintf(stdout, "Failed to load function %s\n", function_name.c_str());
         }
         return func;
+    }
+    static void freeDynamicLibrary(const std::string& library_name)
+    {
+        auto dl = getInstance();
+        if (dl->dynamic_libraries_.count(library_name) > 0)
+        {
+            auto hlib = dl->dynamic_libraries_[library_name];
+#ifdef _WIN32
+            FreeLibrary((HINSTANCE)hlib);
+#else
+            dlclose(hlib);
+#endif
+            dl->dynamic_libraries_.erase(library_name);
+        }
     }
 };
