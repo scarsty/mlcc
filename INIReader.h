@@ -522,6 +522,11 @@ private:
                 {
                     section = line.substr(1, end - 1);    //found a new section
                     prev_key = "";
+                    if (mode == WRITE && !hasSection(section))
+                    {
+                        it = lines_.erase(it);
+                        continue;
+                    }
                 }
                 else if (error == 0)
                 {
@@ -618,12 +623,6 @@ private:
                 }
             }
             it++;
-#if INI_STOP_ON_FIRST_ERROR
-            if (error)
-            {
-                break;
-            }
-#endif
         }
         //new keys for the last section
         if (mode == WRITE && hasSection(section))
