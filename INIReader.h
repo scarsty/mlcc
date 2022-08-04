@@ -159,7 +159,7 @@ private:
     std::string line_break_ = "\n";
 #endif
     int error_ = 0;
-    std::vector<std::string> lines_, lines_section_;    //lines of the files, sections the lines belong to
+    std::vector<std::string> lines_;    //lines of the files, sections the lines belong to
     mutable FileType values_;
 
     //return value: the key has existed, 0 means it is a new key
@@ -363,10 +363,6 @@ public:
             }
             fprintf(stdout, "\n");
         }
-        for (int i = 0; i < lines_.size(); i++)
-        {
-            fprintf(stdout, "%s %s\n", lines_section_[i].c_str(), lines_[i].c_str());
-        }
     }
 
     void clear()
@@ -377,7 +373,6 @@ public:
     void clearAll()
     {
         lines_.clear();
-        lines_section_.clear();
         values_.clear();
     }
 
@@ -415,17 +410,17 @@ private:
         if (clear_style)
         {
             lines_ = splitString(content, "\n\r");
-            return ini_parse_lines(lines_, lines_section_, READ);
+            return ini_parse_lines(lines_, READ);
         }
         else
         {
             auto lines = splitString(content, "\n\r");
             std::vector<std::string> lines_section;
-            return ini_parse_lines(lines, lines_section, READ);
+            return ini_parse_lines(lines, READ);
         }
     }
 
-    int ini_parse_lines(std::vector<std::string>& lines, std::vector<std::string>& lines_section, int mode)
+    int ini_parse_lines(std::vector<std::string>& lines, int mode)
     {
         /* Return pointer to first non-whitespace char in given string. */
         auto lskip = [](const std::string& s) -> std::string
@@ -460,7 +455,6 @@ private:
         std::string prev_key = "";
         int lineno = 0;
         int error = 0;
-        lines_section.clear();
         /* Scan all lines */
         auto it = lines.begin();
         while (it != lines.end())
@@ -512,6 +506,16 @@ private:
 #endif
             else if (line[0] == '[')
             {
+                //if is writing and the previous section is not empty, insert it
+                if (mode == WRITE && hasSection(section))
+                {
+                    for (auto& key : getAllKeys(section))
+                    {
+                        std::string line = key + " = " + getString(section, key);
+                        it = lines_.insert(it, line);
+                    }
+                    eraseSection(section);
+                }
                 /* A "[section]" line */
                 auto end = line.find_first_of("]");
                 if (end != std::string::npos)
@@ -613,7 +617,6 @@ private:
                     prev_key = "";
                 }
             }
-            lines_section.push_back(section);
             it++;
 #if INI_STOP_ON_FIRST_ERROR
             if (error)
@@ -622,20 +625,15 @@ private:
             }
 #endif
         }
-        if (mode == WRITE)
+        //new keys for the last section
+        if (mode == WRITE && hasSection(section))
         {
-            for (auto it = lines_section.begin(); it != lines_section.end();)
+            for (auto& key : getAllKeys(section))
             {
-                if (hasSection(*it))
-                {
-                    it++;
-                }
-                else
-                {
-                    it = lines_section.erase(it);
-                    lines.erase(lines.begin() + (it - lines_section.begin()));
-                }
+                std::string line = key + " = " + getString(section, key);
+                it = lines_.insert(it, line);
             }
+            eraseSection(section);
         }
         return error;
     }
@@ -644,59 +642,13 @@ private:
     {
         auto values0 = values_;
         //rescan the file to modify existing keys
-        ini_parse_lines(lines_, lines_section_, WRITE);
-
-        //add new keys
-        for (auto& skv : values_.sections)
+        ini_parse_lines(lines_, WRITE);
+        for (auto& section : getAllSections())
         {
-            if (skv.section.size() > 0)
+            lines_.insert(lines_.end(), "[" + section + "]");
+            for (auto& key : getAllKeys(section))
             {
-                auto section = skv.section;
-
-                int pos = 0;
-                if (section != "")
-                {
-                    for (int i = 0; i < lines_section_.size(); i++)
-                    {
-                        if (lines_section_[i] == section && lines_[i] != "")
-                        {
-                            pos = i + 1;
-                        }
-                    }
-                }
-                if (section == "" || (pos > 0 && section != ""))
-                {
-                    //insert key into sections
-                    for (auto kv : skv.keys)
-                    {
-                        lines_.insert(lines_.begin() + pos, 1, kv.key + " = " + kv.value);
-                        lines_section_.insert(lines_section_.begin() + pos, 1, section);
-                    }
-                }
-                if (pos == 0 && section != "")
-                {
-                    //append new lines
-                    while (!lines_.empty() && lines_.back() == "")
-                    {
-                        lines_.pop_back();    //remove blank line first
-                        lines_section_.pop_back();
-                    }
-                    if (!lines_.empty())
-                    {
-                        lines_.push_back("");
-                    }
-                    lines_.push_back("[" + section + "]");
-                    if (!lines_section_.empty())
-                    {
-                        lines_section_.push_back(lines_section_.back());
-                    }
-                    lines_section_.push_back(section);
-                    for (auto kv : skv.keys)
-                    {
-                        lines_.push_back(kv.key + " = " + kv.value);
-                        lines_section_.push_back(section);
-                    }
-                }
+                lines_.insert(lines_.end(), key + " = " + getString(section, key));
             }
         }
         values_ = values0;
