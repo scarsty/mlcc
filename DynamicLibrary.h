@@ -35,7 +35,7 @@ private:
             if (dl.second)
             {
 #ifdef _WIN32
-                FreeLibrary((HINSTANCE)dl.second);
+                FreeLibrary(dl.second);
 #else
                 dlclose(dl.second);
 #endif
@@ -44,7 +44,11 @@ private:
     }
 
 private:
+#ifdef _WIN32
+    std::map<std::string, HMODULE> dynamic_libraries_;
+#else
     std::map<std::string, void*> dynamic_libraries_;
+#endif
 
 public:
     static void* loadDynamicLibrary(const std::string& library_name)
@@ -52,11 +56,10 @@ public:
         auto dl = getInstance();
         if (dl->dynamic_libraries_.count(library_name) == 0)
         {
-            void* hlib = nullptr;
 #ifdef _WIN32
-            hlib = LoadLibraryA(library_name.c_str());
+            auto hlib = LoadLibraryA(library_name.c_str());
 #else
-            hlib = dlopen(library_name.c_str(), RTLD_LAZY);
+            auto hlib = dlopen(library_name.c_str(), RTLD_LAZY);
 #endif
             dl->dynamic_libraries_[library_name] = hlib;
             //if (hlib)
@@ -96,7 +99,7 @@ public:
         {
             auto hlib = dl->dynamic_libraries_[library_name];
 #ifdef _WIN32
-            FreeLibrary((HINSTANCE)hlib);
+            FreeLibrary(hlib);
 #else
             dlclose(hlib);
 #endif
