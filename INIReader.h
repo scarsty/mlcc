@@ -44,6 +44,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <list>
 
 // Read an INI file into easy-to-access name/value pairs. (Note that I've gone
 // for simplicity here rather than speed, but it should be pretty decent.)
@@ -64,14 +65,16 @@ private:
     struct SectionType
     {
         std::string section;
-        std::vector<KeyType> keys;
+        std::list<KeyType> keys;
+        std::map < std::string, std::list<KeyType>::iterator > map_keys;
         int line_no;
-        std::function<bool(const std::string&, const std::string&)> compare_key_;
+        std::function<std::string(const std::string&)> compare_key_;
         std::string& operator[](const std::string& str)
         {
+            auto str1 = compare_key_(str);
             for (auto& k : keys)
             {
-                if (compare_key_(k.key, str))
+                if (compare_key_(k.key) == str1)
                 {
                     return k.value;
                 }
@@ -82,9 +85,10 @@ private:
         }
         size_t count(const std::string& str) const
         {
+            auto str1 = compare_key_(str);
             for (auto& k : keys)
             {
-                if (compare_key_(k.key, str))
+                if (compare_key_(k.key) == str1)
                 {
                     return 1;
                 }
@@ -93,9 +97,10 @@ private:
         }
         void erase(const std::string& str)
         {
+            auto str1 = compare_key_(str);
             for (auto it = keys.begin(); it != keys.end(); it++)
             {
-                if (compare_key_(it->key, str))
+                if (compare_key_(it->key) == str1)
                 {
                     keys.erase(it);
                     return;
@@ -109,13 +114,14 @@ private:
     };
     struct FileType
     {
-        std::vector<SectionType> sections;
-        std::function<bool(const std::string&, const std::string&)> compare_section_, compare_key_;
+        std::list<SectionType> sections;
+        std::function<std::string(const std::string&)> compare_section_, compare_key_;
         SectionType& operator[](const std::string& str)
         {
             for (auto& k : sections)
             {
-                if (compare_section_(k.section, str))
+                auto str1 = compare_section_(str);
+                if (compare_section_(k.section) == str1)
                 {
                     return k;
                 }
@@ -127,9 +133,10 @@ private:
         }
         size_t count(const std::string& str) const
         {
+            auto str1 = compare_section_(str);
             for (auto& k : sections)
             {
-                if (compare_section_(k.section, str))
+                if (compare_section_(k.section) == str1)
                 {
                     return 1;
                 }
@@ -138,9 +145,10 @@ private:
         }
         void erase(const std::string& str)
         {
+            auto str1 = compare_section_(str);
             for (auto it = sections.begin(); it != sections.end(); it++)
             {
-                if (compare_section_(it->section, str))
+                if (compare_section_(it->section) == str1)
                 {
                     sections.erase(it);
                     return;
@@ -173,15 +181,15 @@ private:
 public:
     INIReader()
     {
-        values_.compare_section_ = [](const std::string& l, const std::string& r) { return l == r; };
+        values_.compare_section_ = [](const std::string& l) { return l; };
         values_.compare_key_ = values_.compare_section_;
     }
 
-    void setCompareSection(std::function<bool(const std::string&, const std::string&)> com)
+    void setCompareSection(std::function<std::string(const std::string&)> com)
     {
         values_.compare_section_ = com;
     }
-    void setCompareKey(std::function<bool(const std::string&, const std::string&)> com)
+    void setCompareKey(std::function<std::string(const std::string&)> com)
     {
         values_.compare_key_ = com;
         for (auto& k : values_.sections)
@@ -703,13 +711,11 @@ class INIReaderNormal : public INIReader
 public:
     INIReaderNormal()
     {
-        auto compare_case_insensitivity = [](const std::string& l, const std::string& r)
+        auto compare_case_insensitivity = [](const std::string& l)
         {
             auto l1 = l;
-            auto r1 = r;
             std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-            std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-            return l1 == r1;
+            return l1;
         };
         setCompareSection(compare_case_insensitivity);
         setCompareKey(compare_case_insensitivity);
@@ -720,18 +726,15 @@ class INIReaderNoUnderline : public INIReader
 public:
     INIReaderNoUnderline()
     {
-        setCompareSection([](const std::string& l, const std::string& r)
+        setCompareSection([](const std::string& l)
         {
             auto l1 = l;
-            auto r1 = r;
             std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-            std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-            return l1 == r1;
+            return l1;
         });
-        setCompareKey([](const std::string& l, const std::string& r)
+        setCompareKey([](const std::string& l)
         {
             auto l1 = l;
-            auto r1 = r;
             auto erase = [](std::string& s, const std::string& oldstring)
             {
                 auto pos = s.find(oldstring);
@@ -742,10 +745,8 @@ public:
                 }
             };
             erase(l1, "_");
-            erase(r1, "_");
             std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-            std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-            return l1 == r1;
+            return l1;
         });
     }
 };
