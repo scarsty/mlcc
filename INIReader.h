@@ -66,26 +66,31 @@ private:
     {
         std::string section;
         std::list<KeyType> keys;
-        std::map < std::string, std::list<KeyType>::iterator > map_keys;
-        int line_no;
+        std::map<std::string, std::list<KeyType>::iterator> map_keys;
         std::function<std::string(const std::string&)> compare_key_;
         std::string& operator[](const std::string& str)
         {
             auto str1 = compare_key_(str);
-            for (auto& k : keys)
+            if (map_keys.count(str1))
             {
-                if (compare_key_(k.key) == str1)
-                {
-                    return k.value;
-                }
+                return map_keys[str1]->value;
             }
+            //for (auto& k : keys)
+            //{
+            //    if (compare_key_(k.key) == str1)
+            //    {
+            //        return k.value;
+            //    }
+            //}
             keys.emplace_back();
             keys.back().key = str;
+            map_keys[str1] = std::prev(keys.end());
             return keys.back().value;
         }
         size_t count(const std::string& str) const
         {
             auto str1 = compare_key_(str);
+            return map_keys.count(str1);
             for (auto& k : keys)
             {
                 if (compare_key_(k.key) == str1)
@@ -98,6 +103,12 @@ private:
         void erase(const std::string& str)
         {
             auto str1 = compare_key_(str);
+            if (map_keys.count(str1))
+            {
+                keys.erase(map_keys[str1]);
+                map_keys.erase(str1);
+            }
+            return;
             for (auto it = keys.begin(); it != keys.end(); it++)
             {
                 if (compare_key_(it->key) == str1)
@@ -110,6 +121,32 @@ private:
         void clear()
         {
             keys.clear();
+            map_keys.clear();
+        }
+        void rebuildMap()
+        {
+            map_keys.clear();
+            for (auto it = keys.begin(); it != keys.end(); it++)
+            {
+                map_keys[compare_key_(it->key)] = it;
+            }
+        }
+        SectionType() {}
+        SectionType(const SectionType& st)
+        {
+            section = st.section;
+            keys = st.keys;
+            compare_key_ = st.compare_key_;
+            rebuildMap();
+        }
+        SectionType& operator=(const SectionType& st)
+        {
+            if (this == &st) { return *this; }
+            section = st.section;
+            keys = st.keys;
+            compare_key_ = st.compare_key_;
+            rebuildMap();
+            return *this;
         }
     };
     struct FileType
