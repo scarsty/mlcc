@@ -67,21 +67,14 @@ private:
         std::string section;
         std::list<KeyType> keys;
         std::map<std::string, std::list<KeyType>::iterator> map_keys;
-        std::function<std::string(const std::string&)> compare_key_;
+        std::function<std::string(const std::string&)> compare_key;
         std::string& operator[](const std::string& str)
         {
-            auto str1 = compare_key_(str);
+            auto str1 = compare_key(str);
             if (map_keys.count(str1))
             {
                 return map_keys[str1]->value;
             }
-            //for (auto& k : keys)
-            //{
-            //    if (compare_key_(k.key) == str1)
-            //    {
-            //        return k.value;
-            //    }
-            //}
             keys.emplace_back();
             keys.back().key = str;
             map_keys[str1] = std::prev(keys.end());
@@ -89,34 +82,18 @@ private:
         }
         size_t count(const std::string& str) const
         {
-            auto str1 = compare_key_(str);
+            auto str1 = compare_key(str);
             return map_keys.count(str1);
-            for (auto& k : keys)
-            {
-                if (compare_key_(k.key) == str1)
-                {
-                    return 1;
-                }
-            }
-            return 0;
         }
         void erase(const std::string& str)
         {
-            auto str1 = compare_key_(str);
+            auto str1 = compare_key(str);
             if (map_keys.count(str1))
             {
                 keys.erase(map_keys[str1]);
                 map_keys.erase(str1);
             }
             return;
-            for (auto it = keys.begin(); it != keys.end(); it++)
-            {
-                if (compare_key_(it->key) == str1)
-                {
-                    keys.erase(it);
-                    return;
-                }
-            }
         }
         void clear()
         {
@@ -128,15 +105,15 @@ private:
             map_keys.clear();
             for (auto it = keys.begin(); it != keys.end(); it++)
             {
-                map_keys[compare_key_(it->key)] = it;
+                map_keys[compare_key(it->key)] = it;
             }
         }
-        SectionType() {}
+        SectionType() = default;
         SectionType(const SectionType& st)
         {
             section = st.section;
             keys = st.keys;
-            compare_key_ = st.compare_key_;
+            compare_key = st.compare_key;
             rebuildMap();
         }
         SectionType& operator=(const SectionType& st)
@@ -144,36 +121,38 @@ private:
             if (this == &st) { return *this; }
             section = st.section;
             keys = st.keys;
-            compare_key_ = st.compare_key_;
+            compare_key = st.compare_key;
             rebuildMap();
             return *this;
         }
+        SectionType(SectionType&& st) noexcept = default;
+        SectionType& operator=(SectionType&& st) noexcept = default;
     };
     struct FileType
     {
         std::list<SectionType> sections;
-        std::function<std::string(const std::string&)> compare_section_, compare_key_;
+        std::function<std::string(const std::string&)> compare_section, compare_key;
         SectionType& operator[](const std::string& str)
         {
             for (auto& k : sections)
             {
-                auto str1 = compare_section_(str);
-                if (compare_section_(k.section) == str1)
+                auto str1 = compare_section(str);
+                if (compare_section(k.section) == str1)
                 {
                     return k;
                 }
             }
             sections.emplace_back();
             sections.back().section = str;
-            sections.back().compare_key_ = compare_key_;
+            sections.back().compare_key = compare_key;
             return sections.back();
         }
         size_t count(const std::string& str) const
         {
-            auto str1 = compare_section_(str);
+            auto str1 = compare_section(str);
             for (auto& k : sections)
             {
-                if (compare_section_(k.section) == str1)
+                if (compare_section(k.section) == str1)
                 {
                     return 1;
                 }
@@ -182,10 +161,10 @@ private:
         }
         void erase(const std::string& str)
         {
-            auto str1 = compare_section_(str);
+            auto str1 = compare_section(str);
             for (auto it = sections.begin(); it != sections.end(); it++)
             {
-                if (compare_section_(it->section) == str1)
+                if (compare_section(it->section) == str1)
                 {
                     sections.erase(it);
                     return;
@@ -218,20 +197,20 @@ private:
 public:
     INIReader()
     {
-        values_.compare_section_ = [](const std::string& l) { return l; };
-        values_.compare_key_ = values_.compare_section_;
+        values_.compare_section = [](const std::string& l) { return l; };
+        values_.compare_key = values_.compare_section;
     }
 
     void setCompareSection(std::function<std::string(const std::string&)> com)
     {
-        values_.compare_section_ = com;
+        values_.compare_section = com;
     }
     void setCompareKey(std::function<std::string(const std::string&)> com)
     {
-        values_.compare_key_ = com;
+        values_.compare_key = com;
         for (auto& k : values_.sections)
         {
-            k.compare_key_ = com;
+            k.compare_key = com;
         }
     }
 
@@ -695,7 +674,7 @@ private:
                 lines_.insert(lines_.end(), key + " = " + getString(section, key));
             }
         }
-        values_ = values0;
+        values_ = std::move(values0);
     }
 
 public:
