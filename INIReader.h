@@ -59,124 +59,95 @@ private:
     };
     struct KeyType
     {
-        std::string key, value;
-        int line_no;
+        std::string name, value;
     };
-    struct SectionType
+
+    template <typename T>
+    struct BaseType
     {
-        std::string section;
-        std::list<KeyType> keys;
-        std::map<std::string, std::list<KeyType>::iterator> map_keys;
-        std::function<std::string(const std::string&)> compare_key;
-        std::string& operator[](const std::string& str)
+        std::string name;
+        std::list<T> records;
+        std::map<std::string, typename std::list<T>::iterator> map_iter;
+        std::function<std::string(const std::string&)> compare_name;
+
+        T& operator[](const std::string& str)
         {
-            auto str1 = compare_key(str);
-            if (map_keys.count(str1))
+            auto str1 = compare_name(str);
+            if (map_iter.count(str1))
             {
-                return map_keys[str1]->value;
+                return *map_iter[str1];
             }
-            keys.emplace_back();
-            keys.back().key = str;
-            map_keys[str1] = std::prev(keys.end());
-            return keys.back().value;
+            records.emplace_back();
+            records.back().name = str;
+            map_iter[str1] = std::prev(records.end());
+            return records.back();
         }
         size_t count(const std::string& str) const
         {
-            auto str1 = compare_key(str);
-            return map_keys.count(str1);
+            auto str1 = compare_name(str);
+            return map_iter.count(str1);
         }
         void erase(const std::string& str)
         {
-            auto str1 = compare_key(str);
-            if (map_keys.count(str1))
+            auto str1 = compare_name(str);
+            if (map_iter.count(str1))
             {
-                keys.erase(map_keys[str1]);
-                map_keys.erase(str1);
+                records.erase(map_iter[str1]);
+                map_iter.erase(str1);
             }
             return;
         }
         void clear()
         {
-            keys.clear();
-            map_keys.clear();
+            records.clear();
+            map_iter.clear();
         }
         void rebuildMap()
         {
-            map_keys.clear();
-            for (auto it = keys.begin(); it != keys.end(); it++)
+            map_iter.clear();
+            for (auto it = records.begin(); it != records.end(); it++)
             {
-                map_keys[compare_key(it->key)] = it;
+                map_iter[compare_name(it->name)] = it;
             }
         }
-        SectionType() = default;
-        SectionType(const SectionType& st)
+        BaseType() = default;
+        BaseType(const BaseType& st)
         {
-            section = st.section;
-            keys = st.keys;
-            compare_key = st.compare_key;
+            name = st.name;
+            records = st.records;
+            compare_name = st.compare_name;
             rebuildMap();
         }
-        SectionType& operator=(const SectionType& st)
+        BaseType& operator=(const BaseType& st)
         {
             if (this == &st) { return *this; }
-            section = st.section;
-            keys = st.keys;
-            compare_key = st.compare_key;
+            name = st.name;
+            records = st.records;
+            compare_name = st.compare_name;
             rebuildMap();
             return *this;
         }
-        SectionType(SectionType&& st) noexcept = default;
-        SectionType& operator=(SectionType&& st) noexcept = default;
+        BaseType(BaseType&& st) noexcept = default;
+        BaseType& operator=(BaseType&& st) noexcept = default;
     };
-    struct FileType
+    using SectionType = BaseType<KeyType>;
+    struct FileType : public BaseType<SectionType>
     {
-        std::list<SectionType> sections;
-        std::function<std::string(const std::string&)> compare_section, compare_key;
+        std::function<std::string(const std::string&)> compare_key;
         SectionType& operator[](const std::string& str)
         {
-            for (auto& k : sections)
+            auto str1 = compare_name(str);
+            if (map_iter.count(str1))
             {
-                auto str1 = compare_section(str);
-                if (compare_section(k.section) == str1)
-                {
-                    return k;
-                }
+                return *map_iter[str1];
             }
-            sections.emplace_back();
-            sections.back().section = str;
-            sections.back().compare_key = compare_key;
-            return sections.back();
-        }
-        size_t count(const std::string& str) const
-        {
-            auto str1 = compare_section(str);
-            for (auto& k : sections)
-            {
-                if (compare_section(k.section) == str1)
-                {
-                    return 1;
-                }
-            }
-            return 0;
-        }
-        void erase(const std::string& str)
-        {
-            auto str1 = compare_section(str);
-            for (auto it = sections.begin(); it != sections.end(); it++)
-            {
-                if (compare_section(it->section) == str1)
-                {
-                    sections.erase(it);
-                    return;
-                }
-            }
-        }
-        void clear()
-        {
-            sections.clear();
+            records.emplace_back();
+            records.back().name = str;
+            records.back().compare_name = compare_key;
+            map_iter[str1] = std::prev(records.end());
+            return records.back();
         }
     };
-
 #ifdef _WIN32
     std::string line_break_ = "\r\n";
 #else
@@ -184,33 +155,33 @@ private:
 #endif
     int error_ = 0;
     std::vector<std::string> lines_;    //lines of the files, sections the lines belong to
-    mutable FileType values_;
+    mutable FileType sections_;
 
     //return value: the key has existed, 0 means it is a new key
     int valueHandler(const std::string& section, const std::string& key, const std::string& value)
     {
-        int ret = values_[section].count(key);
-        values_[section][key] = value;
+        int ret = sections_[section].count(key);
+        sections_[section][key].value = value;
         return ret;
     }
 
 public:
     INIReader()
     {
-        values_.compare_section = [](const std::string& l) { return l; };
-        values_.compare_key = values_.compare_section;
+        sections_.compare_name = [](const std::string& l) { return l; };
+        sections_.compare_key = [](const std::string& l) { return l; };
     }
 
     void setCompareSection(std::function<std::string(const std::string&)> com)
     {
-        values_.compare_section = com;
+        sections_.compare_name = com;
     }
     void setCompareKey(std::function<std::string(const std::string&)> com)
     {
-        values_.compare_key = com;
-        for (auto& k : values_.sections)
+        sections_.compare_key = com;
+        for (auto& k : sections_.records)
         {
-            k.compare_key = com;
+            k.compare_name = com;
         }
     }
 
@@ -265,13 +236,13 @@ public:
     // Get a string value from INI file, returning default_value if not found.
     std::string getString(const std::string& section, const std::string& key, const std::string& default_value = "") const
     {
-        if (values_.count(section) == 0)
+        if (sections_.count(section) == 0)
         {
             return default_value;
         }
-        if (values_[section].count(key) > 0)
+        if (sections_[section].count(key) > 0)
         {
-            return values_[section][key];
+            return sections_[section][key].value;
         }
         else
         {
@@ -328,21 +299,21 @@ public:
     //check one section exist or not
     int hasSection(const std::string& section)
     {
-        return values_.count(section);
+        return sections_.count(section);
     }
 
     //check one section and one key exist or not
     int hasKey(const std::string& section, const std::string& key)
     {
-        return values_.count(section) > 0 ? values_[section].count(key) : 0;
+        return sections_.count(section) > 0 ? sections_[section].count(key) : 0;
     }
 
     std::vector<std::string> getAllSections()
     {
         std::vector<std::string> ret;
-        for (auto& value : values_.sections)
+        for (auto& value : sections_.records)
         {
-            ret.push_back(value.section);
+            ret.push_back(value.name);
         }
         return ret;
     }
@@ -350,13 +321,13 @@ public:
     std::vector<std::string> getAllKeys(const std::string& section)
     {
         std::vector<std::string> ret;
-        if (values_.count(section) == 0)
+        if (sections_.count(section) == 0)
         {
             return ret;
         }
-        for (auto& kv : values_[section].keys)
+        for (auto& kv : sections_[section].records)
         {
-            ret.push_back(kv.key);
+            ret.push_back(kv.name);
         }
         return ret;
     }
@@ -368,22 +339,22 @@ public:
 
     void eraseKey(const std::string& section, const std::string& key)
     {
-        values_[section].erase(key);
+        sections_[section].erase(key);
     }
 
     void eraseSection(const std::string& section)
     {
-        values_.erase(section);
+        sections_.erase(section);
     }
 
     void print()
     {
-        for (auto& skv : values_.sections)
+        for (auto& skv : sections_.records)
         {
-            fprintf(stdout, "[%s]\n", skv.section.c_str());
-            for (auto& kv : skv.keys)
+            fprintf(stdout, "[%s]\n", skv.name.c_str());
+            for (auto& kv : skv.records)
             {
-                fprintf(stdout, "%s = %s\n", kv.key.c_str(), kv.value.c_str());
+                fprintf(stdout, "%s = %s\n", kv.name.c_str(), kv.value.c_str());
             }
             fprintf(stdout, "\n");
         }
@@ -391,13 +362,13 @@ public:
 
     void clear()
     {
-        values_.clear();
+        sections_.clear();
     }
 
     void clearAll()
     {
         lines_.clear();
-        values_.clear();
+        sections_.clear();
     }
 
 private:
@@ -663,7 +634,7 @@ private:
 
     void resetLines()
     {
-        auto values0 = values_;
+        auto sections0 = sections_;
         //rescan the file to modify existing keys
         ini_parse_lines(lines_, WRITE);
         for (auto& section : getAllSections())
@@ -674,7 +645,7 @@ private:
                 lines_.insert(lines_.end(), key + " = " + getString(section, key));
             }
         }
-        values_ = std::move(values0);
+        sections_ = std::move(sections0);
     }
 
 public:
@@ -712,9 +683,9 @@ public:
         for (auto& section : getAllSections())
         {
             content += "[" + section + "]" + line_break_;
-            for (auto& key : values_[section].keys)
+            for (auto& key : sections_[section].records)
             {
-                content += key.key + "=" + key.value + line_break_;
+                content += key.name + "=" + key.value + line_break_;
             }
         }
         return content;
