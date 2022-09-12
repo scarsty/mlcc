@@ -506,8 +506,11 @@ private:
                 {
                     for (auto& key : getAllKeys(section))
                     {
-                        std::string line = key + " = " + getString(section, key);
-                        it = lines_.insert(it, line);
+                        if (!key.empty())
+                        {
+                            std::string line = key + " = " + getString(section, key);
+                            it = lines_.insert(it, line);
+                        }
                     }
                     eraseSection(section);
                 }
@@ -624,8 +627,12 @@ private:
         {
             for (auto& key : getAllKeys(section))
             {
-                std::string line = key + " = " + getString(section, key);
-                it = lines_.insert(it, line);
+                if (!key.empty())
+                {
+                    std::string line = key + " = " + getString(section, key);
+                    fprintf(stdout, "fdssdf%s\n", key.c_str());
+                    it = lines_.insert(it, line);
+                }
             }
             eraseSection(section);
         }
