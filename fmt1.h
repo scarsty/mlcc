@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <typeinfo>
 
 #if __cplusplus >= 202002L
 #include <format>
@@ -107,7 +108,7 @@ inline std::string sprintf2(const std::string& fmt, const std::string& fmt_s, co
 template <typename T>
 inline std::string to_string(const std::string& fmt, const T& t)
 {
-    return std::to_string(t);
+    return typeid(T).name();    //unknown type
 }
 
 template <typename T>
@@ -126,44 +127,54 @@ inline std::string to_string(const std::string& fmt, const char t)
     return sprintf2(fmt, "%c", t);
 }
 
-inline std::string to_string(const std::string& fmt, const int8_t t)
+inline std::string to_string(const std::string& fmt, const signed char t)
 {
     return sprintf2(fmt, "%hhd", t);
 }
 
-inline std::string to_string(const std::string& fmt, const uint8_t t)
+inline std::string to_string(const std::string& fmt, const unsigned char t)
 {
     return sprintf2(fmt, "%hhu", t);
 }
 
-inline std::string to_string(const std::string& fmt, const int16_t t)
+inline std::string to_string(const std::string& fmt, const short t)
 {
     return sprintf2(fmt, "%hd", t);
 }
 
-inline std::string to_string(const std::string& fmt, const uint16_t t)
+inline std::string to_string(const std::string& fmt, const unsigned short t)
 {
     return sprintf2(fmt, "%hu", t);
 }
 
-inline std::string to_string(const std::string& fmt, const int32_t t)
+inline std::string to_string(const std::string& fmt, const int t)
 {
     return sprintf2(fmt, "%d", t);
 }
 
-inline std::string to_string(const std::string& fmt, const uint32_t t)
+inline std::string to_string(const std::string& fmt, const unsigned t)
 {
     return sprintf2(fmt, "%u", t);
 }
 
-inline std::string to_string(const std::string& fmt, const int64_t t)
+inline std::string to_string(const std::string& fmt, const long t)
 {
     return sprintf2(fmt, "%ld", t);
 }
 
-inline std::string to_string(const std::string& fmt, const uint64_t t)
+inline std::string to_string(const std::string& fmt, const unsigned long t)
 {
     return sprintf2(fmt, "%lu", t);
+}
+
+inline std::string to_string(const std::string& fmt, const long long t)
+{
+    return sprintf2(fmt, "%lld", t);
+}
+
+inline std::string to_string(const std::string& fmt, const unsigned long long t)
+{
+    return sprintf2(fmt, "%llu", t);
 }
 
 inline std::string to_string(const std::string& fmt, const double t)
