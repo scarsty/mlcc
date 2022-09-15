@@ -20,12 +20,12 @@ std::string convert::readStringFromFile(const std::string& filename)
         str.resize(length, '\0');
         if (fread((void*)str.c_str(), 1, length, fp) < length)
         {
-            fprintf(stderr, "Read file %s unfinished!\n", filename.c_str());
+            //fprintf(stderr, "Read file %s unfinished!\n", filename.c_str());
         }
         fclose(fp);
         return str;
     }
-    fprintf(stderr, "Cannot open file %s!\n", filename.c_str());
+    //fprintf(stderr, "Cannot open file %s!\n", filename.c_str());
     return "";
 }
 
@@ -39,7 +39,7 @@ int convert::writeStringToFile(const std::string& str, const std::string& filena
         fclose(fp);
         return length;
     }
-    fprintf(stderr, "Cannot write file %s!\n", filename.c_str());
+    //fprintf(stderr, "Cannot write file %s!\n", filename.c_str());
     return -1;
 }
 

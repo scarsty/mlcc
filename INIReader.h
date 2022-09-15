@@ -191,7 +191,7 @@ public:
         FILE* fp = fopen(filename.c_str(), "rb");
         if (!fp)
         {
-            fprintf(stderr, "Cannot open file %s\n", filename.c_str());
+            //fprintf(stderr, "Cannot open file %s\n", filename.c_str());
             return;
         }
         fseek(fp, 0, SEEK_END);
@@ -201,7 +201,7 @@ public:
         str.resize(length, '\0');
         if (fread((void*)str.c_str(), 1, length, fp) < length)
         {
-            fprintf(stderr, "Read file %s unfinished\n", filename.c_str());
+            //fprintf(stderr, "Read file %s unfinished\n", filename.c_str());
         }
         fclose(fp);
         loadString(str, true);
@@ -630,7 +630,6 @@ private:
                 if (!key.empty())
                 {
                     std::string line = key + " = " + getString(section, key);
-                    fprintf(stdout, "fdssdf%s\n", key.c_str());
                     it = lines_.insert(it, line);
                 }
             }

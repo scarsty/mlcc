@@ -76,7 +76,7 @@ std::vector<char> File::readFile(const std::string& filename, int length)
     FILE* fp = fopen(filename.c_str(), "rb");
     if (!fp)
     {
-        fprintf(stderr, "Cannot open file %s\n", filename.c_str());
+        //fprintf(stderr, "Cannot open file %s\n", filename.c_str());
         return s;
     }
     if (length <= 0)
@@ -88,7 +88,7 @@ std::vector<char> File::readFile(const std::string& filename, int length)
     s.resize(length);
     if (fread(s.data(), 1, length, fp) < length)
     {
-        fprintf(stderr, "Read file %s unfinished!\n", filename.c_str());
+        //fprintf(stderr, "Read file %s unfinished!\n", filename.c_str());
     }
     fclose(fp);
     return s;
@@ -99,7 +99,7 @@ int File::readFile(const std::string& filename, void* s, int length)
     FILE* fp = fopen(filename.c_str(), "rb");
     if (!fp)
     {
-        fprintf(stderr, "Cannot open file %s\n", filename.c_str());
+        //fprintf(stderr, "Cannot open file %s\n", filename.c_str());
         return 0;
     }
     int r = fread(s, 1, length, fp);
@@ -112,7 +112,7 @@ int File::writeFile(const std::string& filename, void* s, int length)
     FILE* fp = fopen(filename.c_str(), "wb");
     if (!fp)
     {
-        fprintf(stderr, "Cannot write file %s\n", filename.c_str());
+        //fprintf(stderr, "Cannot write file %s\n", filename.c_str());
         return 0;
     }
     fseek(fp, 0, 0);
@@ -138,7 +138,7 @@ std::vector<std::string> File::getFilesInPath(const std::string& pathname, int r
 
         if (h_find == INVALID_HANDLE_VALUE)
         {
-            fprintf(stderr, "Get files error in %s\n", pathname.c_str());
+            //fprintf(stderr, "Get files error in %s\n", pathname.c_str());
             return files;
         }
         do
@@ -153,7 +153,7 @@ std::vector<std::string> File::getFilesInPath(const std::string& pathname, int r
         error = GetLastError();
         if (error != ERROR_NO_MORE_FILES)
         {
-            fprintf(stderr, "Find first file error\n");
+            //fprintf(stderr, "Find first file error\n");
             return files;
         }
         FindClose(h_find);
