@@ -297,18 +297,18 @@ public:
     }
 
     //check one section exist or not
-    int hasSection(const std::string& section)
+    int hasSection(const std::string& section) const
     {
         return sections_.count(section);
     }
 
     //check one section and one key exist or not
-    int hasKey(const std::string& section, const std::string& key)
+    int hasKey(const std::string& section, const std::string& key) const
     {
         return sections_.count(section) > 0 ? sections_[section].count(key) : 0;
     }
 
-    std::vector<std::string> getAllSections()
+    std::vector<std::string> getAllSections() const
     {
         std::vector<std::string> ret;
         for (auto& value : sections_.records)
@@ -318,7 +318,7 @@ public:
         return ret;
     }
 
-    std::vector<std::string> getAllKeys(const std::string& section)
+    std::vector<std::string> getAllKeys(const std::string& section) const
     {
         std::vector<std::string> ret;
         if (sections_.count(section) == 0)
@@ -328,6 +328,20 @@ public:
         for (auto& kv : sections_[section].records)
         {
             ret.push_back(kv.name);
+        }
+        return ret;
+    }
+
+    std::vector<KeyType> getAllKeyValues(const std::string& section) const
+    {
+        std::vector<KeyType> ret;
+        if (sections_.count(section) == 0)
+        {
+            return ret;
+        }
+        for (auto& kv : sections_[section].records)
+        {
+            ret.push_back(kv);
         }
         return ret;
     }
@@ -347,7 +361,7 @@ public:
         sections_.erase(section);
     }
 
-    void print()
+    void print() const
     {
         for (auto& skv : sections_.records)
         {
@@ -540,6 +554,7 @@ private:
                 {
                     std::string key = rstrip(line.substr(0, assign_char));
                     std::string value = lskip(line.substr(assign_char + 1));
+                    /* unsupport quote
                     int quote = 0;    //0: no quote, 1: single quote, 2: double quote
                     int quote_end_pos = value.size() - 1;
                     if (value.find_first_of("\'") == 0)
@@ -562,10 +577,10 @@ private:
                         {
                             value = value.substr(1);
                         }
-                    }
+                    }*/
                     std::string comment = "";
 #if INI_ALLOW_INLINE_COMMENTS
-                    if (quote == 0)
+                    //if (quote == 0)
                     {
                         int comment_pos = value.find_first_of(INI_INLINE_COMMENT_PREFIXES);
                         if (comment_pos != std::string::npos)
@@ -683,7 +698,7 @@ public:
     }
 
     //a pure string without comments or blank lines
-    std::string toPureString()
+    std::string toPureString() const
     {
         std::string content;
         for (auto& section : getAllSections())
