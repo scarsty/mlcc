@@ -187,6 +187,11 @@ inline std::string to_string(const std::string& fmt, const float t)
     return sprintf2(fmt, "%g", t);
 }
 
+inline std::string to_string(const std::string& fmt, const bool t)
+{
+    return sprintf2(fmt, "%d", t);
+}
+
 inline std::string to_string(const std::string& fmt, const std::string& t)
 {
     return sprintf2(fmt, "%s", t.c_str());
