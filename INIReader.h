@@ -673,11 +673,14 @@ public:
     //write modified file
     void saveFile(const std::string& filename)
     {
-        auto content = toString();
         FILE* fp = fopen(filename.c_str(), "wb");
-        int length = content.length();
-        fwrite(content.c_str(), length, 1, fp);
-        fclose(fp);
+        if (fp)
+        {
+            auto content = toString();
+            int length = content.length();
+            fwrite(content.c_str(), length, 1, fp);
+            fclose(fp);
+        }
     }
 
     //make a string with trying to keep the original style
