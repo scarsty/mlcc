@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace convert
+namespace strfunc
 {
 
 //string functions

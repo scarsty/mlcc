@@ -119,9 +119,9 @@ public:
 };
 ```
 
-## convert
+## strfunc
 
-convert.h, convert.cpp
+strfunc.h, strfunc.cpp
 
 example.txt:
 
@@ -213,7 +213,7 @@ File.h, File.cpp
 
 This class can read and write file as a vector of any class.
 
-Some functions are very similar to those of libconvert.
+Some functions are very similar to those of "strfunc".
 
 This class can also extract  path, main name or extension from a filename string, examples:
 

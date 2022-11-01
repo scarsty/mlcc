@@ -1,4 +1,4 @@
-#include "convert.h"
+#include "strfunc.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -8,7 +8,7 @@
 //#define fopen fopen_s
 #endif
 
-std::string convert::readStringFromFile(const std::string& filename)
+std::string strfunc::readStringFromFile(const std::string& filename)
 {
     FILE* fp = fopen(filename.c_str(), "rb");
     if (fp)
@@ -29,7 +29,7 @@ std::string convert::readStringFromFile(const std::string& filename)
     return "";
 }
 
-int convert::writeStringToFile(const std::string& str, const std::string& filename)
+int strfunc::writeStringToFile(const std::string& str, const std::string& filename)
 {
     FILE* fp = fopen(filename.c_str(), "wb");
     if (fp)
@@ -43,7 +43,7 @@ int convert::writeStringToFile(const std::string& str, const std::string& filena
     return -1;
 }
 
-void convert::replaceOneSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*=0*/)
+void strfunc::replaceOneSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*=0*/)
 {
     if (oldstring.empty() || oldstring == newstring)
     {
@@ -56,7 +56,7 @@ void convert::replaceOneSubStringRef(std::string& s, const std::string& oldstrin
     }
 }
 
-void convert::replaceAllSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring)
+void strfunc::replaceAllSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring)
 {
     if (oldstring.empty() || oldstring == newstring)
     {
@@ -70,21 +70,21 @@ void convert::replaceAllSubStringRef(std::string& s, const std::string& oldstrin
     }
 }
 
-std::string convert::replaceOneSubString(const std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*= 0*/)
+std::string strfunc::replaceOneSubString(const std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*= 0*/)
 {
     std::string s1 = s;
     replaceOneSubStringRef(s1, oldstring, newstring, pos0);
     return s1;
 }
 
-std::string convert::replaceAllSubString(const std::string& s, const std::string& oldstring, const std::string& newstring)
+std::string strfunc::replaceAllSubString(const std::string& s, const std::string& oldstring, const std::string& newstring)
 {
     std::string s1 = s;
     replaceAllSubStringRef(s1, oldstring, newstring);
     return s1;
 }
 
-void convert::replaceOneStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring)
+void strfunc::replaceOneStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring)
 {
     std::string s = readStringFromFile(oldfilename);
     if (s.length() <= 0)
@@ -95,7 +95,7 @@ void convert::replaceOneStringInFile(const std::string& oldfilename, const std::
     writeStringToFile(s, newfilename);
 }
 
-void convert::replaceAllStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring)
+void strfunc::replaceAllStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring)
 {
     std::string s = readStringFromFile(oldfilename);
     if (s.length() <= 0)
@@ -106,7 +106,7 @@ void convert::replaceAllStringInFile(const std::string& oldfilename, const std::
     writeStringToFile(s, newfilename);
 }
 
-std::string convert::findANumber(const std::string& s)
+std::string strfunc::findANumber(const std::string& s)
 {
     bool findPoint = false;
     bool findNumber = false;
@@ -150,7 +150,7 @@ std::string convert::findANumber(const std::string& s)
     return n;
 }
 
-unsigned convert::findTheLast(const std::string& s, const std::string& content)
+unsigned strfunc::findTheLast(const std::string& s, const std::string& content)
 {
     size_t pos = 0, prepos = 0;
     while (pos != std::string::npos)
@@ -162,7 +162,7 @@ unsigned convert::findTheLast(const std::string& s, const std::string& content)
     return prepos;
 }
 
-std::vector<std::string> convert::splitString(std::string str, std::string pattern, bool ignore_psspace)
+std::vector<std::string> strfunc::splitString(std::string str, std::string pattern, bool ignore_psspace)
 {
     std::string::size_type pos;
     std::vector<std::string> result;
@@ -207,19 +207,19 @@ std::vector<std::string> convert::splitString(std::string str, std::string patte
     return result;
 }
 
-bool convert::isProChar(char c)
+bool strfunc::isProChar(char c)
 {
     return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'z') || (c >= '(' && c <= ')');
 }
 
-std::string convert::toLowerCase(const std::string& s)
+std::string strfunc::toLowerCase(const std::string& s)
 {
     std::string s1 = s;
     std::transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
     return s1;
 }
 
-std::string convert::toUpperCase(const std::string& s)
+std::string strfunc::toUpperCase(const std::string& s)
 {
     std::string s1 = s;
     std::transform(s1.begin(), s1.end(), s1.begin(), ::toupper);
