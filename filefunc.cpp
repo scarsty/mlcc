@@ -1,4 +1,4 @@
-#include "File.h"
+#include "filefunc.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -36,7 +36,7 @@
 #include <filesystem>
 #endif
 
-bool File::fileExist(const std::string& name)
+bool filefunc::fileExist(const std::string& name)
 {
     if (name.empty())
     {
@@ -61,7 +61,7 @@ bool File::fileExist(const std::string& name)
 #endif
 }
 
-bool File::pathExist(const std::string& name)
+bool filefunc::pathExist(const std::string& name)
 {
     if (name.empty())
     {
@@ -82,7 +82,7 @@ bool File::pathExist(const std::string& name)
 #endif
 }
 
-void File::reverse(char* c, int n)
+void filefunc::reverse(char* c, int n)
 {
     for (int i = 0; i < n / 2; i++)
     {
@@ -94,7 +94,7 @@ void File::reverse(char* c, int n)
     }
 }
 
-std::vector<char> File::readFile(const std::string& filename, int length)
+std::vector<char> filefunc::readFile(const std::string& filename, int length)
 {
     std::vector<char> s;
     FILE* fp = fopen(filename.c_str(), "rb");
@@ -118,7 +118,7 @@ std::vector<char> File::readFile(const std::string& filename, int length)
     return s;
 }
 
-int File::readFile(const std::string& filename, void* s, int length)
+int filefunc::readFile(const std::string& filename, void* s, int length)
 {
     FILE* fp = fopen(filename.c_str(), "rb");
     if (!fp)
@@ -131,7 +131,7 @@ int File::readFile(const std::string& filename, void* s, int length)
     return r;
 }
 
-int File::writeFile(const std::string& filename, void* s, int length)
+int filefunc::writeFile(const std::string& filename, void* s, int length)
 {
     FILE* fp = fopen(filename.c_str(), "wb");
     if (!fp)
@@ -145,7 +145,7 @@ int File::writeFile(const std::string& filename, void* s, int length)
     return length;
 }
 
-std::vector<std::string> File::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/)
+std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/)
 {
     if (recursive == 0)
     {
@@ -234,7 +234,7 @@ std::vector<std::string> File::getFilesInPath(const std::string& pathname, int r
     }
 }
 
-void File::makePath(const std::string& path)
+void filefunc::makePath(const std::string& path)
 {
     std::vector<std::string> paths;
     auto p = path;
@@ -253,7 +253,7 @@ void File::makePath(const std::string& path)
     }
 }
 
-std::string File::getFileTime(std::string filename)
+std::string filefunc::getFileTime(std::string filename)
 {
 #if defined(__clang__) && defined(_WIN32)
     struct __stat64 s;
@@ -277,7 +277,7 @@ std::string File::getFileTime(std::string filename)
     return "";
 }
 
-void File::changePath(const std::string& path)
+void filefunc::changePath(const std::string& path)
 {
     if (chdir(path.c_str()) != 0)
     {
@@ -309,7 +309,7 @@ static size_t getLastPathCharPos(const std::string& filename, int utf8 = 0)
     return pos;
 }
 
-std::string File::getFileExt(const std::string& filename)
+std::string filefunc::getFileExt(const std::string& filename)
 {
     auto pos_p = getLastPathCharPos(filename);
     auto pos_d = filename.find_last_of('.');
@@ -321,7 +321,7 @@ std::string File::getFileExt(const std::string& filename)
 }
 
 //find the last point as default, and find the first when mode is 1
-std::string File::getFileMainname(const std::string& filename)
+std::string filefunc::getFileMainname(const std::string& filename)
 {
     auto pos_p = getLastPathCharPos(filename);
     auto pos_d = filename.find_last_of('.');
@@ -332,7 +332,7 @@ std::string File::getFileMainname(const std::string& filename)
     return filename;
 }
 
-std::string File::getFilenameWithoutPath(const std::string& filename)
+std::string filefunc::getFilenameWithoutPath(const std::string& filename)
 {
     auto pos_p = getLastPathCharPos(filename);
     if (pos_p != std::string::npos)
@@ -342,7 +342,7 @@ std::string File::getFilenameWithoutPath(const std::string& filename)
     return filename;
 }
 
-std::string File::changeFileExt(const std::string& filename, const std::string& ext)
+std::string filefunc::changeFileExt(const std::string& filename, const std::string& ext)
 {
     auto e = ext;
     if (!e.empty() && e[0] != '.')
@@ -352,7 +352,8 @@ std::string File::changeFileExt(const std::string& filename, const std::string& 
     return getFileMainname(filename) + e;
 }
 
-std::string File::getFilePath(const std::string& filename)
+//when a path name ends with "/", the result may be not good
+std::string filefunc::getFilePath(const std::string& filename)
 {
     auto pos_p = getLastPathCharPos(filename);
     if (pos_p != std::string::npos)
@@ -362,7 +363,7 @@ std::string File::getFilePath(const std::string& filename)
     return "";
 }
 
-std::string File::toLegalFileanme(const std::string& filename, int allow_path)
+std::string filefunc::toLegalFileanme(const std::string& filename, int allow_path)
 {
     std::string f = filename, chars = " *<>?|";
     if (!allow_path)
@@ -381,7 +382,7 @@ std::string File::toLegalFileanme(const std::string& filename, int allow_path)
     return f;
 }
 
-bool File::compareNature(const std::string& a, const std::string& b)
+bool filefunc::compareNature(const std::string& a, const std::string& b)
 {
     if (a.empty() && b.empty()) { return false; }
     if (a.empty()) { return true; }

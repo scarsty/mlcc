@@ -207,9 +207,9 @@ This library can change the color of the output characters on the console, or ch
 ConsoleControl::setColor(CONSOLE_COLOR_LIGHT_RED);    //change the color of printf, fprintf...
 ConsoleControl::moveUp(2);    //move up the cursor for 2 lines
 ```
-## File
+## filefunc
 
-File.h, File.cpp
+filefunc.h, filefunc.cpp
 
 This class can read and write file as a vector of any class.
 
@@ -220,10 +220,10 @@ This class can also extract  path, main name or extension from a filename string
 ```c++
 std::string filename = R"(C:\Windows\system32\xxx.exe.1)";
 std::string result; 
-result = File::getFilePath(filename);    // C:\Windows\system32
-result = File::getFileMainname(filename);    // C:\Windows\system32\xxx.exe
-result = File::getFilenameWithoutPath(filename);    // xxx.exe.1
-result = File::changeFileExt(filename, "dll");    // C:\Windows\system32\xxx.exe.dll
+result = filefunc::getFilePath(filename);    // C:\Windows\system32
+result = filefunc::getFileMainname(filename);    // C:\Windows\system32\xxx.exe
+result = filefunc::getFilenameWithoutPath(filename);    // xxx.exe.1
+result = filefunc::changeFileExt(filename, "dll");    // C:\Windows\system32\xxx.exe.dll
 ```
 
 On Windows, "\\" and "/" are both supported. A mixed style string (such as "C:\Windows\system32/xxx.exe.1") can also be treated correctly. It can treat ANSI string correctly, but for UTF8 string the result may be not right. In fact Windows cannot open a file with a UTF8 string file name directly, so this problem is not serious.

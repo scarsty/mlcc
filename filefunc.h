@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace File
+namespace filefunc
 {
 
 //read and write file
