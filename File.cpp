@@ -38,17 +38,23 @@
 
 bool File::fileExist(const std::string& name)
 {
-#if CPP_VERSION >= 201703L
-    std::filesystem::path fs(name.c_str());
-    return std::filesystem::exists(fs) && !std::filesystem::is_directory(fs);
-#endif
-    if (name.empty() || access(name.c_str(), 0) == -1)
+    if (name.empty())
     {
         return false;
     }
 #ifdef _WIN32
-    return !(GetFileAttributesA(name.c_str()) & FILE_ATTRIBUTE_DIRECTORY);
+    WIN32_FILE_ATTRIBUTE_DATA attrs = { 0 };
+    auto exist = ::GetFileAttributesExA(name.c_str(), ::GetFileExInfoStandard, &attrs);
+    if (exist)
+    {
+        return !(attrs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+    }
+    return false;
 #else
+    if (access(name.c_str(), 0) == -1)
+    {
+        return false;
+    }
     struct stat sb;
     stat(name.c_str(), &sb);
     return !(sb.st_mode & S_IFDIR);
@@ -57,17 +63,19 @@ bool File::fileExist(const std::string& name)
 
 bool File::pathExist(const std::string& name)
 {
-#if CPP_VERSION >= 201703L
-    std::filesystem::path fs(name.c_str());
-    return std::filesystem::is_directory(fs);
-#endif
-    if (name.empty() || access(name.c_str(), 0) == -1)
+    if (name.empty())
     {
         return false;
     }
 #ifdef _WIN32
-    return GetFileAttributesA(name.c_str()) & FILE_ATTRIBUTE_DIRECTORY;
+    WIN32_FILE_ATTRIBUTE_DATA attrs = { 0 };
+    ::GetFileAttributesExA(name.c_str(), ::GetFileExInfoStandard, &attrs);
+    return attrs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
 #else
+    if (access(name.c_str(), 0) == -1)
+    {
+        return false;
+    }
     struct stat sb;
     stat(name.c_str(), &sb);
     return sb.st_mode & S_IFDIR;
