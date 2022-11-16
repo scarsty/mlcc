@@ -26,31 +26,41 @@
 #include <sys/types.h>
 #endif
 
+#ifdef _MSC_VER
+#define CPP_VERSION _MSVC_LANG
+#else
+#define CPP_VERSION __cplusplus
+#endif
+
+#if CPP_VERSION >= 201703L
 #include <filesystem>
+#endif
 
 bool File::fileExist(const std::string& name)
 {
+#if CPP_VERSION >= 201703L
     std::filesystem::path fs(name.c_str());
-    return std::filesystem::exists(fs);
-    if (name.empty())
+    return std::filesystem::exists(fs) && !std::filesystem::is_directory(fs);
+#endif
+    if (name.empty() || access(name.c_str(), 0) == -1)
     {
         return false;
     }
-    if (FILE* file = fopen(name.c_str(), "r"))
-    {
-        fclose(file);
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+#ifdef _WIN32
+    return !(GetFileAttributesA(name.c_str()) & FILE_ATTRIBUTE_DIRECTORY);
+#else
+    struct stat sb;
+    stat(name.c_str(), &sb);
+    return !(sb.st_mode & S_IFDIR);
+#endif
 }
 
 bool File::pathExist(const std::string& name)
 {
+#if CPP_VERSION >= 201703L
     std::filesystem::path fs(name.c_str());
     return std::filesystem::is_directory(fs);
+#endif
     if (name.empty() || access(name.c_str(), 0) == -1)
     {
         return false;
