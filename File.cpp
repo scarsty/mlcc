@@ -26,8 +26,12 @@
 #include <sys/types.h>
 #endif
 
+#include <filesystem>
+
 bool File::fileExist(const std::string& name)
 {
+    std::filesystem::path fs(name.c_str());
+    return std::filesystem::exists(fs);
     if (name.empty())
     {
         return false;
@@ -45,6 +49,8 @@ bool File::fileExist(const std::string& name)
 
 bool File::pathExist(const std::string& name)
 {
+    std::filesystem::path fs(name.c_str());
+    return std::filesystem::is_directory(fs);
     if (name.empty() || access(name.c_str(), 0) == -1)
     {
         return false;
@@ -367,7 +373,9 @@ bool File::compareNature(const std::string& a, const std::string& b)
     if (!std::isdigit(a[0]) && !std::isdigit(b[0]))
     {
         if (std::toupper(a[0]) == std::toupper(b[0])) { return compareNature(a.substr(1), b.substr(1)); }
-        { return (std::toupper(a[0]) < std::toupper(b[0])); }
+        {
+            return (std::toupper(a[0]) < std::toupper(b[0]));
+        }
     }
 
     // Both strings begin with digit --> parse both numbers
