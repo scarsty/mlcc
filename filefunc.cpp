@@ -82,18 +82,6 @@ bool filefunc::pathExist(const std::string& name)
 #endif
 }
 
-void filefunc::reverse(char* c, int n)
-{
-    for (int i = 0; i < n / 2; i++)
-    {
-        auto& a = *(c + i);
-        auto& b = *(c + n - 1 - i);
-        auto t = b;
-        b = a;
-        a = t;
-    }
-}
-
 std::vector<char> filefunc::readFile(const std::string& filename, int length)
 {
     std::vector<char> s;
@@ -245,7 +233,7 @@ void filefunc::makePath(const std::string& path)
             break;
         }
         paths.push_back(p);
-        p = getFilePath(p);
+        p = getParentPath(p);
     }
     for (auto it = paths.rbegin(); it != paths.rend(); it++)
     {
@@ -287,25 +275,88 @@ void filefunc::changePath(const std::string& path)
 
 static size_t getLastPathCharPos(const std::string& filename, int utf8 = 0)
 {
-    //here use std::string::npos == (decltype(std::string::npos))(-1)
-    //it seems right
+#ifndef _WIN32
+    utf8 = 1;
+#endif
     size_t pos = std::string::npos;
-#ifdef _WIN32
-    //ansi
-    for (int i = 0; i < filename.size(); i++)
+    if (utf8 == 0)
     {
-        if (utf8 == 0 && uint8_t(filename[i]) >= 128)
+        //ansi
+        for (int i = 0; i < filename.size(); i++)
         {
-            i++;
-        }
-        else if (filename[i] == '\\' || filename[i] == '/')
-        {
-            pos = i;
+            if (utf8 == 0 && uint8_t(filename[i]) >= 128)
+            {
+                i++;
+            }
+            else if (filename[i] == '\\' || filename[i] == '/')
+            {
+                pos = i;
+            }
         }
     }
-#else
-    pos = filename.find_last_of('/');
-#endif    // _WIN32
+    else
+    {
+        pos = filename.find_last_of('/');
+    }
+    return pos;
+}
+
+static size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0)
+{
+#ifndef _WIN32
+    utf8 = 1;
+#endif
+    size_t pos = std::string::npos;
+    if (utf8 == 0)
+    {
+        //ansi
+        bool found = false;
+        size_t pos1 = std::string::npos;
+        for (int i = 0; i < filename.size(); i++)
+        {
+            if (uint8_t(filename[i]) >= 128)
+            {
+                i++;
+            }
+            else if (filename[i] == '\\' || filename[i] == '/')
+            {
+                if (!found)
+                {
+                    pos1 = i;
+                    found = true;
+                }
+            }
+            else
+            {
+                pos = pos1;
+                found = false;
+            }
+        }
+    }
+    else
+    {
+        bool found_not_path = false;
+        int found_not_path_count = 0;
+        for (auto i = filename.size(); i--;)
+        {
+            if (filename[i] == '/')
+            {
+                found_not_path = false;
+            }
+            else
+            {
+                if (!found_not_path)
+                {
+                    found_not_path_count++;
+                    if (found_not_path_count == 2)
+                    {
+                        return i + 1;
+                    }
+                }
+                found_not_path = true;
+            }
+        }
+    }
     return pos;
 }
 
@@ -352,10 +403,9 @@ std::string filefunc::changeFileExt(const std::string& filename, const std::stri
     return getFileMainname(filename) + e;
 }
 
-//when a path name ends with "/", the result may be not good
-std::string filefunc::getFilePath(const std::string& filename)
+std::string filefunc::getParentPath(const std::string& filename)
 {
-    auto pos_p = getLastPathCharPos(filename);
+    auto pos_p = getLastEftPathCharPos(filename);
     if (pos_p != std::string::npos)
     {
         return filename.substr(0, pos_p);

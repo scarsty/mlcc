@@ -220,7 +220,7 @@ This class can also extract  path, main name or extension from a filename string
 ```c++
 std::string filename = R"(C:\Windows\system32\xxx.exe.1)";
 std::string result; 
-result = filefunc::getFilePath(filename);    // C:\Windows\system32
+result = filefunc::getParentPath(filename);    // C:\Windows\system32
 result = filefunc::getFileMainname(filename);    // C:\Windows\system32\xxx.exe
 result = filefunc::getFilenameWithoutPath(filename);    // xxx.exe.1
 result = filefunc::changeFileExt(filename, "dll");    // C:\Windows\system32\xxx.exe.dll
