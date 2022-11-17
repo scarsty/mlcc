@@ -273,6 +273,15 @@ void filefunc::changePath(const std::string& path)
     }
 }
 
+inline bool is_path_char(char c)
+{
+#ifdef _WIN32
+    return c == '\\' || c == '/';
+#else
+    return c == '/';
+#endif
+}
+
 static size_t getLastPathCharPos(const std::string& filename, int utf8 = 0)
 {
 #ifndef _WIN32
@@ -288,7 +297,7 @@ static size_t getLastPathCharPos(const std::string& filename, int utf8 = 0)
             {
                 i++;
             }
-            else if (filename[i] == '\\' || filename[i] == '/')
+            else if (is_path_char(filename[i]))
             {
                 pos = i;
             }
@@ -296,7 +305,14 @@ static size_t getLastPathCharPos(const std::string& filename, int utf8 = 0)
     }
     else
     {
-        pos = filename.find_last_of('/');
+        for (auto i = filename.size(); i--;)
+        {
+            if (is_path_char(filename[i]))
+            {
+                pos = i;
+                break;
+            }
+        }
     }
     return pos;
 }
@@ -361,7 +377,7 @@ static size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0)
             {
                 i++;
             }
-            else if (filename[i] == '\\' || filename[i] == '/')
+            else if (is_path_char(filename[i]))
             {
                 if (!found)
                 {
@@ -382,7 +398,7 @@ static size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0)
         int found_not_path_count = 0;
         for (auto i = filename.size(); i--;)
         {
-            if (filename[i] == '/')
+            if (is_path_char(filename[i]))
             {
                 found_not_path = false;
             }
