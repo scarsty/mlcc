@@ -301,6 +301,49 @@ static size_t getLastPathCharPos(const std::string& filename, int utf8 = 0)
     return pos;
 }
 
+std::string filefunc::getFileExt(const std::string& filename)
+{
+    auto pos_p = getLastPathCharPos(filename);
+    auto pos_d = filename.find_last_of('.');
+    if (pos_d != std::string::npos && (pos_p < pos_d || pos_p == std::string::npos))
+    {
+        return filename.substr(pos_d + 1);
+    }
+    return "";
+}
+
+//find the last point as default, and find the first when mode is 1
+std::string filefunc::getFileMainname(const std::string& filename)
+{
+    auto pos_p = getLastPathCharPos(filename);
+    auto pos_d = filename.find_last_of('.');
+    if (pos_d != std::string::npos && (pos_p < pos_d || pos_p == std::string::npos))
+    {
+        return filename.substr(0, pos_d);
+    }
+    return filename;
+}
+
+std::string filefunc::getFilenameWithoutPath(const std::string& filename)
+{
+    auto pos_p = getLastPathCharPos(filename);
+    if (pos_p != std::string::npos)
+    {
+        return filename.substr(pos_p + 1);
+    }
+    return filename;
+}
+
+std::string filefunc::changeFileExt(const std::string& filename, const std::string& ext)
+{
+    auto e = ext;
+    if (!e.empty() && e[0] != '.')
+    {
+        e = "." + e;
+    }
+    return getFileMainname(filename) + e;
+}
+
 static size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0)
 {
 #ifndef _WIN32
@@ -358,49 +401,6 @@ static size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0)
         }
     }
     return pos;
-}
-
-std::string filefunc::getFileExt(const std::string& filename)
-{
-    auto pos_p = getLastPathCharPos(filename);
-    auto pos_d = filename.find_last_of('.');
-    if (pos_d != std::string::npos && (pos_p < pos_d || pos_p == std::string::npos))
-    {
-        return filename.substr(pos_d + 1);
-    }
-    return "";
-}
-
-//find the last point as default, and find the first when mode is 1
-std::string filefunc::getFileMainname(const std::string& filename)
-{
-    auto pos_p = getLastPathCharPos(filename);
-    auto pos_d = filename.find_last_of('.');
-    if (pos_d != std::string::npos && (pos_p < pos_d || pos_p == std::string::npos))
-    {
-        return filename.substr(0, pos_d);
-    }
-    return filename;
-}
-
-std::string filefunc::getFilenameWithoutPath(const std::string& filename)
-{
-    auto pos_p = getLastPathCharPos(filename);
-    if (pos_p != std::string::npos)
-    {
-        return filename.substr(pos_p + 1);
-    }
-    return filename;
-}
-
-std::string filefunc::changeFileExt(const std::string& filename, const std::string& ext)
-{
-    auto e = ext;
-    if (!e.empty() && e[0] != '.')
-    {
-        e = "." + e;
-    }
-    return getFileMainname(filename) + e;
 }
 
 std::string filefunc::getParentPath(const std::string& filename)
