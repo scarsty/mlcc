@@ -30,8 +30,7 @@ private:
     {
         if (color_map_.empty())
         {
-            color_map_ =
-            {
+            color_map_ = {
                 { CONSOLE_COLOR_NONE, "\e[0m" },
                 { CONSOLE_COLOR_RED, "\e[0;31m" },
                 { CONSOLE_COLOR_LIGHT_RED, "\e[1;31m" },
@@ -97,5 +96,9 @@ public:
             for (int i = 0; i < -l; i++) { fprintf(stderr, "\n"); }
         }
 #endif
+    }
+    static void moveDown(int l = 1)
+    {
+        moveUp(-l);
     }
 };
