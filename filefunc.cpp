@@ -431,16 +431,22 @@ std::string filefunc::getParentPath(const std::string& filename)
 
 std::string filefunc::toLegalFileanme(const std::string& filename, int allow_path)
 {
-    std::string f = filename, chars = " *<>?|";
+    std::string f = filename, chars = " *<>?|:";
     if (!allow_path)
     {
-        chars += ":/\\";
+        chars += "/\\";
     }
     for (char i = 31; i >= 0; i--)
     {
         chars += i;
     }
     size_t pos = 0;
+#ifdef _WIN32
+    if (allow_path && f.size() >= 2 && f[1] == ':')
+    {
+        pos = 2;
+    }
+#endif
     while ((pos = f.find_first_of(chars, pos)) != std::string::npos)
     {
         f[pos] = '_';
