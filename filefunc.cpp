@@ -366,6 +366,7 @@ static size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0)
     utf8 = 1;
 #endif
     size_t pos = std::string::npos;
+    //avoid mistakes for continued path char
     if (utf8 == 0)
     {
         //ansi
@@ -373,12 +374,7 @@ static size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0)
         size_t pos1 = std::string::npos;
         for (int i = 0; i < filename.size(); i++)
         {
-            if (uint8_t(filename[i]) >= 128)
-            {
-                i++;
-                found = false;
-            }
-            else if (is_path_char(filename[i]))
+            if (is_path_char(filename[i]))
             {
                 if (!found)
                 {
@@ -390,6 +386,10 @@ static size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0)
             {
                 pos = pos1;
                 found = false;
+                if (uint8_t(filename[i]) >= 128)
+                {
+                    i++;
+                }
             }
         }
     }
