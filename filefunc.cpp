@@ -376,6 +376,7 @@ static size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0)
             if (uint8_t(filename[i]) >= 128)
             {
                 i++;
+                found = false;
             }
             else if (is_path_char(filename[i]))
             {
