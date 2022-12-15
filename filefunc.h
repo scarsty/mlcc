@@ -60,8 +60,8 @@ std::string getFileExt(const std::string& filename);
 std::string getFileMainname(const std::string& filename);
 std::string getFilenameWithoutPath(const std::string& filename);
 std::string changeFileExt(const std::string& filename, const std::string& ext);
-std::string getParentPath(const std::string& filename);
+std::string getParentPath(const std::string& filename, int utf8 = 0);    //utf8 has no effect on non-win32
 std::string toLegalFileanme(const std::string& filename, int allow_path = 1);
 bool compareNature(const std::string& a, const std::string& b);
 
-}    // namespace File
+}    //namespace filefunc

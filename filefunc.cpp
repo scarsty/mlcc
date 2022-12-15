@@ -420,9 +420,9 @@ static size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0)
     return pos;
 }
 
-std::string filefunc::getParentPath(const std::string& filename)
+std::string filefunc::getParentPath(const std::string& filename, int utf8)
 {
-    auto pos_p = getLastEftPathCharPos(filename);
+    auto pos_p = getLastEftPathCharPos(filename, utf8);
     if (pos_p != std::string::npos)
     {
         return filename.substr(0, pos_p);
