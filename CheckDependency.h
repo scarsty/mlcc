@@ -1,8 +1,7 @@
 #pragma once
 
-#include "windows.h"    //DONT REMOVE IT
+#include "windows.h"
 
-#include "DynamicLibrary.h"
 #include "ImageHlp.h"
 #include <map>
 #include <string>
