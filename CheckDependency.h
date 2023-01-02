@@ -10,14 +10,15 @@
 #pragma comment(lib, "imagehlp.lib")
 
 // auto dlls = CheckDependency(pe_name).DllsNotGood();
-// return value is the dlls which lost functions
+// Return value is a map. If all are OK, the map is empty.
+// Else, the keys are the names of dlls and the values are vectors of functions lost.
 
 class CheckDependency
 {
 private:
     PLOADED_IMAGE image = nullptr;
 
-    std::map<std::string, std::vector<std::string>> import_table_, not_good_dlls_;
+    std::map<std::string, std::vector<std::string>> import_table_, dlls_not_good_;
     std::map<std::string, std::map<std::string, int>> export_table_;
 
     PIMAGE_SECTION_HEADER GetEnclosingSectionHeader(DWORD rva)
@@ -57,7 +58,7 @@ private:
         return (PVOID)(image->MappedAddress + rva - delta);
     }
 
-    void DumpImportTable(const std::string& path, std::map<std::string, int>& check_map)
+    void DumpTable(const std::string& path, std::map<std::string, int>& check_map)
     {
         check_map[path]++;
         image = ImageLoad(path.c_str(), 0);
@@ -68,13 +69,13 @@ private:
 
         if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 1)
         {
-            auto exportDesc = (PIMAGE_EXPORT_DIRECTORY)GetPtrFromRVA(image->FileHeader->OptionalHeader.DataDirectory[0].VirtualAddress);
-            if (!exportDesc)
+            auto export_dir = (PIMAGE_EXPORT_DIRECTORY)GetPtrFromRVA(image->FileHeader->OptionalHeader.DataDirectory[0].VirtualAddress);
+            if (!export_dir)
             {
                 return;
             }
-            auto name = (PDWORD)GetPtrFromRVA(exportDesc->AddressOfNames);
-            for (size_t i = 0; i < exportDesc->NumberOfNames; i++)
+            auto name = (PDWORD)GetPtrFromRVA(export_dir->AddressOfNames);
+            for (size_t i = 0; i < export_dir->NumberOfNames; i++)
             {
                 //printf("export %s::%s\n", path.c_str(), (const char*)GetPtrFromRVA(*name));
                 if (!name)
@@ -88,21 +89,21 @@ private:
 
         if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2)
         {
-            auto importDesc = (PIMAGE_IMPORT_DESCRIPTOR)GetPtrFromRVA(image->FileHeader->OptionalHeader.DataDirectory[1].VirtualAddress);
+            auto import_desc = (PIMAGE_IMPORT_DESCRIPTOR)GetPtrFromRVA(image->FileHeader->OptionalHeader.DataDirectory[1].VirtualAddress);
 
-            if (!importDesc)
+            if (!import_desc)
             {
                 return;
             }
             while (1)
             {
                 // See if we've reached an empty IMAGE_IMPORT_DESCRIPTOR
-                if ((importDesc->TimeDateStamp == 0) && (importDesc->Name == 0))
+                if ((import_desc->TimeDateStamp == 0) && (import_desc->Name == 0))
                 {
                     break;
                 }
-                auto dll_name = (const char*)GetPtrFromRVA(importDesc->Name);
-                auto thunk = (PIMAGE_THUNK_DATA64)GetPtrFromRVA(importDesc->OriginalFirstThunk);
+                auto dll_name = (const char*)GetPtrFromRVA(import_desc->Name);
+                auto thunk = (PIMAGE_THUNK_DATA64)GetPtrFromRVA(import_desc->OriginalFirstThunk);
                 while (1)
                 {
                     if (thunk->u1.AddressOfData == 0)
@@ -121,7 +122,7 @@ private:
                 {
                     check_map[dll_name] = 0;
                 }
-                importDesc++;
+                import_desc++;
             }
         }
         ImageUnload(image);
@@ -133,16 +134,16 @@ public:
     }
     CheckDependency(const std::string& file)
     {
-        not_good_dlls_ = Check(file);
+        dlls_not_good_ = Check(file);
     }
     std::map<std::string, std::vector<std::string>> DllsNotGood()
     {
-        return not_good_dlls_;
+        return dlls_not_good_;
     }
     std::map<std::string, std::vector<std::string>> Check(const std::string& file)
     {
         std::map<std::string, int> check_map;
-        DumpImportTable(file.c_str(), check_map);
+        DumpTable(file.c_str(), check_map);
         while (1)
         {
             bool recheck = false;
@@ -150,7 +151,7 @@ public:
             {
                 if (pair.second == 0)
                 {
-                    DumpImportTable(pair.first.c_str(), check_map);
+                    DumpTable(pair.first.c_str(), check_map);
                     recheck = true;
                 }
             }
