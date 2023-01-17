@@ -797,15 +797,6 @@ void Cifa::register_parameter(const std::string& name, Object o)
     parameters[name] = o;
 }
 
-void Cifa::register_vector(const std::string& name, const std::vector<Object>& v)
-{
-    int i = 0;
-    for (auto& o : v)
-    {
-        parameters[name + "[" + std::to_string(i++) + "]"] = o;
-    }
-}
-
 void* Cifa::get_user_data(const std::string& name)
 {
     return user_data[name];
