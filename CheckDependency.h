@@ -11,14 +11,28 @@
 
 // auto dlls = CheckDependency(pe_name).DllsNotGood();
 // Return value is a map. If all are OK, the map is empty.
-// Else, the keys are the names of dlls and the values are vectors of functions lost.
+// Else, the keys are the names of dlls and the values are vectors of struct NotGoodInfo.
+// Empty full path means the file is not found.
+// If the path and machine of a file are both OK, but some functions are lost, usually that means the version of this file is not right. 
 
 class CheckDependency
 {
 private:
     PLOADED_IMAGE image = nullptr;
-
-    std::map<std::string, std::vector<std::string>> import_table_, dlls_not_good_;
+    struct ImportInfo
+    {
+        std::string full_path;
+        std::string machine;
+        std::vector<std::string> used_functions;    // functions which used by other modules
+    };
+    struct NotGoodInfo
+    {
+        std::string full_path;
+        std::string machine;
+        std::vector<std::string> lost_functions;    // function which should exist
+    };
+    std::map<std::string, ImportInfo> import_table_;
+    std::map<std::string, NotGoodInfo> dlls_not_good_;
     std::map<std::string, std::map<std::string, int>> export_table_;
 
     PIMAGE_SECTION_HEADER GetEnclosingSectionHeader(DWORD rva)
@@ -62,11 +76,26 @@ private:
     {
         check_map[path]++;
         image = ImageLoad(path.c_str(), 0);
+        char full_path[MAX_PATH];
+        SearchPathA(NULL, path.c_str(), NULL, MAX_PATH, full_path, NULL);
         if (!image)
         {
             return;
         }
-
+        import_table_[path].full_path = full_path;
+        if (image->FileHeader->FileHeader.Machine == 0x014c)
+        {
+            // if the machine is not x64, the export/import table maybe not right
+            import_table_[path].machine = "x86";
+        }
+        else if (image->FileHeader->FileHeader.Machine == 0x8664)
+        {
+            import_table_[path].machine = "x64";
+        }
+        else
+        {
+            import_table_[path].machine = "unknown";
+        }
         if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 1)
         {
             auto export_dir = (PIMAGE_EXPORT_DIRECTORY)GetPtrFromRVA(image->FileHeader->OptionalHeader.DataDirectory[0].VirtualAddress);
@@ -114,7 +143,7 @@ private:
                     if (name && name->Name)
                     {
                         //printf("import %s::%s\n", dll_name, name->Name);
-                        import_table_[dll_name].push_back(name->Name);
+                        import_table_[dll_name].used_functions.push_back(name->Name);
                     }
                     thunk++;
                 }
@@ -136,11 +165,11 @@ public:
     {
         dlls_not_good_ = Check(file);
     }
-    std::map<std::string, std::vector<std::string>> DllsNotGood()
+    std::map<std::string, NotGoodInfo> DllsNotGood()
     {
         return dlls_not_good_;
     }
-    std::map<std::string, std::vector<std::string>> Check(const std::string& file)
+    std::map<std::string, NotGoodInfo> Check(const std::string& file)
     {
         std::map<std::string, int> check_map;
         DumpTable(file.c_str(), check_map);
@@ -160,7 +189,7 @@ public:
                 break;
             }
         }
-        std::map<std::string, std::vector<std::string>> problem_dlls;
+        std::map<std::string, NotGoodInfo> problem_dlls;
         for (auto& import_pair : import_table_)
         {
             auto& dll_name = import_pair.first;
@@ -168,15 +197,19 @@ public:
             {
                 continue;
             }
-            for (auto& function_name : import_pair.second)
+            for (auto& function_name : import_pair.second.used_functions)
             {
                 if (export_table_[dll_name].count(function_name) == 0)
                 {
-                    problem_dlls[dll_name].push_back(function_name);
+                    problem_dlls[dll_name].lost_functions.push_back(function_name);
                 }
             }
         }
-
+        for (auto& dll : problem_dlls)
+        {
+            dll.second.full_path = import_table_[dll.first].full_path;
+            dll.second.machine = import_table_[dll.first].machine;
+        }
         return problem_dlls;
     }
 };
