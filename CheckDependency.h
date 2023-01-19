@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef _CHECKDEPENDENCY_H_
+#define _CHECKDEPENDENCY_H_
+#endif
+
 #include "windows.h"
 
 #include "ImageHlp.h"
@@ -23,13 +27,13 @@ private:
     {
         std::string full_path;
         std::string machine;
-        std::vector<std::string> used_functions;    // functions which used by other modules
+        std::vector<std::string> used_functions;    // functions used by other modules
     };
     struct NotGoodInfo
     {
         std::string full_path;
         std::string machine;
-        std::vector<std::string> lost_functions;    // function which should exist
+        std::vector<std::string> lost_functions;    // functions which should exist
     };
     std::map<std::string, ImportInfo> import_table_;
     std::map<std::string, NotGoodInfo> dlls_not_good_;
