@@ -172,6 +172,16 @@ public:
         sections_.compare_key = [](const std::string& l) { return l; };
     }
 
+    const std::string& operator()(const std::string& section, const std::string& key) const
+    {
+        return sections_[section][key].value;
+    }
+
+    std::string& operator()(const std::string& section, const std::string& key)
+    {
+        return sections_[section][key].value;
+    }
+
     void setCompareSection(std::function<std::string(const std::string&)> com)
     {
         sections_.compare_name = com;

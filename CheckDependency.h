@@ -17,7 +17,7 @@
 // Return value is a map. If all are OK, the map is empty.
 // Else, the keys are the names of dlls and the values are vectors of struct NotGoodInfo.
 // Empty full path means the file is not found.
-// If the path and machine of a file are both OK, but some functions are lost, usually that means the version of this file is not right. 
+// If the path and machine of a file are both OK, but some functions are lost, usually that means the version of this file is not right.
 
 class CheckDependency
 {
@@ -80,13 +80,13 @@ private:
     {
         check_map[path]++;
         image = ImageLoad(path.c_str(), 0);
-        char full_path[MAX_PATH];
+        char full_path[MAX_PATH] = {0};
         SearchPathA(NULL, path.c_str(), NULL, MAX_PATH, full_path, NULL);
+        import_table_[path].full_path = full_path;
         if (!image)
         {
             return;
         }
-        import_table_[path].full_path = full_path;
         if (image->FileHeader->FileHeader.Machine == 0x014c)
         {
             // if the machine is not x64, the export/import table maybe not right
@@ -200,6 +200,10 @@ public:
             if (dll_name.find("api-ms-win") == 0 || dll_name.find("KERNEL32") == 0)
             {
                 continue;
+            }
+            if (import_pair.second.full_path.empty())
+            {
+                problem_dlls[dll_name] = NotGoodInfo();
             }
             for (auto& function_name : import_pair.second.used_functions)
             {
