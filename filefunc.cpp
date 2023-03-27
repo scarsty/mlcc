@@ -267,7 +267,7 @@ std::string filefunc::getFileTime(std::string filename)
 
 void filefunc::changePath(const std::string& path)
 {
-    if (_chdir(path.c_str()) != 0)
+    if (chdir(path.c_str()) != 0)
     {
         fprintf(stderr, "Failed to change work path %s\n", path.c_str());
     }
