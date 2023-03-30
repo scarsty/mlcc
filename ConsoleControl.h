@@ -63,7 +63,7 @@ private:
     ConsoleControl& operator=(ConsoleControl&) = delete;
 
 public:
-    static void setColor(int c)
+    static void setColor(ConsoleColor c)
     {
         auto cc = getInstance();
 #ifdef _MSC_VER
@@ -79,7 +79,7 @@ public:
         fprintf(stderr, "%s", cc->color_map_[c].c_str());
 #endif
     }
-    static void resetColor(int c)
+    static void resetColor()
     {
         setColor(CONSOLE_COLOR_NONE);
     }
