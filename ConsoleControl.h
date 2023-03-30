@@ -79,6 +79,10 @@ public:
         fprintf(stderr, "%s", cc->color_map_[c].c_str());
 #endif
     }
+    static void resetColor(int c)
+    {
+        setColor(CONSOLE_COLOR_NONE);
+    }
     static void moveUp(int l = 1)
     {
 #ifdef _MSC_VER
