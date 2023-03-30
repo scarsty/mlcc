@@ -225,3 +225,20 @@ std::string strfunc::toUpperCase(const std::string& s)
     std::transform(s1.begin(), s1.end(), s1.begin(), ::toupper);
     return s1;
 }
+
+std::string strfunc::ltrim(const std::string& s)
+{
+    size_t start = s.find_first_not_of(" \n\r\t\f\v");
+    return (start == std::string::npos) ? "" : s.substr(start);
+}
+
+std::string strfunc::rtrim(const std::string& s)
+{
+    size_t end = s.find_last_not_of(" \n\r\t\f\v");
+    return (end == std::string::npos) ? "" : s.substr(0, end + 1);
+}
+
+std::string strfunc::trim(const std::string& s)
+{
+    return rtrim(ltrim(s));
+}
