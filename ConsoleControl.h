@@ -65,6 +65,10 @@ private:
 public:
     static void setColor(ConsoleColor c)
     {
+        setColor(static_cast<int>(c));
+    }
+    static void setColor(int c)
+    {
         auto cc = getInstance();
 #ifdef _MSC_VER
         if (c != CONSOLE_COLOR_NONE)
