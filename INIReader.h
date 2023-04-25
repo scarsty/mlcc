@@ -90,7 +90,8 @@ private:
             {
                 return *(map_iter.at(str1));
             }
-            return T();
+            static T t();
+            return t;
         }
         size_t count(const std::string& str) const
         {
@@ -164,7 +165,8 @@ private:
             {
                 return *(map_iter.at(str1));
             }
-            return SectionType();
+            static SectionType st;
+            return st;
         }
     };
 #ifdef _WIN32
