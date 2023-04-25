@@ -41,10 +41,11 @@
 
 #include <algorithm>
 #include <functional>
+#include <list>
 #include <map>
+#include <mutex>
 #include <string>
 #include <vector>
-#include <list>
 
 // Read an INI file into easy-to-access name/value pairs. (Note that I've gone
 // for simplicity here rather than speed, but it should be pretty decent.)
@@ -81,6 +82,15 @@ private:
             records.back().name = str;
             map_iter[str1] = std::prev(records.end());
             return records.back();
+        }
+        const T& at(const std::string& str) const
+        {
+            auto str1 = compare_name(str);
+            if (map_iter.count(str1))
+            {
+                return *(map_iter.at(str1));
+            }
+            return T();
         }
         size_t count(const std::string& str) const
         {
@@ -147,6 +157,15 @@ private:
             map_iter[str1] = std::prev(records.end());
             return records.back();
         }
+        const SectionType& at(const std::string& str) const
+        {
+            auto str1 = compare_name(str);
+            if (map_iter.count(str1))
+            {
+                return *(map_iter.at(str1));
+            }
+            return SectionType();
+        }
     };
 #ifdef _WIN32
     std::string line_break_ = "\r\n";
@@ -155,7 +174,8 @@ private:
 #endif
     int error_ = 0;
     std::vector<std::string> lines_;    //lines of the files, sections the lines belong to
-    mutable FileType sections_;
+    FileType sections_;
+    mutable std::mutex mutex_;
 
     //return value: the key has existed, 0 means it is a new key
     int valueHandler(const std::string& section, const std::string& key, const std::string& value)
@@ -168,13 +188,19 @@ private:
 public:
     INIReader()
     {
-        sections_.compare_name = [](const std::string& l) { return l; };
-        sections_.compare_key = [](const std::string& l) { return l; };
+        sections_.compare_name = [](const std::string& l)
+        {
+            return l;
+        };
+        sections_.compare_key = [](const std::string& l)
+        {
+            return l;
+        };
     }
 
     const std::string& operator()(const std::string& section, const std::string& key) const
     {
-        return sections_[section][key].value;
+        return sections_.at(section).at(key).value;
     }
 
     std::string& operator()(const std::string& section, const std::string& key)
@@ -246,13 +272,14 @@ public:
     // Get a string value from INI file, returning default_value if not found.
     std::string getString(const std::string& section, const std::string& key, const std::string& default_value = "") const
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         if (sections_.count(section) == 0)
         {
             return default_value;
         }
-        if (sections_[section].count(key) > 0)
+        if (sections_.at(section).count(key) > 0)
         {
-            return sections_[section][key].value;
+            return sections_.at(section).at(key).value;
         }
         else
         {
@@ -315,7 +342,7 @@ public:
     //check one section and one key exist or not
     int hasKey(const std::string& section, const std::string& key) const
     {
-        return sections_.count(section) > 0 ? sections_[section].count(key) : 0;
+        return sections_.count(section) > 0 ? sections_.at(section).count(key) : 0;
     }
 
     std::vector<std::string> getAllSections() const
@@ -335,7 +362,7 @@ public:
         {
             return ret;
         }
-        for (auto& kv : sections_[section].records)
+        for (auto& kv : sections_.at(section).records)
         {
             ret.push_back(kv.name);
         }
@@ -349,7 +376,7 @@ public:
         {
             return ret;
         }
-        for (auto& kv : sections_[section].records)
+        for (auto& kv : sections_.at(section).records)
         {
             ret.push_back(kv);
         }
@@ -358,11 +385,13 @@ public:
 
     void setKey(const std::string& section, const std::string& key, const std::string& value)
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         valueHandler(section, key, value);
     }
 
     void eraseKey(const std::string& section, const std::string& key)
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         sections_[section].erase(key);
     }
 
@@ -717,7 +746,7 @@ public:
         for (auto& section : getAllSections())
         {
             content += "[" + section + "]" + line_break_;
-            for (auto& key : sections_[section].records)
+            for (auto& key : sections_.at(section).records)
             {
                 content += key.name + "=" + key.value + line_break_;
             }
@@ -748,27 +777,26 @@ public:
     INIReaderNoUnderline()
     {
         setCompareSection([](const std::string& l)
-        {
-            auto l1 = l;
-            std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-            return l1;
-        });
-        setCompareKey([](const std::string& l)
-        {
-            auto l1 = l;
-            auto erase = [](std::string& s, const std::string& oldstring)
             {
-                auto pos = s.find(oldstring);
-                while (pos != std::string::npos)
+                auto l1 = l;
+                std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+                return l1;
+            });
+        setCompareKey([](const std::string& l)
+            {
+                auto l1 = l;
+                auto erase = [](std::string& s, const std::string& oldstring)
                 {
-                    s.erase(pos, oldstring.length());
-                    pos = s.find(oldstring, pos);
-                }
-            };
-            erase(l1, "_");
-            std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-            return l1;
-        });
+                    auto pos = s.find(oldstring);
+                    while (pos != std::string::npos)
+                    {
+                        s.erase(pos, oldstring.length());
+                        pos = s.find(oldstring, pos);
+                    }
+                };
+                erase(l1, "_");
+                std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+                return l1;
+            });
     }
 };
-
