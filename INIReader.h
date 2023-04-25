@@ -90,7 +90,7 @@ private:
             {
                 return *(map_iter.at(str1));
             }
-            static T t();
+            static T t{};
             return t;
         }
         size_t count(const std::string& str) const
