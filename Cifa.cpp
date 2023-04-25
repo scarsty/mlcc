@@ -270,7 +270,7 @@ std::list<CalUnit> Cifa::split(std::string& str)
             {
                 pos1 += 2;
             }
-            for (size_t i = pos; i <= pos1; i++)
+            for (size_t i = pos; i < pos1; i++)
             {
                 if (str[i] != '\n') { str[i] = ' '; }
             }
