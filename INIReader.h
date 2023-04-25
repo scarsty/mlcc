@@ -106,7 +106,6 @@ private:
                 records.erase(map_iter[str1]);
                 map_iter.erase(str1);
             }
-            return;
         }
         void clear()
         {
