@@ -43,7 +43,7 @@
 #include <functional>
 #include <list>
 #include <map>
-#include <mutex>
+//#include <mutex>
 #include <string>
 #include <vector>
 
@@ -176,7 +176,7 @@ private:
     int error_ = 0;
     std::vector<std::string> lines_;    //lines of the files, sections the lines belong to
     FileType sections_;
-    mutable std::mutex mutex_;
+    //std::mutex mutex_;
 
     //return value: the key has existed, 0 means it is a new key
     int valueHandler(const std::string& section, const std::string& key, const std::string& value)
@@ -273,7 +273,7 @@ public:
     // Get a string value from INI file, returning default_value if not found.
     std::string getString(const std::string& section, const std::string& key, const std::string& default_value = "") const
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        //std::lock_guard<std::mutex> lock(mutex_);
         if (sections_.count(section) == 0)
         {
             return default_value;
@@ -386,13 +386,13 @@ public:
 
     void setKey(const std::string& section, const std::string& key, const std::string& value)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        //std::lock_guard<std::mutex> lock(mutex_);
         valueHandler(section, key, value);
     }
 
     void eraseKey(const std::string& section, const std::string& key)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        //std::lock_guard<std::mutex> lock(mutex_);
         sections_[section].erase(key);
     }
 
