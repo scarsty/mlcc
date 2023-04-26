@@ -51,8 +51,16 @@ private:
 #endif
 
 public:
-    static void* loadDynamicLibrary(const std::string& library_name)
+    static void* loadDynamicLibrary(std::string library_name)
     {
+        if (library_name.find(".") == std::string::npos)
+        {
+#ifdef _WIN32
+            library_name = library_name + ".dll";
+#else
+            library_name = "lib" + library_name + ".so";
+#endif
+        }
         auto dl = getInstance();
         if (dl->dynamic_libraries_.count(library_name) == 0)
         {
