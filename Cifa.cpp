@@ -81,7 +81,7 @@ Object Cifa::eval(CalUnit& c)
             if (c.str == "|") { return int(eval(c.v[0])) | int(eval(c.v[1])); }
             if (c.str == "&&") { return bool(eval(c.v[0])) && bool(eval(c.v[1])); }
             if (c.str == "||") { return bool(eval(c.v[0])) || bool(eval(c.v[1])); }
-            if (c.str == "=") { return get_parameter(c.v[0]) = eval(c.v[1]); }
+            if (c.str == "=") { return get_parameter(c.v[0], 1) = eval(c.v[1]); }
             if (c.str == "+=") { return get_parameter(c.v[0]) = add(get_parameter(c.v[0]), eval(c.v[1])); }
             if (c.str == "-=") { return get_parameter(c.v[0]) = sub(get_parameter(c.v[0]), eval(c.v[1])); }
             if (c.str == "*=") { return get_parameter(c.v[0]) = mul(get_parameter(c.v[0]), eval(c.v[1])); }
@@ -820,7 +820,7 @@ Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc)
     }
 }
 
-Object& Cifa::get_parameter(CalUnit& c)
+Object& Cifa::get_parameter(CalUnit& c, int allow_undefined)
 {
     std::string parameter_name = c.str;
     if (c.v.size() > 0 && c.v[0].str == "[]")
@@ -840,7 +840,20 @@ Object& Cifa::get_parameter(CalUnit& c)
             parameter_name += "[" + str + "]";
         }
     }
-    return parameters[parameter_name];
+    if (allow_undefined)
+    {
+        return parameters[parameter_name];
+    }
+    if (parameters.count(parameter_name))
+    {
+        return parameters[parameter_name];
+    }
+    else
+    {
+        add_error(c, "parameter %s is undefined", parameter_name.c_str());
+        static Object o;
+        return o;
+    }
 }
 
 void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
@@ -1030,18 +1043,19 @@ Object Cifa::run_script(std::string str)
     }
     else
     {
+        result.type = "Error";
+        std::sort(errors.begin(), errors.end(), [](const ErrorMessage& l, const ErrorMessage& r) -> bool
+            {
+                return l.line * 1024 + l.col < r.line * 1024 + r.col;
+            });
+        for (auto& e : errors)
+        {
+            result.content += "Error (" + std::to_string(e.line) + ", " + std::to_string(e.col) + "): " + e.message + "\n";
+        }
         if (output_error)
         {
-            std::sort(errors.begin(), errors.end(), [](const ErrorMessage& l, const ErrorMessage& r) -> bool
-                {
-                    return l.line * 1024 + l.col < r.line * 1024 + r.col;
-                });
-            for (auto& e : errors)
-            {
-                std::cout << "Error (" << e.line << ", " << e.col << "): " << e.message << "\n";
-            }
+            std::cerr << result.content;
         }
-        result.type = "Error";
     }
     return result;
 }
