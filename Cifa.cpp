@@ -81,7 +81,7 @@ Object Cifa::eval(CalUnit& c)
             if (c.str == "|") { return int(eval(c.v[0])) | int(eval(c.v[1])); }
             if (c.str == "&&") { return bool(eval(c.v[0])) && bool(eval(c.v[1])); }
             if (c.str == "||") { return bool(eval(c.v[0])) || bool(eval(c.v[1])); }
-            if (c.str == "=") { return get_parameter(c.v[0], 1) = eval(c.v[1]); }
+            if (c.str == "=") { return get_parameter(c.v[0]) = eval(c.v[1]); }
             if (c.str == "+=") { return get_parameter(c.v[0]) = add(get_parameter(c.v[0]), eval(c.v[1])); }
             if (c.str == "-=") { return get_parameter(c.v[0]) = sub(get_parameter(c.v[0]), eval(c.v[1])); }
             if (c.str == "*=") { return get_parameter(c.v[0]) = mul(get_parameter(c.v[0]), eval(c.v[1])); }
@@ -820,7 +820,12 @@ Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc)
     }
 }
 
-Object& Cifa::get_parameter(CalUnit& c, int allow_undefined)
+Object& Cifa::get_parameter(CalUnit& c)
+{
+    return parameters[convert_parameter_name(c)];
+}
+
+std::string Cifa::convert_parameter_name(CalUnit& c)
 {
     std::string parameter_name = c.str;
     if (c.v.size() > 0 && c.v[0].str == "[]")
@@ -840,20 +845,12 @@ Object& Cifa::get_parameter(CalUnit& c, int allow_undefined)
             parameter_name += "[" + str + "]";
         }
     }
-    if (allow_undefined)
-    {
-        return parameters[parameter_name];
-    }
-    if (parameters.count(parameter_name))
-    {
-        return parameters[parameter_name];
-    }
-    else
-    {
-        add_error(c, "parameter %s is undefined", parameter_name.c_str());
-        static Object o;
-        return o;
-    }
+    return parameter_name;
+}
+
+bool Cifa::check_parameter(CalUnit& c)
+{
+    return parameters.count(convert_parameter_name(c));
 }
 
 void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
@@ -872,7 +869,11 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
         {
             if (c.str == "=")
             {
-                if (c.v[0].type == CalUnitType::Parameter && get_parameter(c.v[0], 1).type == "__"
+                if (c.v[0].type == CalUnitType::Parameter)
+                {
+                    get_parameter(c.v[0]);    //only parameter at left of "=" is allowed
+                }
+                if (c.v[0].type == CalUnitType::Parameter && get_parameter(c.v[0]).type == "__"
                     || c.v[0].type != CalUnitType::Parameter)
                 {
                     add_error(c, "%s cannot be assigned", c.v[0].str.c_str());
@@ -896,13 +897,17 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
         if (c.v.size() > 0)
         {
             add_error(c, "cannot calculate constant %s with operands", c.str.c_str());
-        }
+        };
     }
     else if (c.type == CalUnitType::Parameter)
     {
         if (c.v.size() > 0 && c.v[0].str != "[]")
         {
             add_error(c, "cannot calculate parameter %s with operands", c.str.c_str());
+        }
+        if (!check_parameter(c))
+        {
+            add_error(c, "parameter %s is at right of = but not been initialized", c.str.c_str());    //parameters at left of "=" have been added
         }
     }
     else if (c.type == CalUnitType::Function)

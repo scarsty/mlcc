@@ -163,7 +163,9 @@ public:
 
     void* get_user_data(const std::string& name);
     Object run_function(const std::string& name, std::vector<CalUnit>& vc);
-    Object& get_parameter(CalUnit& c, int allow_undefined = 0);    //undefined parameter only allow at left of '='
+    Object& get_parameter(CalUnit& c);
+    std::string convert_parameter_name(CalUnit& c);
+    bool check_parameter(CalUnit& c);
 
     void check_cal_unit(CalUnit& c, CalUnit* father);
 
