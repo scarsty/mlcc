@@ -1038,7 +1038,7 @@ Object Cifa::run_script(std::string str)
                 });
             for (auto& e : errors)
             {
-                std::cerr << "Error (" << e.line << ", " << e.col << "): " << e.message << "\n";
+                std::cout << "Error (" << e.line << ", " << e.col << "): " << e.message << "\n";
             }
         }
         result.type = "Error";

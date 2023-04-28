@@ -188,7 +188,7 @@ public:
         errors.emplace_back(std::move(e));
     }
 
-    void setOutoutError(bool oe) { output_error = oe; }
+    void setOutputError(bool oe) { output_error = oe; }
 
     //四则运算准许用户增加自定义功能
 
