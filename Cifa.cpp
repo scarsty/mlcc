@@ -872,7 +872,7 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
         {
             if (c.str == "=")
             {
-                if (c.v[0].type == CalUnitType::Parameter && get_parameter(c.v[0]).type == "__"
+                if (c.v[0].type == CalUnitType::Parameter && get_parameter(c.v[0], 1).type == "__"
                     || c.v[0].type != CalUnitType::Parameter)
                 {
                     add_error(c, "%s cannot be assigned", c.v[0].str.c_str());
