@@ -274,3 +274,9 @@ A C++ warp for iconv.
 # DrawStringFT
 
 A C++ warp for freetype and opencv Mat.
+
+# CheckDependency
+
+Only for Windows.
+
+To check the dependencies of a exe or dll file. 

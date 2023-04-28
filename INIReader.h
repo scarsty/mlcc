@@ -185,6 +185,16 @@ private:
         sections_[section][key].value = value;
         return ret;
     }
+#ifdef INI_DUMP_STRUCTURE
+    mutable std::vector<INIReader> dump_structure_;
+    void setDumpStructure(const std::string& section, const std::string& key, const std::string& type) const
+    {
+        if (!dump_structure_.empty())
+        {
+            dump_structure_[0].setKey(section, key, type);
+        }
+    }
+#endif
 
 public:
     INIReader()
@@ -198,7 +208,15 @@ public:
             return l;
         };
     }
-
+#ifdef INI_DUMP_STRUCTURE
+    ~INIReader()
+    {
+        if (!dump_structure_.empty())
+        {
+            dump_structure_[0].saveFile("__dump__.ini");
+        }
+    }
+#endif
     const std::string& operator()(const std::string& section, const std::string& key) const
     {
         return sections_.at(section).at(key).value;
@@ -261,8 +279,13 @@ public:
             }
         }
         error_ = ini_parse_content(content, clear_style);
+#ifdef INI_DUMP_STRUCTURE
+        if (getBoolean("", "dump"))
+        {
+            dump_structure_.resize(1);
+        }
+#endif
     }
-
     // Return the result of ini_parse(), i.e., 0 on success, line number of
     // first error on parse error, or -1 on file open error.
     int parseError() const
@@ -273,6 +296,9 @@ public:
     // Get a string value from INI file, returning default_value if not found.
     std::string getString(const std::string& section, const std::string& key, const std::string& default_value = "") const
     {
+#ifdef INI_DUMP_STRUCTURE
+        setDumpStructure(section, key, "string");
+#endif
         //std::lock_guard<std::mutex> lock(mutex_);
         if (sections_.count(section) == 0)
         {
@@ -292,6 +318,9 @@ public:
     // not found or not a valid integer (decimal "1234", "-1234", or hex "0x4d2").
     int getInt(const std::string& section, const std::string& key, long default_value = 0) const
     {
+#ifdef INI_DUMP_STRUCTURE
+        setDumpStructure(section, key, "int");
+#endif
         auto valstr = getString(section, key, "");
         const char* value = valstr.c_str();
         char* end;
@@ -305,6 +334,9 @@ public:
     // according to strtod().
     double getReal(const std::string& section, const std::string& key, double default_value = 0.0) const
     {
+#ifdef INI_DUMP_STRUCTURE
+        setDumpStructure(section, key, "real");
+#endif
         auto valstr = getString(section, key, "");
         const char* value = valstr.c_str();
         char* end;
@@ -317,6 +349,9 @@ public:
     // and valid false values are "false", "no", "off", "0" (not case sensitive).
     bool getBoolean(const std::string& section, const std::string& key, bool default_value = false) const
     {
+#ifdef INI_DUMP_STRUCTURE
+        setDumpStructure(section, key, "bool");
+#endif
         auto valstr = getString(section, key, "");
         // Convert to lower case to make string comparisons case-insensitive
         std::transform(valstr.begin(), valstr.end(), valstr.begin(), ::tolower);
