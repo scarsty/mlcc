@@ -873,6 +873,7 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
                 {
                     check_cal_unit(c.v[1], &c);    //here make sure no undefined parameters at right of "="
                     get_parameter(c.v[0]);         //record a parameter at left of "="
+                    //this will check twice things at right of "="
                 }
                 if (c.v[0].type == CalUnitType::Parameter && get_parameter(c.v[0]).type == "__"
                     || c.v[0].type != CalUnitType::Parameter)
@@ -1050,10 +1051,6 @@ Object Cifa::run_script(std::string str)
     else
     {
         result.type = "Error";
-        std::sort(errors.begin(), errors.end(), [](const ErrorMessage& l, const ErrorMessage& r) -> bool
-            {
-                return l.line * 1024 + l.col < r.line * 1024 + r.col;
-            });
         for (auto& e : errors)
         {
             result.content += "Error (" + std::to_string(e.line) + ", " + std::to_string(e.col) + "): " + e.message + "\n";

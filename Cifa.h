@@ -4,6 +4,7 @@
 #include <functional>
 #include <list>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -124,7 +125,20 @@ private:
         size_t line = 0, col = 0;
         std::string message;
     };
-    std::vector<ErrorMessage> errors;
+
+    struct ErrorMessageComp
+    {
+        bool operator()(const ErrorMessage& l, const ErrorMessage& r) const
+        {
+            if (l.line == r.line)
+            {
+                return l.col < r.col;
+            }
+            return l.line < r.line;
+        }
+    };
+
+    std::set<ErrorMessage, ErrorMessageComp> errors;
 
     bool output_error = true;
 
@@ -187,7 +201,7 @@ public:
             snprintf(buffer, 1024, args...);
         }
         e.message = buffer;
-        errors.emplace_back(std::move(e));
+        errors.emplace(std::move(e));
     }
 
     void setOutputError(bool oe) { output_error = oe; }
