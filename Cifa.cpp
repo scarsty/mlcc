@@ -872,7 +872,7 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
                 if (c.v[0].type == CalUnitType::Parameter)
                 {
                     check_cal_unit(c.v[1], &c);    //here make sure no undefined parameters at right of "="
-                    get_parameter(c.v[0]);         //only parameter at left of "=" is allowed
+                    get_parameter(c.v[0]);         //record a parameter at left of "="
                 }
                 if (c.v[0].type == CalUnitType::Parameter && get_parameter(c.v[0]).type == "__"
                     || c.v[0].type != CalUnitType::Parameter)
