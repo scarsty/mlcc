@@ -49,11 +49,6 @@ public:
         return s.count();
     }
 
-    bool isOverTime(double seconds)
-    {
-        return getElapsedTime() > seconds;
-    }
-
     double getLastPeriod()
     {
         return getElapsedTime(true);
