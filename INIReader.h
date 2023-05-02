@@ -316,7 +316,7 @@ public:
 
     // Get an integer (long) value from INI file, returning default_value if
     // not found or not a valid integer (decimal "1234", "-1234", or hex "0x4d2").
-    int getInt(const std::string& section, const std::string& key, long default_value = 0) const
+    int getInt(const std::string& section, const std::string& key, int default_value = 0) const
     {
 #ifdef INI_DUMP_STRUCTURE
         setDumpStructure(section, key, "int");
@@ -368,7 +368,24 @@ public:
             return getReal(section, key, default_value);
         }
     }
-
+    std::vector<std::string> getStringVector(const std::string& section, const std::string& key, const std::string& split_chars = ",", const std::vector<std::string>& default_v = {}) const
+    {
+        auto v = splitString(getString(section, key), split_chars, true);
+        if (v.empty()) { return default_v; }
+        return v;
+    }
+    std::vector<double> getRealVector(const std::string& section, const std::string& key, const std::string& split_chars = ",", const std::vector<double>& default_v = {}) const
+    {
+        auto v = stringVectorToVector<double>(getStringVector(section, key, split_chars));
+        if (v.empty()) { return default_v; }
+        return v;
+    }
+    std::vector<int> getIntVector(const std::string& section, const std::string& key, const std::string& split_chars = ",", const std::vector<int>& default_v = {}) const
+    {
+        auto v = stringVectorToVector<int>(getStringVector(section, key, split_chars));
+        if (v.empty()) { return default_v; }
+        return v;
+    }
     //check one section exist or not
     int hasSection(const std::string& section) const
     {
@@ -742,6 +759,68 @@ private:
             }
         }
         sections_ = std::move(sections0);
+    }
+
+    static std::vector<std::string> splitString(std::string str, std::string pattern, bool ignore_psspace)
+    {
+        std::string::size_type pos;
+        std::vector<std::string> result;
+        if (str.empty())
+        {
+            return result;
+        }
+        if (pattern.empty())
+        {
+            pattern = ",;| ";
+        }
+        str += pattern[0];    //扩展字符串以方便操作
+        bool have_space = pattern.find(" ") != std::string::npos;
+        int size = str.size();
+        for (int i = 0; i < size; i++)
+        {
+            if (have_space)
+            {
+                //当空格作为分隔符时，连续空格视为一个
+                while (str[i] == ' ')
+                {
+                    i++;
+                }
+            }
+            pos = str.find_first_of(pattern, i);
+            if (pos < size)
+            {
+                std::string s = str.substr(i, pos - i);
+                if (ignore_psspace)
+                {
+                    auto pre = s.find_first_not_of(" ");
+                    auto suf = s.find_last_not_of(" ");
+                    if (pre != std::string::npos && suf != std::string::npos)
+                    {
+                        s = s.substr(pre, suf - pre + 1);
+                    }
+                }
+                result.push_back(s);
+                i = pos;
+            }
+        }
+        return result;
+    }
+    //only support int, float, double
+    template <typename T>
+    static T stringTo(const std::string& s)
+    {
+        double v = atof(s.c_str());
+        return T(v);
+    }
+    template <typename T>
+    static std::vector<T> stringVectorToVector(const std::vector<std::string>& v0)
+    {
+        std::vector<T> v;
+        for (auto& s : v0)
+        {
+            v.push_back(stringTo<T>(s));
+        }
+        return v;
     }
 
 public:
