@@ -225,7 +225,7 @@ std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, i
 void filefunc::makePath(const std::string& path)
 {
     std::vector<std::string> paths;
-    auto p = path;
+    auto p = path + "/";
     while (true)
     {
         if (pathExist(p) || p == "")
