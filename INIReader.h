@@ -773,14 +773,14 @@ private:
         {
             pattern = ",;| ";
         }
-        str += pattern[0];    //À©Õ¹×Ö·û´®ÒÔ·½±ã²Ù×÷
+        str += pattern[0];    //æ‰©å±•å­—ç¬¦ä¸²ä»¥æ–¹ä¾¿æ“ä½œ
         bool have_space = pattern.find(" ") != std::string::npos;
         int size = str.size();
         for (int i = 0; i < size; i++)
         {
             if (have_space)
             {
-                //µ±¿Õ¸ñ×÷Îª·Ö¸ô·ûÊ±£¬Á¬Ğø¿Õ¸ñÊÓÎªÒ»¸ö
+                //å½“ç©ºæ ¼ä½œä¸ºåˆ†éš”ç¬¦æ—¶ï¼Œè¿ç»­ç©ºæ ¼è§†ä¸ºä¸€ä¸ª
                 while (str[i] == ' ')
                 {
                     i++;

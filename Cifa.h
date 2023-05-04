@@ -47,7 +47,7 @@ enum class CalUnitType
     Key,
     Type,
     Union,
-    //UnionRound,    //()ºÏ²¢Ä£Ê½£¬½öforÓï¾äÊ¹ÓÃ
+    //UnionRound,    //()åˆå¹¶æ¨¡å¼ï¼Œä»…forè¯­å¥ä½¿ç”¨
 };
 
 struct CalUnit
@@ -104,11 +104,11 @@ bool vector_have(const std::vector<std::vector<T>>& ops, const T& op)
 class Cifa
 {
 private:
-    //ÔËËã·û£¬´Ë´¦µÄË³Ğò¼´ÓÅÏÈ¼¶£¬µ¥Ä¿ºÍÓÒ½áºÏÓÉÏÂÃæµÄÁĞ±íÅĞ¶Ï
+    //è¿ç®—ç¬¦ï¼Œæ­¤å¤„çš„é¡ºåºå³ä¼˜å…ˆçº§ï¼Œå•ç›®å’Œå³ç»“åˆç”±ä¸‹é¢çš„åˆ—è¡¨åˆ¤æ–­
     std::vector<std::vector<std::string>> ops = { { ".", "++", "--" }, { "!" }, { "*", "/", "%" }, { "+", "-" }, { ">", "<", ">=", "<=" }, { "==", "!=" }, { "&" }, { "|" }, { "&&" }, { "||" }, { "=", "*=", "/=", "+=", "-=" }, { "," } };
-    std::vector<std::string> ops_single = { "++", "--", "!", "()++", "()--" };    //µ¥Ä¿È«²¿ÊÇÓÒ½áºÏ
-    std::vector<std::string> ops_right = { "=", "*=", "/=", "+=", "-=" };         //ÓÒ½áºÏ
-    //¹Ø¼ü×Ö£¬ÔÚ±íÖĞµÄÎ»ÖÃÎªÆäËùĞè²ÎÊı¸öÊı
+    std::vector<std::string> ops_single = { "++", "--", "!", "()++", "()--" };    //å•ç›®å…¨éƒ¨æ˜¯å³ç»“åˆ
+    std::vector<std::string> ops_right = { "=", "*=", "/=", "+=", "-=" };         //å³ç»“åˆ
+    //å…³é”®å­—ï¼Œåœ¨è¡¨ä¸­çš„ä½ç½®ä¸ºå…¶æ‰€éœ€å‚æ•°ä¸ªæ•°
     std::vector<std::vector<std::string>> keys = { { "true", "false" }, { "break", "continue", "else", "return" }, { "if", "for", "while" } };
     std::vector<std::string> types = { "auto", "int", "float", "double" };
 
@@ -206,7 +206,7 @@ public:
 
     void setOutputError(bool oe) { output_error = oe; }
 
-    //ËÄÔòÔËËã×¼ĞíÓÃ»§Ôö¼Ó×Ô¶¨Òå¹¦ÄÜ
+    //å››åˆ™è¿ç®—å‡†è®¸ç”¨æˆ·å¢åŠ è‡ªå®šä¹‰åŠŸèƒ½
 
 #define OPERATOR(o1, o2, op, op2) \
     if (o1.type == "" && o2.type == "") \
