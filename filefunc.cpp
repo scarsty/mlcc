@@ -98,7 +98,7 @@ std::vector<char> filefunc::readFile(const std::string& filename, int length)
         fseek(fp, 0, 0);
     }
     s.resize(length);
-    if (fread(s.data(), 1, length, fp) < length)
+    if ((int)fread(s.data(), 1, length, fp) < length)
     {
         //fprintf(stderr, "Read file %s unfinished!\n", filename.c_str());
     }
@@ -291,7 +291,7 @@ static size_t getLastPathCharPos(const std::string& filename, int utf8 = 0)
     if (utf8 == 0)
     {
         //ansi
-        for (int i = 0; i < filename.size(); i++)
+        for (size_t i = 0; i < filename.size(); i++)
         {
             if (utf8 == 0 && uint8_t(filename[i]) >= 128)
             {
@@ -372,7 +372,7 @@ static size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0)
         //ansi
         bool found = false;
         size_t pos1 = std::string::npos;
-        for (int i = 0; i < filename.size(); i++)
+        for (size_t i = 0; i < filename.size(); i++)
         {
             if (is_path_char(filename[i]))
             {
