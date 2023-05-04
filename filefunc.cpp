@@ -430,7 +430,7 @@ std::string filefunc::getParentPath(const std::string& filename, int utf8)
     return "";
 }
 
-std::string filefunc::toLegalFileanme(const std::string& filename, int allow_path)
+std::string filefunc::toLegalFilename(const std::string& filename, int allow_path)
 {
     std::string f = filename, chars = " *<>?|:";
     if (!allow_path)
