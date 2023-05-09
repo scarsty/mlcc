@@ -331,6 +331,12 @@ public:
             return getReal(section, key, default_value);
         }
     }
+    template <typename T>
+    T get(const std::string& section, const std::string& key, T default_value = T(0)) const
+    {
+        auto v = stringTo<T>(getString(section, key, std::to_string(default_value)));
+        return v;
+    }
     std::vector<std::string> getStringVector(const std::string& section, const std::string& key, const std::string& split_chars = ",", const std::vector<std::string>& default_v = {}) const
     {
         auto v = splitString(getString(section, key), split_chars, true);
@@ -346,6 +352,13 @@ public:
     std::vector<int> getIntVector(const std::string& section, const std::string& key, const std::string& split_chars = ",", const std::vector<int>& default_v = {}) const
     {
         auto v = stringVectorToVector<int>(getStringVector(section, key, split_chars));
+        if (v.empty()) { return default_v; }
+        return v;
+    }
+    template <typename T>
+    std::vector<T> getVector(const std::string& section, const std::string& key, const std::string& split_chars = ",", const std::vector<T>& default_v = {}) const
+    {
+        auto v = stringVectorToVector<T>(getStringVector(section, key, split_chars));
         if (v.empty()) { return default_v; }
         return v;
     }
