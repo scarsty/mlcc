@@ -37,7 +37,7 @@ public:
         slot = face->glyph;
         fontsize_ = fontsize;
     }
-    int drawString(std::string text, cv::Mat& mat, int x, int y, int background)
+    int drawString(std::string text, cv::Mat& mat, int x, int y, cv::Vec3b color, int fusion = 0)
     {
         pen.x = 0;
         pen.y = 0;
@@ -48,7 +48,7 @@ public:
             FT_Set_Transform(face, nullptr, &pen);
             wchar_t v = *(wchar_t*)&text1[n];
             FT_Load_Char(face, v, FT_LOAD_RENDER);
-            draw_bitmap(&slot->bitmap, slot->bitmap_left + x, fontsize_ * 1 - slot->bitmap_top + y, mat, background);
+            draw_bitmap(&slot->bitmap, slot->bitmap_left + x, fontsize_ * 1 - slot->bitmap_top + y, mat, color, fusion);
             pen.x += slot->advance.x;
             pen.y += slot->advance.y;
             width = slot->bitmap.width + slot->bitmap_left;
@@ -57,7 +57,7 @@ public:
     }
 
 private:
-    void draw_bitmap(FT_Bitmap* bitmap, FT_Int x, FT_Int y, cv::Mat& image, int background)
+    void draw_bitmap(FT_Bitmap* bitmap, FT_Int x, FT_Int y, cv::Mat& image, cv::Vec3b color, int fusion)
     {
         FT_Int x_max = x + bitmap->width;
         FT_Int y_max = y + bitmap->rows;
@@ -69,13 +69,44 @@ private:
                 {
                     continue;
                 }
-                auto& v = bitmap->buffer[q * bitmap->width + p];
-                if (background)
+                auto& v0 = bitmap->buffer[q * bitmap->width + p];
+                if (image.channels() == 1)
                 {
-                    v /= 2;
+                    auto& a = image.data[j * image.step + i];
+                    auto v = v0;
+                    if (fusion == 0)
+                    {
+                        a = v;
+                    }
+                    else if (fusion == -1)
+                    {
+                        a = std::min(v, a);
+                    }
+                    else if (fusion == 1)
+                    {
+                        a = std::max(v, a);
+                    }
                 }
-                image.at<uint8_t>(j, i) = std::max(v, image.at<uint8_t>(j, i));
-                //image.at<uint8_t>(j, i) = image.at<uint8_t>(j, i) * (1 - v / 255.0) + v;
+                else if (image.channels() == 3)
+                {
+                    for (int c = 0; c < image.channels(); c++)
+                    {
+                        auto& a = image.data[j * image.step + i * 3 + c];
+                        auto v = uchar(v0 * color[c] / 255);
+                        if (fusion == 0)
+                        {
+                            a = v;
+                        }
+                        else if (fusion == -1)
+                        {
+                            a = std::min(v, a);
+                        }
+                        else if (fusion == 1)
+                        {
+                            a = std::max(v, a);
+                        }
+                    }
+                }
             }
         }
     }
