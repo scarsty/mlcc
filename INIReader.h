@@ -537,7 +537,7 @@ private:
         while (it != lines.end())
         {
             lineno++;
-            std::string& line = *it;
+            std::string line = *it;
             /* Skip comment */
             if (lskip(line).find_first_of(INI_INLINE_COMMENT_PREFIXES) == 0)
             {
@@ -592,6 +592,7 @@ private:
                         {
                             std::string line = key + " = " + getString(section, key);
                             it = lines_.insert(it, line);
+                            it++;
                         }
                     }
                     eraseSection(section);
@@ -714,6 +715,7 @@ private:
                 {
                     std::string line = key + " = " + getString(section, key);
                     it = lines_.insert(it, line);
+                    it++;
                 }
             }
             eraseSection(section);
