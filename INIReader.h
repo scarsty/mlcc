@@ -222,13 +222,13 @@ public:
     }
 
     // parse a given filename
-    void loadFile(const std::string& filename)
+    int loadFile(const std::string& filename)
     {
         FILE* fp = fopen(filename.c_str(), "rb");
         if (!fp)
         {
             //fprintf(stderr, "Cannot open file %s\n", filename.c_str());
-            return;
+            return 1;
         }
         fseek(fp, 0, SEEK_END);
         int length = ftell(fp);
@@ -238,9 +238,11 @@ public:
         if (fread((void*)str.c_str(), 1, length, fp) < length)
         {
             //fprintf(stderr, "Read file %s unfinished\n", filename.c_str());
+            return 1;
         }
         fclose(fp);
         loadString(str, true);
+        return 0;
     }
 
     // parse an ini string
@@ -803,7 +805,7 @@ private:
 
 public:
     //write modified file
-    void saveFile(const std::string& filename)
+    int saveFile(const std::string& filename)
     {
         FILE* fp = fopen(filename.c_str(), "wb");
         if (fp)
@@ -812,7 +814,9 @@ public:
             int length = content.length();
             fwrite(content.c_str(), length, 1, fp);
             fclose(fp);
+            return 0;
         }
+        return 1;
     }
 
     //make a string with trying to keep the original style
