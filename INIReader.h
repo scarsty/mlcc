@@ -52,15 +52,17 @@
 
 class INIReader
 {
+public:
+    struct KeyType
+    {
+        std::string name, value;
+    };
+
 private:
     enum
     {
         READ = 0,
         WRITE = 1,
-    };
-    struct KeyType
-    {
-        std::string name, value;
     };
 
     template <typename T>
@@ -174,7 +176,7 @@ private:
     std::string line_break_ = "\n";
 #endif
     int error_ = 0;
-    std::vector<std::string> lines_;    //lines of the files, sections the lines belong to
+    std::vector<std::string> lines_;    //lines of the files
     FileType sections_;
     //std::mutex mutex_;
 

@@ -70,6 +70,10 @@ private:
                     continue;
                 }
                 auto& v0 = bitmap->buffer[q * bitmap->width + p];
+                if (v0 == 0)
+                {
+                    continue;
+                }
                 if (image.channels() == 1)
                 {
                     auto& a = image.data[j * image.step + i];
