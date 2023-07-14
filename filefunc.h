@@ -54,6 +54,7 @@ std::vector<std::string> getFilesInPath(const std::string& pathname, int recursi
 std::string getFileTime(std::string filename);
 void changePath(const std::string& path);
 void makePath(const std::string& path);
+void removeFile(const std::string& filename);
 
 //functions about file name
 std::string getFileExt(const std::string& filename);

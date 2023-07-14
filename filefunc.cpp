@@ -241,6 +241,11 @@ void filefunc::makePath(const std::string& path)
     }
 }
 
+void filefunc::removeFile(const std::string& filename)
+{
+    remove(filename.c_str());
+}
+
 std::string filefunc::getFileTime(std::string filename)
 {
 #if defined(__clang__) && defined(_WIN32)
