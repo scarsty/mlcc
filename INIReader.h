@@ -14,12 +14,6 @@
 #define INI_ALLOW_MULTILINE 1
 #endif
 
-//Nonzero to allow a UTF-8 BOM sequence (0xEF 0xBB 0xBF) at the start of
-//the file. See http://code.google.com/p/inih/issues/detail?id=21
-#ifndef INI_ALLOW_BOM
-#define INI_ALLOW_BOM 1
-#endif
-
 //Nonzero to allow inline comments (with valid inline comment characters
 //specified by INI_INLINE_COMMENT_PREFIXES). Set to 0 to turn off and match
 //Python 3.2+ configparser behaviour.
@@ -30,20 +24,10 @@
 #define INI_INLINE_COMMENT_PREFIXES ";#"
 #endif
 
-//Stop parsing on first error (default is to keep parsing).
-#ifndef INI_STOP_ON_FIRST_ERROR
-#define INI_STOP_ON_FIRST_ERROR 0
-#endif
-
-#if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_WARNINGS)
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <algorithm>
 #include <functional>
 #include <list>
 #include <map>
-//#include <mutex>
 #include <string>
 #include <vector>
 
@@ -188,6 +172,17 @@ private:
         return ret;
     }
 
+private:
+    static std::string dealValue(const std::string str)
+    {
+        std::string str1;
+        if (str.find_first_of(INI_INLINE_COMMENT_PREFIXES) != std::string::npos)
+        {
+            return "\"" + str + "\"";
+        }
+        return str;
+    }
+
 public:
     INIReader()
     {
@@ -243,12 +238,12 @@ public:
             return 1;
         }
         fclose(fp);
-        loadString(str, true);
+        loadString(str);
         return 0;
     }
 
     // parse an ini string
-    void loadString(const std::string& content, bool clear_style = true)
+    void loadString(const std::string& content)
     {
         line_break_ = "\n";
         int pos = content.find(line_break_, 1);
@@ -263,7 +258,7 @@ public:
                 line_break_ = "\n\r";
             }
         }
-        error_ = ini_parse_content(content, clear_style);
+        error_ = ini_parse_content(content);
     }
     // Return the result of ini_parse(), i.e., 0 on success, line number of
     // first error on parse error, or -1 on file open error.
@@ -458,47 +453,40 @@ public:
     }
 
 private:
-    int ini_parse_content(const std::string& content, bool clear_style)
+    int ini_parse_content(const std::string& content)
     {
         //split the content into lines
-        auto splitString = [](std::string str, std::string pattern)
+        auto split_to_lines = [](std::string str)
         {
-            std::string::size_type pos;
             std::vector<std::string> result;
-            str += pattern[0];
+            str += '\n';
             int size = str.size();
-            char pre_pattern = '\0';
-            for (int i = 0; i < size; i++)
+            int quote = 0;
+            size_t pos = 0;
+            std::string str1;
+            for (size_t i = 0; i < size; i++)
             {
-                pos = str.find_first_of(pattern, i);
-                if (pos < size)
+                auto c = str[i];
+                if (quote == 0 && c == '\r')
                 {
-                    std::string s = str.substr(i, pos - i);
-                    if (s.empty() && pre_pattern != '\0' && pre_pattern != str[pos])    //a pair of different patterns are omitted,
-                    {
-                        pre_pattern = '\0';
-                    }
-                    else
-                    {
-                        result.push_back(s);
-                        pre_pattern = str[pos];
-                    }
-                    i = pos;
+                    continue;
                 }
+                if (quote == 0 && c == '\n')
+                {
+                    result.push_back(str1);
+                    str1.clear();
+                    continue;
+                }
+                str1 += c;
+                if (quote == 0 && c == '\'') { quote = 1; }
+                else if (quote == 0 && c == '\"') { quote = 2; }
+                else if (quote == 1 && c == '\'') { quote = 0; }
+                else if (quote == 2 && c == '\"') { quote = 0; }
             }
             return result;
         };
-        if (clear_style)
-        {
-            lines_ = splitString(content, "\n\r");
-            return ini_parse_lines(lines_, READ);
-        }
-        else
-        {
-            auto lines = splitString(content, "\n\r");
-            std::vector<std::string> lines_section;
-            return ini_parse_lines(lines, READ);
-        }
+        lines_ = split_to_lines(content);
+        return ini_parse_lines(lines_, READ);
     }
 
     int ini_parse_lines(std::vector<std::string>& lines, int mode)
@@ -549,12 +537,10 @@ private:
                 prev_key = "";
                 continue;
             }
-#if INI_ALLOW_BOM
             if (lineno == 1 && line.size() >= 3 && (unsigned char)line[0] == 0xEF && (unsigned char)line[1] == 0xBB && (unsigned char)line[2] == 0xBF)
             {
                 line = line.substr(3);
             }
-#endif
             line = rstrip(line);    //remove spaces on two sides
 
             if (line.size() < 2)    //a line should contains at least two letters such as "a=", "[]"
@@ -570,7 +556,13 @@ private:
                 if (mode == READ)
                 {
                     /* Non-blank line with leading whitespace, treat as continuation of previous name's value (as per Python config parser). */
-                    std::string value = getString(section, prev_key, "") + line_break_ + rstrip(line);
+                    auto line1 = line;
+                    size_t pos = line1.find_first_of(INI_INLINE_COMMENT_PREFIXES);
+                    if (pos != std::string::npos)
+                    {
+                        line1 = line1.substr(0, pos);
+                    }
+                    std::string value = getString(section, prev_key, "") + line_break_ + rstrip(line1);
                     valueHandler(section, prev_key, value);
                     if (error == 0)
                     {
@@ -621,13 +613,11 @@ private:
             }
             else
             {
-                /* Not a comment, must be a name[=]value pair */
                 auto assign_char = line.find_first_of("=");
                 if (assign_char != std::string::npos)
                 {
                     std::string key = rstrip(line.substr(0, assign_char));
                     std::string value = lskip(line.substr(assign_char + 1));
-                    /* unsupport quote
                     int quote = 0;    //0: no quote, 1: single quote, 2: double quote
                     int quote_end_pos = value.size() - 1;
                     if (value.find_first_of("\'") == 0)
@@ -650,10 +640,10 @@ private:
                         {
                             value = value.substr(1);
                         }
-                    }*/
+                    }
                     std::string comment = "";
 #if INI_ALLOW_INLINE_COMMENTS
-                    //if (quote == 0)
+                    if (quote == 0)
                     {
                         int comment_pos = value.find_first_of(INI_INLINE_COMMENT_PREFIXES);
                         if (comment_pos != std::string::npos)
@@ -685,7 +675,7 @@ private:
                             if (value1 != value)
                             {
                                 //rewrite the line
-                                *it = key + " = " + value1 + blanks + comment;
+                                *it = key + " = " + dealValue(value1) + blanks + comment;
                             }
                             eraseKey(section, key);
                         }
@@ -847,7 +837,7 @@ public:
             content += "[" + section + "]" + line_break_;
             for (auto& key : sections_.at(section).records)
             {
-                content += key.name + "=" + key.value + line_break_;
+                content += key.name + "=" + dealValue(key.value) + line_break_;
             }
         }
         return content;
