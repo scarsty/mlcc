@@ -9,35 +9,30 @@ struct INIReaderBin
 {
 private:
     INIReader ini_;
-    std::string head_;
-
+    const char* head_ = "CFG_BIN INI";
+    const int head_size_ = 32;
+    // The head is "CFG_BIN INI", 32 bytes is kept
+    // The next 8 bytes is the length of the txt information
+    // Next is the txt information. One value has two integers which are the differ from the beginning of content and the length
+    // Next is the binary content
+    // The beginning of the binary is 40+length of txt
 public:
-    INIReaderBin()
-    {
-        // The head is "CFG_BIN INI", 32 bytes is kept
-        head_ = "CFG_BIN INI";
-        head_.resize(32);
-        // The next 8 bytes is the length of the txt information
-        // Next is the txt information. One value has two integers which are the differ from the beginning of content and the length
-        // Next is the binary content
-        // The beginning of the binary is 40+length of txt
-    }
     int parse(const std::string& str)
     {
-        if (str.size() > 32 + sizeof(uint64_t) && str.substr(0, 11) == "CFG_BIN INI")
+        if (str.size() > head_size_ + sizeof(uint64_t) && str.substr(0, 11) == head_)
         {
             uint64_t size_ini = 0;
             if (str.size() >= sizeof(uint64_t))
             {
-                size_ini = *(uint64_t*)(str.data() + 32);
+                size_ini = *(uint64_t*)(str.data() + head_size_);
             }
-            uint64_t begin = 32 + sizeof(uint64_t) + size_ini;
+            uint64_t begin = head_size_ + sizeof(uint64_t) + size_ini;
             INIReader assist;
             if (str.size() < begin)
             {
                 return -1;
             }
-            assist.loadString(str.substr(32 + sizeof(uint64_t), size_ini));
+            assist.loadString(str.substr(head_size_ + sizeof(uint64_t), size_ini));
             for (auto& section : assist.getAllSections())
             {
                 for (auto& key : assist.getAllKeys(section))
@@ -75,8 +70,8 @@ public:
         auto str_ini = assist.toString();
         uint64_t l = str_ini.size();
         std::string result = head_;
-        result.resize(32 + sizeof(uint64_t));
-        memcpy(&result[32], &l, sizeof(uint64_t));
+        result.resize(head_size_ + sizeof(uint64_t));
+        memcpy(&result[head_size_], &l, sizeof(uint64_t));
         result = result + str_ini + str_content;
         return result;
     }
