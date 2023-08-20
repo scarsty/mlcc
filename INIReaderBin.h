@@ -9,23 +9,27 @@ struct INIReaderBin
 {
 private:
     INIReader ini_;
-    std::map<std::string, std::string> values;
     std::string head_;
 
 public:
     INIReaderBin()
     {
+        // The head is "CFG_BIN INI", 32 bytes is kept
         head_ = "CFG_BIN INI";
         head_.resize(32);
+        // The next 8 bytes is the length of the txt information
+        // Next is the txt information. One value has two integers which are the differ from the beginning of content and the length
+        // Next is the binary content
+        // The beginning of the binary is 40+length of txt
     }
     int parse(const std::string& str)
     {
-        if (str.size() > 40 && str.substr(0, 8) == "CFG_BIN INI")
+        if (str.size() > 32 + sizeof(uint64_t) && str.substr(0, 11) == "CFG_BIN INI")
         {
             uint64_t size_ini = 0;
             if (str.size() >= sizeof(uint64_t))
             {
-                size_ini = *(uint64_t*)str.data();
+                size_ini = *(uint64_t*)(str.data() + 32);
             }
             uint64_t begin = 32 + sizeof(uint64_t) + size_ini;
             INIReader assist;
