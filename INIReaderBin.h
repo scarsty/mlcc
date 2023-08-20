@@ -5,38 +5,53 @@
 #include "INIReader.h"
 #include "strfunc.h"
 
-// This format is used to store text or binary data in one file.
-// Like XML, the name of the key is placed before and after the value. If some coincidence happen, just damn it.
-
 struct INIReaderBin
 {
 private:
     INIReader ini_;
     std::map<std::string, std::string> values;
+    std::string head_;
 
 public:
+    INIReaderBin()
+    {
+        head_ = "CFG_BIN INI";
+        head_.resize(32);
+    }
     int parse(const std::string& str)
     {
-        uint64_t size_ini = 0;
-        if (str.size() >= sizeof(uint64_t))
+        if (str.size() > 40 && str.substr(0, 8) == "CFG_BIN INI")
         {
-            size_ini = *(uint64_t*)str.data();
-        }
-        uint64_t begin = sizeof(uint64_t) + size_ini;
-        INIReader assist;
-        assist.loadString(str.substr(sizeof(uint64_t), size_ini));
-        for (auto& section : assist.getAllSections())
-        {
-            for (auto& key : assist.getAllKeys(section))
+            uint64_t size_ini = 0;
+            if (str.size() >= sizeof(uint64_t))
             {
-                auto vec = assist.getIntVector(section, key);
-                if (vec.size() == 2)
+                size_ini = *(uint64_t*)str.data();
+            }
+            uint64_t begin = 32 + sizeof(uint64_t) + size_ini;
+            INIReader assist;
+            if (str.size() < begin)
+            {
+                return -1;
+            }
+            assist.loadString(str.substr(32 + sizeof(uint64_t), size_ini));
+            for (auto& section : assist.getAllSections())
+            {
+                for (auto& key : assist.getAllKeys(section))
                 {
-                    ini_.setKey(section, key, str.substr(begin + vec[0], vec[1]));
+                    auto vec = assist.getIntVector(section, key);
+                    if (vec.size() == 2)
+                    {
+                        if (begin + vec[0] + vec[1] > str.size())
+                        {
+                            return -1;
+                        }
+                        ini_.setKey(section, key, str.substr(begin + vec[0], vec[1]));
+                    }
                 }
             }
+            return 0;
         }
-        return 0;
+        return -1;
     }
 
     // The result may be not a text string.
@@ -55,10 +70,10 @@ public:
         }
         auto str_ini = assist.toString();
         uint64_t l = str_ini.size();
-        std::string result;
-        result.resize(sizeof(uint64_t));
-        memcpy(&result[0], &l, sizeof(uint64_t));
-        result += str_ini + str_content;
+        std::string result = head_;
+        result.resize(32 + sizeof(uint64_t));
+        memcpy(&result[32], &l, sizeof(uint64_t));
+        result = result + str_ini + str_content;
         return result;
     }
 
