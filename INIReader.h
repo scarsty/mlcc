@@ -7,9 +7,6 @@
 #include <string>
 #include <vector>
 
-// Read an INI file into easy-to-access name/value pairs. (Note that I've gone
-// for simplicity here rather than speed, but it should be pretty decent.)
-
 class INIReader
 {
 public:
@@ -288,9 +285,12 @@ public:
             return ret;
         }
         auto& sec = index_section_.at(compare_section_(section));
-        for (auto& kv : sec.pks)
+        for (auto& kv : sec.ps->keys)
         {
-            ret.push_back(kv.first);
+            if (!kv.key.empty())
+            {
+                ret.push_back(kv.key);
+            }
         }
         return ret;
     }
