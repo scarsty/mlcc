@@ -5,6 +5,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 class INIReader
@@ -26,13 +27,24 @@ private:
     struct Index
     {
         Section* ps = nullptr;
-        std::map<std::string, KeyType*> pks;
+        std::unordered_map<std::string, KeyType*> pks;
     };
+
+    struct fake_view
+    {
+        char* p;
+        size_t length;
+        std::string to_string() const { return std::string(p, length); }
+    };
+
+    fake_view substr_fake_view(const std::string& str, size_t pos, size_t length)
+    {
+        return { (char*)str.data() + pos, length };
+    }
 
     std::function<std::string(const std::string&)> compare_section_;
     std::function<std::string(const std::string&)> compare_key_;
-
-    std::map<std::string, Index> index_section_;
+    std::unordered_map<std::string, Index> index_section_;
 
 #ifdef _WIN32
     std::string line_break_ = "\r\n";
@@ -48,35 +60,37 @@ private:
         Section* ps = nullptr;
         auto section1 = compare_section_(section);
         auto key1 = compare_key_(key);
-        if (index_section_.count(section1) == 0)
+        auto it = index_section_.find(section1);
+        if (it == index_section_.end())
         {
             sections_.push_back({ section, {} });
-            index_section_[section1] = { &sections_.back(), {} };
+            it = index_section_.insert({ section1, { &sections_.back(), {} } }).first;
         }
-        ps = index_section_[section1].ps;
+        ps = it->second.ps;
         if (key1 == "")
         {
             ps->keys.push_back({ key, value, other });
         }
         else if (ps)
         {
-            if (index_section_[section1].pks.count(key1) == 0)
+            auto itk = it->second.pks.find(key1);
+            if (itk == it->second.pks.end())
             {
                 ps->keys.push_back({ key, value, other });
                 index_section_[section1].pks[key1] = &ps->keys.back();
             }
             else
             {
-                *index_section_[section1].pks[key1] = { key, value, other };
+                itk->second->value = value;
+                itk->second->other = other;
             }
         }
         return 0;
     }
 
 private:
-    static std::string dealValue(const std::string str)
+    static std::string dealValue(const std::string& str)
     {
-        std::string str1;
         if (str.find_first_of(";#\n\r") != std::string::npos)
         {
             return "\"" + str + "\"";
@@ -298,11 +312,12 @@ public:
     std::vector<KeyType> getAllKeyValues(const std::string& section) const
     {
         std::vector<KeyType> ret;
-        if (index_section_.count(compare_section_(section)) == 0)
+        auto it = index_section_.find(compare_section_(section));
+        if (it == index_section_.end())
         {
             return ret;
         }
-        auto ps = index_section_.at(compare_section_(section)).ps;
+        auto ps = it->second.ps;
         for (auto& kv : ps->keys)
         {
             ret.push_back(kv);
@@ -367,7 +382,7 @@ private:
             if (pos != std::string::npos)
             {
                 suf = s.size() - pos - 1;
-                s = s.substr(0, pos + 1);
+                s.resize(pos + 1);
             }
             else
             {
@@ -377,7 +392,6 @@ private:
 
         /* Uses a fair bit of stack (use heap instead if you need to) */
         std::string section = "";
-        std::string prev_key = "";
         int error = 0;
         /* Scan all lines */
         size_t i = 0;
@@ -411,7 +425,6 @@ private:
                 if (end != std::string::npos)
                 {
                     section = content.substr(i + 1, end - i - 1);    //found a new section
-                    prev_key = "";
                 }
                 i = end;
                 new_line = false;
@@ -445,7 +458,8 @@ private:
                         //if find a key, search the value from the next char of '=', considering quote and new line
                         size_t i1 = end + 1;
                         int quote = 0;    //0: no quote, 1: ', 2: "
-                        std::string v, o;
+                        std::string v;
+                        size_t o_begin;
                         bool begin = true;
                         bool end = false;
                         while (i1 < content.size())
@@ -474,19 +488,17 @@ private:
                                     if (c1 == '\r' || c1 == '\n')
                                     {
                                         i = i1;
+                                        o_begin = i1;
                                         break;
                                     }
                                     if (c1 == '#' || c1 == ';')
                                     {
+                                        o_begin = i1;
                                         end = true;
                                     }
                                     if (!end)
                                     {
                                         v += c1;
-                                    }
-                                    else
-                                    {
-                                        o += c1;
                                     }
                                 }
                                 else
@@ -500,14 +512,14 @@ private:
                         rstrip(v, suf);
                         if (suf)
                         {
-                            o = std::string(suf, ' ') + o;
+                            o_begin -= suf;
                         }
                         if (v.front() == '\'' && v.back() == '\''
                             || v.front() == '\"' && v.back() == '\"')
                         {
                             v = v.substr(1, v.size() - 2);
                         }
-                        valueHandler(section, key, v, o);
+                        valueHandler(section, key, v, content.substr(o_begin, i1 - o_begin));
                         i = i1;
                     }
                 }
@@ -532,14 +544,14 @@ private:
         {
             pattern = ",;| ";
         }
-        str += pattern[0];    //扩展字符串以方便操作
+        str += pattern[0];    //expand string to find the last one
         bool have_space = pattern.find(" ") != std::string::npos;
         int size = str.size();
         for (int i = 0; i < size; i++)
         {
             if (have_space)
             {
-                //当空格作为分隔符时，连续空格视为一个
+                //treat continuous space as one, when space is in pattern
                 while (str[i] == ' ')
                 {
                     i++;
@@ -599,35 +611,7 @@ public:
     }
 
     //make a string with trying to keep the original style
-    std::string toString()
-    {
-        std::string content;
-        bool first = true;
-        for (auto& sec : sections_)
-        {
-            content += "[" + sec.name + "]" + line_break_;
-            if (first && sec.name.empty())
-            {
-                first = false;
-                content = "";
-            }
-            for (auto& key : sec.keys)
-            {
-                if (key.key.empty())
-                {
-                    content += key.other + line_break_;
-                }
-                else
-                {
-                    content += key.key + " = " + dealValue(key.value) + key.other + line_break_;
-                }
-            }
-        }
-        return content;
-    }
-
-    //a pure string without comments or blank lines
-    std::string toPureString() const
+    std::string toString(bool only_kv = false) const
     {
         std::string content;
         bool first = true;
@@ -643,13 +627,45 @@ public:
             }
             for (auto& key : sec.keys)
             {
-                if (!key.key.empty())
+                if (only_kv)
                 {
-                    content += key.key + " = " + dealValue(key.value) + line_break_;
+                    if (!key.key.empty())
+                    {
+                        content += key.key;
+                        content += " = ";
+                        content += dealValue(key.value);
+                        content += line_break_;
+                    }
+                }
+                else
+                {
+                    if (key.key.empty())
+                    {
+                        content += key.other;
+                        content += line_break_;
+                    }
+                    else
+                    {
+                        content += key.key;
+                        content += " = ";
+                        content += dealValue(key.value);
+                        content += key.other;
+                        content += line_break_;
+                    }
                 }
             }
         }
+        if (content.size() > line_break_.size())
+        {
+            content.resize(content.size() - line_break_.size());
+        }
         return content;
+    }
+
+    //a pure string without comments or blank lines
+    std::string toPureString() const
+    {
+        return toString(true);
     }
 };
 
