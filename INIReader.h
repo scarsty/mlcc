@@ -1,28 +1,4 @@
-// Read an INI file into easy-to-access name/value pairs.
-
-// inih and INIReader are released under the New BSD license (see LICENSE.txt).
-// Go to the project home page for more info:
-//
-// https://github.com/benhoyt/inih
-
 #pragma once
-
-//Nonzero to allow multi-line value parsing, in the style of Python's
-//configparser. If allowed, ini_parse() will call the handler with the same
-//name for each subsequent line parsed.
-#ifndef INI_ALLOW_MULTILINE
-#define INI_ALLOW_MULTILINE 1
-#endif
-
-//Nonzero to allow inline comments (with valid inline comment characters
-//specified by INI_INLINE_COMMENT_PREFIXES). Set to 0 to turn off and match
-//Python 3.2+ configparser behaviour.
-#ifndef INI_ALLOW_INLINE_COMMENTS
-#define INI_ALLOW_INLINE_COMMENTS 1
-#endif
-#ifndef INI_INLINE_COMMENT_PREFIXES
-#define INI_INLINE_COMMENT_PREFIXES ";#"
-#endif
 
 #include <algorithm>
 #include <functional>
@@ -104,7 +80,7 @@ private:
     static std::string dealValue(const std::string str)
     {
         std::string str1;
-        if (str.find_first_of(INI_INLINE_COMMENT_PREFIXES) != std::string::npos)
+        if (str.find_first_of(";#\n\r") != std::string::npos)
         {
             return "\"" + str + "\"";
         }
