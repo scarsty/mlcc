@@ -39,121 +39,28 @@ class INIReader
 public:
     struct KeyType
     {
-        std::string name, value;
+        std::string key, value, other;
+    };
+    struct Section
+    {
+        std::string name;
+        std::list<KeyType> keys;
     };
 
 private:
-    enum
+    std::list<Section> sections_;
+
+    struct Index
     {
-        READ = 0,
-        WRITE = 1,
+        Section* ps = nullptr;
+        std::map<std::string, KeyType*> pks;
     };
 
-    template <typename T>
-    struct BaseType
-    {
-        std::string name;
-        std::list<T> records;
-        std::map<std::string, typename std::list<T>::iterator> map_iter;
-        std::function<std::string(const std::string&)> compare_name;
+    std::function<std::string(const std::string&)> compare_section_;
+    std::function<std::string(const std::string&)> compare_key_;
 
-        T& operator[](const std::string& str)
-        {
-            auto str1 = compare_name(str);
-            if (map_iter.count(str1))
-            {
-                return *map_iter[str1];
-            }
-            records.emplace_back();
-            records.back().name = str;
-            map_iter[str1] = std::prev(records.end());
-            return records.back();
-        }
-        const T& at(const std::string& str) const
-        {
-            auto str1 = compare_name(str);
-            if (map_iter.count(str1))
-            {
-                return *(map_iter.at(str1));
-            }
-            static T t{};
-            return t;
-        }
-        size_t count(const std::string& str) const
-        {
-            auto str1 = compare_name(str);
-            return map_iter.count(str1);
-        }
-        void erase(const std::string& str)
-        {
-            auto str1 = compare_name(str);
-            if (map_iter.count(str1))
-            {
-                records.erase(map_iter[str1]);
-                map_iter.erase(str1);
-            }
-        }
-        void clear()
-        {
-            records.clear();
-            map_iter.clear();
-        }
-        void rebuildMap()
-        {
-            map_iter.clear();
-            for (auto it = records.begin(); it != records.end(); it++)
-            {
-                map_iter[compare_name(it->name)] = it;
-            }
-        }
-        BaseType() = default;
-        BaseType(const BaseType& st)
-        {
-            name = st.name;
-            records = st.records;
-            compare_name = st.compare_name;
-            rebuildMap();
-        }
-        BaseType& operator=(const BaseType& st)
-        {
-            if (this == &st) { return *this; }
-            name = st.name;
-            records = st.records;
-            compare_name = st.compare_name;
-            rebuildMap();
-            return *this;
-        }
-        BaseType(BaseType&& st) noexcept = default;
-        BaseType& operator=(BaseType&& st) noexcept = default;
-    };
-    using SectionType = BaseType<KeyType>;
-    struct FileType : public BaseType<SectionType>
-    {
-        std::function<std::string(const std::string&)> compare_key;
-        SectionType& operator[](const std::string& str)
-        {
-            auto str1 = compare_name(str);
-            if (map_iter.count(str1))
-            {
-                return *map_iter[str1];
-            }
-            records.emplace_back();
-            records.back().name = str;
-            records.back().compare_name = compare_key;
-            map_iter[str1] = std::prev(records.end());
-            return records.back();
-        }
-        const SectionType& at(const std::string& str) const
-        {
-            auto str1 = compare_name(str);
-            if (map_iter.count(str1))
-            {
-                return *(map_iter.at(str1));
-            }
-            static SectionType st;
-            return st;
-        }
-    };
+    std::map<std::string, Index> index_section_;
+
 #ifdef _WIN32
     std::string line_break_ = "\r\n";
 #else
@@ -161,15 +68,36 @@ private:
 #endif
     int error_ = 0;
     std::vector<std::string> lines_;    //lines of the files
-    FileType sections_;
-    //std::mutex mutex_;
 
     //return value: the key has existed, 0 means it is a new key
-    int valueHandler(const std::string& section, const std::string& key, const std::string& value)
+    int valueHandler(const std::string& section, const std::string& key, const std::string& value, const std::string& other = "")
     {
-        int ret = sections_[section].count(key);
-        sections_[section][key].value = value;
-        return ret;
+        Section* ps = nullptr;
+        auto section1 = compare_section_(section);
+        auto key1 = compare_key_(key);
+        if (index_section_.count(section1) == 0)
+        {
+            sections_.push_back({ section, {} });
+            index_section_[section1] = { &sections_.back(), {} };
+        }
+        ps = index_section_[section1].ps;
+        if (key1 == "")
+        {
+            ps->keys.push_back({ key, value, other });
+        }
+        else if (ps)
+        {
+            if (index_section_[section1].pks.count(key1) == 0)
+            {
+                ps->keys.push_back({ key, value, other });
+                index_section_[section1].pks[key1] = &ps->keys.back();
+            }
+            else
+            {
+                *index_section_[section1].pks[key1] = { key, value, other };
+            }
+        }
+        return 0;
     }
 
 private:
@@ -186,36 +114,23 @@ private:
 public:
     INIReader()
     {
-        sections_.compare_name = [](const std::string& l)
+        compare_section_ = [](const std::string& l)
         {
             return l;
         };
-        sections_.compare_key = [](const std::string& l)
+        compare_key_ = [](const std::string& l)
         {
             return l;
         };
-    }
-    const std::string& operator()(const std::string& section, const std::string& key) const
-    {
-        return sections_.at(section).at(key).value;
-    }
-
-    std::string& operator()(const std::string& section, const std::string& key)
-    {
-        return sections_[section][key].value;
     }
 
     void setCompareSection(std::function<std::string(const std::string&)> com)
     {
-        sections_.compare_name = com;
+        compare_section_ = com;
     }
     void setCompareKey(std::function<std::string(const std::string&)> com)
     {
-        sections_.compare_key = com;
-        for (auto& k : sections_.records)
-        {
-            k.compare_name = com;
-        }
+        compare_key_ = com;
     }
 
     // parse a given filename
@@ -270,19 +185,17 @@ public:
     // Get a string value from INI file, returning default_value if not found.
     std::string getString(const std::string& section, const std::string& key, const std::string& default_value = "") const
     {
-        //std::lock_guard<std::mutex> lock(mutex_);
-        if (sections_.count(section) == 0)
+        auto section1 = compare_section_(section);
+        if (index_section_.count(section1) == 0)
         {
             return default_value;
         }
-        if (sections_.at(section).count(key) > 0)
-        {
-            return sections_.at(section).at(key).value;
-        }
-        else
+        auto key1 = compare_key_(key);
+        if (index_section_.at(section1).pks.count(key1) == 0)
         {
             return default_value;
         }
+        return index_section_.at(section1).pks.at(key1)->value;
     }
 
     // Get an integer (long) value from INI file, returning default_value if
@@ -364,19 +277,27 @@ public:
     //check one section exist or not
     int hasSection(const std::string& section) const
     {
-        return sections_.count(section);
+        return index_section_.count(compare_section_(section));
     }
 
     //check one section and one key exist or not
     int hasKey(const std::string& section, const std::string& key) const
     {
-        return sections_.count(section) > 0 ? sections_.at(section).count(key) : 0;
+        if (index_section_.count(compare_section_(section)) == 0)
+        {
+            return 0;
+        }
+        if (index_section_.at(compare_section_(section)).pks.count(compare_key_(key)) == 0)
+        {
+            return 0;
+        }
+        return 1;
     }
 
     std::vector<std::string> getAllSections() const
     {
         std::vector<std::string> ret;
-        for (auto& value : sections_.records)
+        for (auto& value : sections_)
         {
             ret.push_back(value.name);
         }
@@ -386,13 +307,14 @@ public:
     std::vector<std::string> getAllKeys(const std::string& section) const
     {
         std::vector<std::string> ret;
-        if (sections_.count(section) == 0)
+        if (index_section_.count(compare_section_(section)) == 0)
         {
             return ret;
         }
-        for (auto& kv : sections_.at(section).records)
+        auto& sec = index_section_.at(compare_section_(section));
+        for (auto& kv : sec.pks)
         {
-            ret.push_back(kv.name);
+            ret.push_back(kv.first);
         }
         return ret;
     }
@@ -400,11 +322,12 @@ public:
     std::vector<KeyType> getAllKeyValues(const std::string& section) const
     {
         std::vector<KeyType> ret;
-        if (sections_.count(section) == 0)
+        if (index_section_.count(compare_section_(section)) == 0)
         {
             return ret;
         }
-        for (auto& kv : sections_.at(section).records)
+        auto ps = index_section_.at(compare_section_(section)).ps;
+        for (auto& kv : ps->keys)
         {
             ret.push_back(kv);
         }
@@ -413,32 +336,28 @@ public:
 
     void setKey(const std::string& section, const std::string& key, const std::string& value)
     {
-        //std::lock_guard<std::mutex> lock(mutex_);
         valueHandler(section, key, value);
     }
 
     void eraseKey(const std::string& section, const std::string& key)
     {
-        //std::lock_guard<std::mutex> lock(mutex_);
-        sections_[section].erase(key);
+        auto& it = index_section_[compare_section_(section)];
+        auto& pkey = it.pks[compare_key_(key)];
+        it.ps->keys.remove_if([=](KeyType& value)
+            {
+                return &value == pkey;
+            });
+        it.pks.erase(compare_key_(key));
     }
 
     void eraseSection(const std::string& section)
     {
-        sections_.erase(section);
-    }
-
-    void print() const
-    {
-        for (auto& skv : sections_.records)
-        {
-            fprintf(stdout, "[%s]\n", skv.name.c_str());
-            for (auto& kv : skv.records)
+        auto& it = index_section_[compare_section_(section)];
+        sections_.remove_if([&](Section& sec)
             {
-                fprintf(stdout, "%s = %s\n", kv.name.c_str(), kv.value.c_str());
-            }
-            fprintf(stdout, "\n");
-        }
+                return &sec == it.ps;
+            });
+        index_section_.erase(compare_section_(section));
     }
 
     void clear()
@@ -454,42 +373,6 @@ public:
 
 private:
     int ini_parse_content(const std::string& content)
-    {
-        //split the content into lines
-        auto split_to_lines = [](std::string str)
-        {
-            std::vector<std::string> result;
-            str += '\n';
-            int size = str.size();
-            int quote = 0;
-            size_t pos = 0;
-            std::string str1;
-            for (size_t i = 0; i < size; i++)
-            {
-                auto c = str[i];
-                if (quote == 0 && c == '\r')
-                {
-                    continue;
-                }
-                if (quote == 0 && c == '\n')
-                {
-                    result.push_back(str1);
-                    str1.clear();
-                    continue;
-                }
-                str1 += c;
-                if (quote == 0 && c == '\'') { quote = 1; }
-                else if (quote == 0 && c == '\"') { quote = 2; }
-                else if (quote == 1 && c == '\'') { quote = 0; }
-                else if (quote == 2 && c == '\"') { quote = 0; }
-            }
-            return result;
-        };
-        lines_ = split_to_lines(content);
-        return ini_parse_lines(lines_, READ);
-    }
-
-    int ini_parse_lines(std::vector<std::string>& lines, int mode)
     {
         /* Return pointer to first non-whitespace char in given string. */
         auto lskip = [](const std::string& s) -> std::string
@@ -522,215 +405,147 @@ private:
         /* Uses a fair bit of stack (use heap instead if you need to) */
         std::string section = "";
         std::string prev_key = "";
-        int lineno = 0;
         int error = 0;
         /* Scan all lines */
-        auto it = lines.begin();
-        while (it != lines.end())
+        size_t i = 0;
+        if (content.size() >= 3 && (unsigned char)content[0] == 0xEF && (unsigned char)content[1] == 0xBB && (unsigned char)content[2] == 0xBF)
         {
-            lineno++;
-            std::string line = *it;
-            /* Skip comment */
-            if (lskip(line).find_first_of(INI_INLINE_COMMENT_PREFIXES) == 0)
-            {
-                it++;
-                prev_key = "";
-                continue;
-            }
-            if (lineno == 1 && line.size() >= 3 && (unsigned char)line[0] == 0xEF && (unsigned char)line[1] == 0xBB && (unsigned char)line[2] == 0xBF)
-            {
-                line = line.substr(3);
-            }
-            line = rstrip(line);    //remove spaces on two sides
+            i = 3;
+        }
+        bool new_line = true;
 
-            if (line.size() < 2)    //a line should contains at least two letters such as "a=", "[]"
+        int status = 0;    //0: new line, 1: comment, 2: section, 3: key, 4: value
+        std::string str;
+        while (i < content.size())
+        {
+            auto& c = content[i];
+
+            if (c == '\r') { i++; }
+            else if (!new_line && c == '\n')
             {
+                i++;
+                new_line = true;
             }
-            else if (line[0] == ';' || line[0] == '#')
+            else if (new_line && c == '\n')
             {
-                /* Per Python configparser, allow both ; and # comments at the start of a line */
+                new_line = true;
+                valueHandler(section, "", "", "");
+                i++;
             }
-#if INI_ALLOW_MULTILINE
-            else if (prev_key != "" && line[0] == ' ')
+            else if (new_line && c == '[')
             {
-                if (mode == READ)
-                {
-                    /* Non-blank line with leading whitespace, treat as continuation of previous name's value (as per Python config parser). */
-                    auto line1 = line;
-                    size_t pos = line1.find_first_of(INI_INLINE_COMMENT_PREFIXES);
-                    if (pos != std::string::npos)
-                    {
-                        line1 = line1.substr(0, pos);
-                    }
-                    std::string value = getString(section, prev_key, "") + line_break_ + rstrip(line1);
-                    valueHandler(section, prev_key, value);
-                    if (error == 0)
-                    {
-                        //error = lineno;
-                    }
-                }
-                else
-                {
-                    /* Ignore this line, WARRNING: comment will be lost! */
-                    it = lines.erase(it);
-                    continue;
-                }
-            }
-#endif
-            else if (line[0] == '[')
-            {
-                //if is writing and the previous section is not empty, insert it
-                if (mode == WRITE && hasSection(section))
-                {
-                    for (auto& key : getAllKeys(section))
-                    {
-                        if (!key.empty())
-                        {
-                            std::string line = key + " = " + getString(section, key);
-                            it = lines_.insert(it, line);
-                            it++;
-                        }
-                    }
-                    eraseSection(section);
-                }
-                /* A "[section]" line */
-                auto end = line.find_first_of("]");
+                auto end = content.find_first_of("]", i + 1);
                 if (end != std::string::npos)
                 {
-                    section = line.substr(1, end - 1);    //found a new section
+                    section = content.substr(i + 1, end - i - 1);    //found a new section
                     prev_key = "";
-                    if (mode == WRITE && !hasSection(section))
-                    {
-                        it = lines_.erase(it);
-                        continue;
-                    }
                 }
-                else if (error == 0)
+                i = end + 1;
+                new_line = false;
+            }
+            else if (new_line && c != ' ')
+            {
+                if (c=='r')
                 {
-                    /* No ']' found on section line */
-                    error = lineno;
+                    int cd=0;
+                }
+                new_line = false;
+                auto end = content.find_first_of("=", i + 1);
+
+                if (end != std::string::npos)
+                {
+                    auto end2 = content.find_first_of(";#\n", i);
+                    auto c1 = content[end2];
+                    if (end2 < end)
+                    {
+                        auto endline = content.find_first_of("\n\r", i);
+                        if (endline != std::string::npos)
+                        {
+                            std::string o = content.substr(i, endline - i);
+                            valueHandler(section, "", "", o);
+                            i = endline + 1;
+                        }
+                        else
+                        {
+                            i++;
+                        }
+                    }
+                    else
+                    {
+                        auto key = content.substr(i, end - i);    //found a new key
+                        key = rstrip(key);
+                        //if find a key, search the value from the next char of '=', considering quote and new line
+                        size_t i1 = end + 1;
+                        int quote = 0;    //0: no quote, 1: ', 2: "
+                        std::string v, o;
+                        bool begin = true;
+                        bool end = false;
+                        while (i1 < content.size())
+                        {
+                            auto& c1 = content[i1];
+                            if (begin && c1 == ' ')
+                            {
+                                i1++;
+                                continue;
+                            }
+                            if (begin && c1 != ' ')
+                            {
+                                begin = false;
+                            }
+                            if (!begin)
+                            {
+                                if (!end)
+                                {
+                                    if (quote == 0 && c1 == '\'') { quote = 1; }
+                                    else if (quote == 0 && c1 == '\"') { quote = 2; }
+                                    else if (quote == 1 && c1 == '\'') { quote = 0; }
+                                    else if (quote == 2 && c1 == '\"') { quote = 0; }
+                                }
+                                if (quote == 0)
+                                {
+                                    if (c1 == '\r' || c1 == '\n')
+                                    {
+                                        i = i1;
+                                        break;
+                                    }
+                                    if (c1 == '#' || c1 == ';')
+                                    {
+                                        end = true;
+                                    }
+                                    if (!end)
+                                    {
+                                        v += c1;
+                                    }
+                                    else
+                                    {
+                                        o += c1;
+                                    }
+                                }
+                                else
+                                {
+                                    v += c1;
+                                }
+                            }
+                            i1++;
+                        }
+                        //remove the last space of v
+                        v = rstrip(v);
+                        if (v.front() == '\'' && v.back() == '\''
+                            || v.front() == '\"' && v.back() == '\"')
+                        {
+                            v = v.substr(1, v.size() - 2);
+                        }
+                        valueHandler(section, key, v, o);
+                        i = i1 + 1;
+                    }
                 }
             }
             else
             {
-                auto assign_char = line.find_first_of("=");
-                if (assign_char != std::string::npos)
-                {
-                    std::string key = rstrip(line.substr(0, assign_char));
-                    std::string value = lskip(line.substr(assign_char + 1));
-                    int quote = 0;    //0: no quote, 1: single quote, 2: double quote
-                    int quote_end_pos = value.size() - 1;
-                    if (value.find_first_of("\'") == 0)
-                    {
-                        quote = 1;
-                        quote_end_pos = value.find_first_of("\'", 1);
-                    }
-                    else if (value.find_first_of("\"") == 0)
-                    {
-                        quote = 2;
-                        quote_end_pos = value.find_first_of("\"", 1);
-                    }
-                    if (quote)
-                    {
-                        if (quote_end_pos >= 0)
-                        {
-                            value = value.substr(1, quote_end_pos - 1);
-                        }
-                        else
-                        {
-                            value = value.substr(1);
-                        }
-                    }
-                    std::string comment = "";
-#if INI_ALLOW_INLINE_COMMENTS
-                    if (quote == 0)
-                    {
-                        int comment_pos = value.find_first_of(INI_INLINE_COMMENT_PREFIXES);
-                        if (comment_pos != std::string::npos)
-                        {
-                            comment = value.substr(comment_pos);
-                            value = value.substr(0, comment_pos);
-                        }
-                    }
-#endif
-                    auto blanks = value.substr(value.find_last_not_of(" ") + 1);
-                    value = rstrip(value);
-
-                    /* Valid name[=:]value pair found, call handler */
-                    prev_key = key;
-
-                    if (mode == READ)
-                    {
-                        int key_exist = valueHandler(section, key, value);
-                        if (key_exist > 0)
-                        {
-                            //repeat defined, how to deal it?
-                        }
-                    }
-                    else if (mode == WRITE)
-                    {
-                        if (hasKey(section, key))
-                        {
-                            auto value1 = getString(section, key, value);
-                            if (value1 != value)
-                            {
-                                //rewrite the line
-                                *it = key + " = " + dealValue(value1) + blanks + comment;
-                            }
-                            eraseKey(section, key);
-                        }
-                        else
-                        {
-                            //key has been erased
-                            it = lines.erase(it);
-                            continue;
-                        }
-                    }
-                    if (!error)
-                    {
-                        //error = lineno;
-                    }
-                }
-                else if (error == 0)
-                {
-                    /* No '=' or ':' found on name[=:]value line */
-                    error = lineno;
-                    prev_key = "";
-                }
-            }
-            it++;
-        }
-        //new keys for the last section
-        if (mode == WRITE && hasSection(section))
-        {
-            for (auto& key : getAllKeys(section))
-            {
-                if (!key.empty())
-                {
-                    std::string line = key + " = " + getString(section, key);
-                    it = lines_.insert(it, line);
-                    it++;
-                }
-            }
-            eraseSection(section);
-        }
-        return error;
-    }
-
-    void resetLines()
-    {
-        auto sections0 = sections_;
-        //rescan the file to modify existing keys
-        ini_parse_lines(lines_, WRITE);
-        for (auto& section : getAllSections())
-        {
-            lines_.insert(lines_.end(), "[" + section + "]");
-            for (auto& key : getAllKeys(section))
-            {
-                lines_.insert(lines_.end(), key + " = " + getString(section, key));
+                i++;
             }
         }
-        sections_ = std::move(sections0);
+        return 0;
     }
 
     static std::vector<std::string> splitString(std::string str, std::string pattern, bool ignore_psspace)
@@ -814,7 +629,6 @@ public:
     //make a string with trying to keep the original style
     std::string toString()
     {
-        resetLines();
         std::string content;
         for (int i = 0; i < lines_.size(); i++)
         {
@@ -835,9 +649,9 @@ public:
         for (auto& section : getAllSections())
         {
             content += "[" + section + "]" + line_break_;
-            for (auto& key : sections_.at(section).records)
+            //for (auto& key : sections_.at(section).records)
             {
-                content += key.name + "=" + dealValue(key.value) + line_break_;
+                //    content += key.name + "=" + dealValue(key.value) + line_break_;
             }
         }
         return content;
