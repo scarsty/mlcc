@@ -374,31 +374,28 @@ public:
 private:
     int ini_parse_content(const std::string& content)
     {
-        /* Return pointer to first non-whitespace char in given string. */
-        auto lskip = [](const std::string& s) -> std::string
+        /* Return pointer to first non-whitespace char in given string */
+        auto lskip = [](std::string& s) -> void
         {
             auto pre = s.find_first_not_of(" ");
             if (pre != std::string::npos)
             {
-                return s.substr(pre);
-            }
-            else
-            {
-                return "";
+                s = s.substr(pre);
             }
         };
 
-        /* Strip whitespace chars off end of given string, in place. Return s. */
-        auto rstrip = [](const std::string& s) -> std::string
+        /* Strip whitespace chars off end of given string */
+        auto rstrip = [](std::string& s, size_t& suf) -> void
         {
-            auto suf = s.find_last_not_of(" ");
-            if (suf != std::string::npos)
+            auto pos = s.find_last_not_of(" ");
+            if (pos != std::string::npos)
             {
-                return s.substr(0, suf + 1);
+                suf = s.size() - pos - 1;
+                s = s.substr(0, pos + 1);
             }
             else
             {
-                return "";
+                suf = 0;
             }
         };
 
@@ -440,22 +437,16 @@ private:
                     section = content.substr(i + 1, end - i - 1);    //found a new section
                     prev_key = "";
                 }
-                i = end + 1;
+                i = end;
                 new_line = false;
             }
             else if (new_line && c != ' ')
             {
-                if (c=='r')
-                {
-                    int cd=0;
-                }
                 new_line = false;
                 auto end = content.find_first_of("=", i + 1);
-
                 if (end != std::string::npos)
                 {
-                    auto end2 = content.find_first_of(";#\n", i);
-                    auto c1 = content[end2];
+                    auto end2 = content.find_first_of(";#\n\r\'\"", i);
                     if (end2 < end)
                     {
                         auto endline = content.find_first_of("\n\r", i);
@@ -463,7 +454,7 @@ private:
                         {
                             std::string o = content.substr(i, endline - i);
                             valueHandler(section, "", "", o);
-                            i = endline + 1;
+                            i = endline;
                         }
                         else
                         {
@@ -473,7 +464,8 @@ private:
                     else
                     {
                         auto key = content.substr(i, end - i);    //found a new key
-                        key = rstrip(key);
+                        size_t suf;
+                        rstrip(key, suf);
                         //if find a key, search the value from the next char of '=', considering quote and new line
                         size_t i1 = end + 1;
                         int quote = 0;    //0: no quote, 1: ', 2: "
@@ -529,14 +521,18 @@ private:
                             i1++;
                         }
                         //remove the last space of v
-                        v = rstrip(v);
+                        rstrip(v, suf);
+                        if (suf)
+                        {
+                            o = std::string(suf, ' ') + o;
+                        }
                         if (v.front() == '\'' && v.back() == '\''
                             || v.front() == '\"' && v.back() == '\"')
                         {
                             v = v.substr(1, v.size() - 2);
                         }
                         valueHandler(section, key, v, o);
-                        i = i1 + 1;
+                        i = i1;
                     }
                 }
             }
@@ -630,13 +626,25 @@ public:
     std::string toString()
     {
         std::string content;
-        for (int i = 0; i < lines_.size(); i++)
+        bool first = true;
+        for (auto& sec : sections_)
         {
-            auto& line = lines_[i];
-            content += line;
-            if (i != lines_.size() - 1)
+            content += "[" + sec.name + "]" + line_break_;
+            if (first && sec.name.empty())
             {
-                content += line_break_;
+                first = false;
+                content = "";
+            }
+            for (auto& key : sec.keys)
+            {
+                if (key.key.empty())
+                {
+                    content += key.other + line_break_;
+                }
+                else
+                {
+                    content += key.key + " = " + dealValue(key.value) + key.other + line_break_;
+                }
             }
         }
         return content;
@@ -646,12 +654,23 @@ public:
     std::string toPureString() const
     {
         std::string content;
-        for (auto& section : getAllSections())
+        bool first = true;
+        for (auto& sec : sections_)
         {
-            content += "[" + section + "]" + line_break_;
-            //for (auto& key : sections_.at(section).records)
+            if (first && sec.name.empty())
             {
-                //    content += key.name + "=" + dealValue(key.value) + line_break_;
+                first = false;
+            }
+            else
+            {
+                content += "[" + sec.name + "]" + line_break_;
+            }
+            for (auto& key : sec.keys)
+            {
+                if (!key.key.empty())
+                {
+                    content += key.key + " = " + dealValue(key.value) + line_break_;
+                }
             }
         }
         return content;
