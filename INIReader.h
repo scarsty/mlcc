@@ -64,7 +64,9 @@ private:
         if (it == index_section_.end())
         {
             sections_.push_back({ section, {} });
-            it = index_section_.insert({ section1, { &sections_.back(), {} } }).first;
+            Index index;
+            index.ps = &sections_.back();
+            it = index_section_.insert(std::pair<std::string, Index>(section1, index)).first;
         }
         ps = it->second.ps;
         if (key1 == "")
