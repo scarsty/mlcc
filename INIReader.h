@@ -356,11 +356,7 @@ public:
     void clear()
     {
         sections_.clear();
-    }
-
-    void clearAll()
-    {
-        sections_.clear();
+        index_section_.clear();
     }
 
 private:
@@ -461,7 +457,7 @@ private:
                         size_t i1 = end + 1;
                         int quote = 0;    //0: no quote, 1: ', 2: "
                         std::string v;
-                        size_t o_begin;
+                        size_t o_begin = std::string::npos;
                         bool begin = true;
                         bool end = false;
                         while (i1 < content.size())
@@ -490,7 +486,6 @@ private:
                                     if (c1 == '\r' || c1 == '\n')
                                     {
                                         i = i1;
-                                        o_begin = i1;
                                         break;
                                     }
                                     if (c1 == '#' || c1 == ';')
@@ -510,14 +505,18 @@ private:
                             }
                             i1++;
                         }
+                        if (o_begin == std::string::npos)
+                        {
+                            o_begin = i1;
+                        }
                         //remove the last space of v
                         rstrip(v, suf);
                         if (suf)
                         {
                             o_begin -= suf;
                         }
-                        if (v.front() == '\'' && v.back() == '\''
-                            || v.front() == '\"' && v.back() == '\"')
+                        if (v.size() >= 2
+                            && (v.front() == '\'' && v.back() == '\'' || v.front() == '\"' && v.back() == '\"'))
                         {
                             v = v.substr(1, v.size() - 2);
                         }
