@@ -14,7 +14,7 @@ A simple c-style script, please see [cifa](cifa) for more details. The old devel
 
 INIReader.h
 
-Read and write ini file. Modified from <https://github.com/benhoyt/inih>.
+Read and write ini file. Modified from <https://github.com/benhoyt/inih>. The writting of it is very quick.
 
 ### Read an ini file
 
@@ -42,7 +42,7 @@ int main()
     int port = ini.getInt("database", "port", 0);    //port = 143
     int port_ = ini.getInt("database", "port_", 0);    //port_ = 143
     std::string name = ini.getString("owner", "name", "");    //name = Joha Doe
-    std::string file = ini.getString("database", "file");    //file = "payroll.dat" (the quotation mark will be kept)
+    std::string file = ini.getString("database", "file");    //file = payroll.dat (the quotation mark will be removed)
     return 0;
 }
 ```
@@ -74,22 +74,33 @@ The content of example1.ini after running is:
 head = nothing
 ; last modified 1 April 2001 by John Doe
 [owner]
-name=John Doe
-organization=Acme Widgets Inc.
+name = John Doe
+organization = Acme Widgets Inc.
 age = 30
 
 [database]
 ; use IP address in case network name resolution is not working
-server=192.0.2.62     
-file="payroll.dat"
+server = 192.0.2.62     
+file = payroll.dat
 
 [account]
 password = ***
 
 ```
-This library does not support operating the comments.
+A space will be added at both sides of "=", and the comments will be maintained.
 
-If a key has been multi-defined, the last value should be taken. **Please note all the multi-defined lines EXCLUDE the last one will be ERASED when save!**
+If the string includes some special charactors, such as ";" and "#" (which are the commont prefix), or line break, please use quote to surround it. Examples:
+
+```ini
+[sec]
+key1 = "cc;dd#l"
+key2 = "line1
+line2"
+```
+
+This library does not support the escape characters or operating the comments.
+
+If a key has been multi-defined, the last value should be taken. **Please note all the multi-defined lines EXCLUDE the first one will be ERASED when save!** But the last comment to it will be kept.
 
 You can define how to compare the section or key with setCompareSection and setCompareKey. Such as:
 
@@ -99,22 +110,14 @@ class INIReaderNormal : public INIReader
 public:
     INIReaderNormal()
     {
-        setCompareSection([](const std::string& l, const std::string& r)
+        auto compare_case_insensitivity = [](const std::string& l)
         {
             auto l1 = l;
-            auto r1 = r;
             std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-            std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-            return l1 == r1;
-        });
-        setCompareKey([](const std::string& l, const std::string& r)
-        {
-            auto l1 = l;
-            auto r1 = r;
-            std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-            std::transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-            return l1 == r1;
-        });
+            return l1;
+        };
+        setCompareSection(compare_case_insensitivity);
+        setCompareKey(compare_case_insensitivity);
     }
 };
 ```

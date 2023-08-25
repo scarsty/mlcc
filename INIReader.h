@@ -52,7 +52,7 @@ private:
     std::string line_break_ = "\n";
 #endif
     int error_ = 0;
-    std::vector<std::string> lines_;    //lines of the files
+    bool bom_ = false;
 
     //return value: the key has existed, 0 means it is a new key
     int valueHandler(const std::string& section, const std::string& key, const std::string& value, const std::string& other = "")
@@ -358,7 +358,6 @@ public:
 
     void clearAll()
     {
-        lines_.clear();
         sections_.clear();
     }
 
@@ -398,6 +397,7 @@ private:
         if (content.size() >= 3 && (unsigned char)content[0] == 0xEF && (unsigned char)content[1] == 0xBB && (unsigned char)content[2] == 0xBF)
         {
             i = 3;
+            bom_ = true;
         }
         bool new_line = true;
 
@@ -614,6 +614,10 @@ public:
     std::string toString(bool only_kv = false) const
     {
         std::string content;
+        if (bom_)
+        {
+            content += "\xEF\xBB\xBF";
+        }
         bool first = true;
         for (auto& sec : sections_)
         {
