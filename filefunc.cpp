@@ -32,10 +32,6 @@
 #define CPP_VERSION __cplusplus
 #endif
 
-#if CPP_VERSION >= 201703L
-#include <filesystem>
-#endif
-
 bool filefunc::fileExist(const std::string& name)
 {
     if (name.empty())
