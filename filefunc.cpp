@@ -26,12 +26,6 @@
 #include <sys/types.h>
 #endif
 
-#ifdef _MSC_VER
-#define CPP_VERSION _MSVC_LANG
-#else
-#define CPP_VERSION __cplusplus
-#endif
-
 bool filefunc::fileExist(const std::string& name)
 {
     if (name.empty())
