@@ -8,7 +8,7 @@
 struct INIReaderBin
 {
 private:
-    INIReader ini_;
+    INIReaderNormal ini_;
     const char* head_ = "CFG_BIN INI";
     const int head_size_ = 32;
     // The head is "CFG_BIN INI", 32 bytes is kept
@@ -27,7 +27,7 @@ public:
                 size_ini = *(uint64_t*)(str.data() + head_size_);
             }
             uint64_t begin = head_size_ + sizeof(uint64_t) + size_ini;
-            INIReader assist;
+            INIReaderNormal assist;
             if (str.size() < begin)
             {
                 return -1;
@@ -57,7 +57,7 @@ public:
     std::string to_string()
     {
         std::string str_content;
-        INIReader assist;
+        INIReaderNormal assist;
         for (auto& section : ini_.getAllSections())
         {
             for (auto& key : ini_.getAllKeys(section))
