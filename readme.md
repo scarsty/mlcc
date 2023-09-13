@@ -129,6 +129,12 @@ a=1
 [sec1]
 a=1
 ```
+```c++
+INIReader ini;
+ini["sec0"]["a"]=1;
+ini["sec0"]["sec0_1"]["a"]=1;
+ini["sec1"]["a"]=1;
+```
 
 ## strfunc
 
