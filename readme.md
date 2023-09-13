@@ -102,24 +102,32 @@ This library does not support the escape characters or operating the comments.
 
 If a key has been multi-defined, the last value should be taken. **Please note all the multi-defined lines EXCLUDE the first one will be ERASED when save!** But the last comment to it will be kept.
 
-You can define how to compare the section or key with setCompareSection and setCompareKey. Such as:
+You can define how to compare the section or key with the hash function of unorder_map. Such as:
 
 ```c++
-class INIReaderNormal : public INIReader
+struct CaseInsensitivityCompare
 {
-public:
-    INIReaderNormal()
+    size_t operator()(const std::string& l) const
     {
-        auto compare_case_insensitivity = [](const std::string& l)
-        {
-            auto l1 = l;
-            std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-            return l1;
-        };
-        setCompareSection(compare_case_insensitivity);
-        setCompareKey(compare_case_insensitivity);
+        auto l1 = l;
+        std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+        return std::hash<std::string>{}(l1);
     }
 };
+
+using INIReaderNormal = INIReader<CaseInsensitivityCompare>;
+
+```
+
+Multi level hierarchy is supported, the sub section should be inisde two or more square brackets to. Such as:
+
+```ini
+[sec0]
+a=1
+[[sec0_1]]
+a=1
+[sec1]
+a=1
 ```
 
 ## strfunc
