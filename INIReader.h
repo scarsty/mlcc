@@ -8,43 +8,138 @@
 #include <unordered_map>
 #include <vector>
 
+template <class COM_METHOD>
 class INIReader
 {
 public:
-    struct KeyType
+    template <typename T>
+    struct Record
     {
-        std::string key, value, other;
+        std::string key;
+        T value;
     };
-    struct Section
+    template <typename T, class COM_METHOD>
+    struct ListWithIndex : std::list<Record<T>>
     {
-        std::string name;
-        std::list<KeyType> keys;
+        std::unordered_map<std::string, T*, COM_METHOD> index;
+        T& operator[](const std::string& key)
+        {
+            //auto it = index.find(key);
+            //if (it == index.end())
+            //{
+            //    std::list<Record<T>>::push_back({ key, T() });
+            //    it = std::list<Record<T>>::back();
+            //    it = index.insert(std::pair<std::string, Index>(section1, index)).first;
+            // too complexiable
+            //}
+            auto key1 = key;
+            auto p = index[key1];
+            if (p)
+            {
+                return *p;
+            }
+            else
+            {
+                std::list<Record<T>>::push_back({ key, T() });
+                index[key1] = &std::list<Record<T>>::back().value;
+                return std::list<Record<T>>::back().value;
+            }
+        }
+        const T& at(const std::string& key) const
+        {
+            return *index.at(key);
+        }
+        int count(const std::string& key) const
+        {
+            return index.count(key);
+        }
+    };
+
+public:
+    struct KeyType1
+    {
+        std::string value;
+        ListWithIndex<KeyType1, COM_METHOD> sections;
+        std::string other;
+
+        KeyType1() {}
+        KeyType1(const std::string& value, const std::string& other = "") : value(value), other(other) {}
+        KeyType1(const char* value) : value(value) {}
+        template <typename T>
+        KeyType1(const T& value) : value(std::to_string(value)) {}
+
+        int toInt() const
+        {
+            return atoi(value.c_str());
+        }
+        double toDouble() const
+        {
+            return atof(value.c_str());
+        }
+        const std::string& toString() const
+        {
+            return value;
+        }
+        KeyType1& operator[](const std::string& key)
+        {
+            return sections[key];
+        }
+        const KeyType1& operator[](const std::string& key) const
+        {
+            return sections.at(key);
+        }
+        const int count(const std::string& key) const
+        {
+            return sections.index.count(key);
+        }
+        void addWithoutIndex(const KeyType1& value)
+        {
+            sections.push_back({ "", value });
+        }
+        std::string allToString(int layer = 1, bool show_other = true, const std::string& line_break = "\n") const    //ignore the value of first layer
+        {
+            std::string str;
+            for (auto& sec : sections)
+            {
+                if (sec.value.sections.size() == 0)
+                {
+                    if (sec.key.empty())
+                    {
+                        if (show_other)
+                        {
+                            str += sec.value.other;
+                        }
+                    }
+                    else
+                    {
+                        str += sec.key;
+                        str += " = ";
+                        str += dealValue(sec.value.value);
+                        if (show_other)
+                        {
+                            str += sec.value.other;
+                        }
+                    }
+                    str += line_break;
+                }
+            }
+            for (auto& sec : sections)
+            {
+                if (sec.value.sections.size() > 0)
+                {
+                    str += std::string(layer, '[');
+                    str += sec.key;
+                    str += std::string(layer, ']');
+                    str += line_break;
+                    str += sec.value.allToString(layer + 1, show_other, line_break);
+                }
+            }
+            return str;
+        }
     };
 
 private:
-    std::list<Section> sections_;
-
-    struct Index
-    {
-        Section* ps = nullptr;
-        std::unordered_map<std::string, KeyType*> pks;
-    };
-
-    struct fake_view
-    {
-        char* p;
-        size_t length;
-        std::string to_string() const { return std::string(p, length); }
-    };
-
-    fake_view substr_fake_view(const std::string& str, size_t pos, size_t length)
-    {
-        return { (char*)str.data() + pos, length };
-    }
-
-    std::function<std::string(const std::string&)> compare_section_;
-    std::function<std::string(const std::string&)> compare_key_;
-    std::unordered_map<std::string, Index> index_section_;
+    KeyType1 keys;
 
 #ifdef _WIN32
     std::string line_break_ = "\r\n";
@@ -55,37 +150,15 @@ private:
     bool bom_ = false;
 
     //return value: the key has existed, 0 means it is a new key
-    int valueHandler(const std::string& section, const std::string& key, const std::string& value, const std::string& other = "")
+    int valueHandler(KeyType1& keytype, const std::string& section, const std::string& key, const std::string& value, const std::string& other = "")
     {
-        Section* ps = nullptr;
-        auto section1 = compare_section_(section);
-        auto key1 = compare_key_(key);
-        auto it = index_section_.find(section1);
-        if (it == index_section_.end())
+        if (key.empty())
         {
-            sections_.push_back({ section, {} });
-            Index index;
-            index.ps = &sections_.back();
-            it = index_section_.insert(std::pair<std::string, Index>(section1, index)).first;
+            keytype[section].addWithoutIndex(KeyType1(value, other));    //comment or others
         }
-        ps = it->second.ps;
-        if (key1 == "")
+        else
         {
-            ps->keys.push_back({ key, value, other });
-        }
-        else if (ps)
-        {
-            auto itk = it->second.pks.find(key1);
-            if (itk == it->second.pks.end())
-            {
-                ps->keys.push_back({ key, value, other });
-                index_section_[section1].pks[key1] = &ps->keys.back();
-            }
-            else
-            {
-                itk->second->value = value;
-                itk->second->other = other;
-            }
+            keytype[section][key] = KeyType1(value, other);
         }
         return 0;
     }
@@ -103,23 +176,20 @@ private:
 public:
     INIReader()
     {
-        compare_section_ = [](const std::string& l)
-        {
-            return l;
-        };
-        compare_key_ = [](const std::string& l)
-        {
-            return l;
-        };
+        //compare_key_ = [](const std::string& l)
+        //{
+        //    return l;
+        //};
     }
 
-    void setCompareSection(std::function<std::string(const std::string&)> com)
-    {
-        compare_section_ = com;
-    }
     void setCompareKey(std::function<std::string(const std::string&)> com)
     {
-        compare_key_ = com;
+        //compare_key_ = com;
+    }
+
+    KeyType1& operator[](const std::string& key)
+    {
+        return keys[key];
     }
 
     // parse a given filename
@@ -174,17 +244,17 @@ public:
     // Get a string value from INI file, returning default_value if not found.
     std::string getString(const std::string& section, const std::string& key, const std::string& default_value = "") const
     {
-        auto section1 = compare_section_(section);
-        if (index_section_.count(section1) == 0)
+        auto section1 = (section);
+        if (keys.count(section1) == 0)
         {
             return default_value;
         }
-        auto key1 = compare_key_(key);
-        if (index_section_.at(section1).pks.count(key1) == 0)
+        auto key1 = (key);
+        if (keys[section1].count(key1) == 0)
         {
             return default_value;
         }
-        return index_section_.at(section1).pks.at(key1)->value;
+        return keys[section1][key1].value;
     }
 
     // Get an integer (long) value from INI file, returning default_value if
@@ -266,17 +336,17 @@ public:
     //check one section exist or not
     int hasSection(const std::string& section) const
     {
-        return index_section_.count(compare_section_(section));
+        return keys.sections.index.count(section);
     }
 
     //check one section and one key exist or not
     int hasKey(const std::string& section, const std::string& key) const
     {
-        if (index_section_.count(compare_section_(section)) == 0)
+        if (keys.count(section) == 0)
         {
             return 0;
         }
-        if (index_section_.at(compare_section_(section)).pks.count(compare_key_(key)) == 0)
+        if (keys[section].count(key) == 0)
         {
             return 0;
         }
@@ -286,9 +356,9 @@ public:
     std::vector<std::string> getAllSections() const
     {
         std::vector<std::string> ret;
-        for (auto& value : sections_)
+        for (auto& value : keys.sections)
         {
-            ret.push_back(value.name);
+            ret.push_back(value.key);
         }
         return ret;
     }
@@ -296,12 +366,12 @@ public:
     std::vector<std::string> getAllKeys(const std::string& section) const
     {
         std::vector<std::string> ret;
-        if (index_section_.count(compare_section_(section)) == 0)
+        if (keys.count(section) == 0)
         {
             return ret;
         }
-        auto& sec = index_section_.at(compare_section_(section));
-        for (auto& kv : sec.ps->keys)
+        auto& sec = keys[section].sections;
+        for (auto& kv : sec)
         {
             if (!kv.key.empty())
             {
@@ -311,52 +381,35 @@ public:
         return ret;
     }
 
-    std::vector<KeyType> getAllKeyValues(const std::string& section) const
-    {
-        std::vector<KeyType> ret;
-        auto it = index_section_.find(compare_section_(section));
-        if (it == index_section_.end())
-        {
-            return ret;
-        }
-        auto ps = it->second.ps;
-        for (auto& kv : ps->keys)
-        {
-            ret.push_back(kv);
-        }
-        return ret;
-    }
-
     void setKey(const std::string& section, const std::string& key, const std::string& value)
     {
-        valueHandler(section, key, value);
+        valueHandler(keys, section, key, value);
     }
 
     void eraseKey(const std::string& section, const std::string& key)
     {
-        auto& it = index_section_[compare_section_(section)];
-        auto& pkey = it.pks[compare_key_(key)];
-        it.ps->keys.remove_if([=](KeyType& value)
+        auto& it = keys[section];
+        auto& pkey = it[key];
+        it.sections.remove_if([&](Record<KeyType1>& value)
             {
-                return &value == pkey;
+                return &value.value == &pkey;
             });
-        it.pks.erase(compare_key_(key));
+        it.sections.index.erase(key);
     }
 
     void eraseSection(const std::string& section)
     {
-        auto& it = index_section_[compare_section_(section)];
-        sections_.remove_if([&](Section& sec)
+        auto& it = keys[section];
+        keys.sections.remove_if([&](Record<KeyType1>& sec)
             {
-                return &sec == it.ps;
+                return &sec.value == &it;
             });
-        index_section_.erase(compare_section_(section));
+        keys.sections.index.erase(section);
     }
 
     void clear()
     {
-        sections_.clear();
-        index_section_.clear();
+        keys.sections.clear();
     }
 
 private:
@@ -401,6 +454,8 @@ private:
 
         int status = 0;    //0: new line, 1: comment, 2: section, 3: key, 4: value
         std::string str;
+        std::vector<KeyType1*> stack = { &keys };
+        int current_layer = 1;
         while (i < content.size())
         {
             auto& c = content[i];
@@ -414,15 +469,24 @@ private:
             else if (new_line && c == '\n')
             {
                 new_line = true;
-                valueHandler(section, "", "", "");
+                valueHandler(*stack.back(), section, "", "", "");
                 i++;
             }
             else if (new_line && c == '[')
             {
-                auto end = content.find_first_of("]", i + 1);
+                auto square_count = content.find_first_not_of("[", i + 1) - i;
+                auto end = content.find_first_of("]", i + square_count);
+                if (square_count > stack.size())
+                {
+                    stack.push_back(&stack.back()->sections[section]);
+                }
+                else if (square_count < stack.size())
+                {
+                    stack.pop_back();
+                }
                 if (end != std::string::npos)
                 {
-                    section = content.substr(i + 1, end - i - 1);    //found a new section
+                    section = content.substr(i + square_count, end - i - square_count);    //found a new section
                 }
                 i = end;
                 new_line = false;
@@ -440,7 +504,7 @@ private:
                         if (endline != std::string::npos)
                         {
                             std::string o = content.substr(i, endline - i);
-                            valueHandler(section, "", "", o);
+                            valueHandler(*stack.back(), section, "", "", o);
                             i = endline;
                         }
                         else
@@ -520,7 +584,7 @@ private:
                         {
                             v = v.substr(1, v.size() - 2);
                         }
-                        valueHandler(section, key, v, content.substr(o_begin, i1 - o_begin));
+                        valueHandler(*stack.back(), section, key, v, content.substr(o_begin, i1 - o_begin));
                         i = i1;
                     }
                 }
@@ -612,7 +676,7 @@ public:
     }
 
     //make a string with trying to keep the original style
-    std::string toString(bool only_kv = false) const
+    std::string toString(bool comment = true) const
     {
         std::string content;
         if (bom_)
@@ -620,47 +684,8 @@ public:
             content += "\xEF\xBB\xBF";
         }
         bool first = true;
-        for (auto& sec : sections_)
-        {
-            if (first && sec.name.empty())
-            {
-                first = false;
-            }
-            else
-            {
-                content += "[" + sec.name + "]" + line_break_;
-            }
-            for (auto& key : sec.keys)
-            {
-                if (only_kv)
-                {
-                    if (!key.key.empty())
-                    {
-                        content += key.key;
-                        content += " = ";
-                        content += dealValue(key.value);
-                        content += line_break_;
-                    }
-                }
-                else
-                {
-                    if (key.key.empty())
-                    {
-                        content += key.other;
-                        content += line_break_;
-                    }
-                    else
-                    {
-                        content += key.key;
-                        content += " = ";
-                        content += dealValue(key.value);
-                        content += key.other;
-                        content += line_break_;
-                    }
-                }
-            }
-        }
-        if (content.size() > line_break_.size())
+        content += keys.allToString(1, comment, line_break_);
+        if (content.size() >= line_break_.size())
         {
             content.resize(content.size() - line_break_.size());
         }
@@ -670,52 +695,40 @@ public:
     //a pure string without comments or blank lines
     std::string toPureString() const
     {
-        return toString(true);
+        return toString(false);
     }
 };
 
-// The most widely used
-class INIReaderNormal : public INIReader
+struct CaseInsensitivityCompare
 {
-public:
-    INIReaderNormal()
+    size_t operator()(const std::string& l) const
     {
-        auto compare_case_insensitivity = [](const std::string& l)
+        auto l1 = l;
+        std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+        return std::hash<std::string>{}(l1);
+    }
+};
+
+struct NoUnderlineCompare
+{
+    size_t operator()(const std::string& l) const
+    {
+        auto l1 = l;
+        auto replaceAllString = [](std::string& s, const std::string& oldstring, const std::string& newstring)
         {
-            auto l1 = l;
-            std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-            return l1;
+            int pos = s.find(oldstring);
+            while (pos >= 0)
+            {
+                s.erase(pos, oldstring.length());
+                s.insert(pos, newstring);
+                pos = s.find(oldstring, pos + newstring.length());
+            }
         };
-        setCompareSection(compare_case_insensitivity);
-        setCompareKey(compare_case_insensitivity);
+        replaceAllString(l1, "_", "");
+        std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
+        return std::hash<std::string>{}(l1);
     }
 };
-class INIReaderNoUnderline : public INIReader
-{
-public:
-    INIReaderNoUnderline()
-    {
-        setCompareSection([](const std::string& l)
-            {
-                auto l1 = l;
-                std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-                return l1;
-            });
-        setCompareKey([](const std::string& l)
-            {
-                auto l1 = l;
-                auto erase = [](std::string& s, const std::string& oldstring)
-                {
-                    auto pos = s.find(oldstring);
-                    while (pos != std::string::npos)
-                    {
-                        s.erase(pos, oldstring.length());
-                        pos = s.find(oldstring, pos);
-                    }
-                };
-                erase(l1, "_");
-                std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-                return l1;
-            });
-    }
-};
+
+using INIReaderNormal = INIReader<CaseInsensitivityCompare>;
+using INIReaderNoUnderline = INIReader<NoUnderlineCompare>;
