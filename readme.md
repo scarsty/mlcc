@@ -42,7 +42,7 @@ int main()
     int port = ini.getInt("database", "port", 0);    //port = 143
     int port_ = ini.getInt("database", "port_", 0);    //port_ = 143
     std::string name = ini.getString("owner", "name", "");    //name = Joha Doe
-    std::string file = ini.getString("database", "file");    //file = payroll.dat (the quotation mark will be removed)
+    auto file = ini["database"]["file"].toString();    //file = payroll.dat (the quotation mark will be removed)
     return 0;
 }
 ```
@@ -63,7 +63,8 @@ int main()
     ini.setKey("", "head", "nothing");
     ini.setKey("owner", "age", "30");
     ini.eraseKey("database", "port");
-    ini.setKey("account", "password", "***");
+    ini["owner"].erase("name");
+    ini["account"]["password"] = "***";
     ini.saveFile("example1.ini");
     return 0;
 }
@@ -71,10 +72,10 @@ int main()
 The content of example1.ini after running is:
 
 ```ini
+[]
 head = nothing
 ; last modified 1 April 2001 by John Doe
 [owner]
-name = John Doe
 organization = Acme Widgets Inc.
 age = 30
 
@@ -102,24 +103,32 @@ This library does not support the escape characters or operating the comments.
 
 If a key has been multi-defined, the last value should be taken. **Please note all the multi-defined lines EXCLUDE the first one will be ERASED when save!** But the last comment to it will be kept.
 
-You can define how to compare the section or key with the hash function of unorder_map. Such as:
+You can define how to compare the section and key. Such as:
 
 ```c++
-struct CaseInsensitivityCompare
+struct CaseInsensitivity
 {
-    size_t operator()(const std::string& l) const
+    std::string operator()(const std::string& l) const
     {
         auto l1 = l;
         std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-        return std::hash<std::string>{}(l1);
+        return l1;
     }
 };
 
-using INIReaderNormal = INIReader<CaseInsensitivityCompare>;
+using INIReaderNormal = INIReader<CaseInsensitivity>;
 
 ```
 
-Multi level hierarchy is supported, the sub section should be inisde two or more square brackets to. Such as:
+Multi level hierarchy is supported, the sub section should be put inisde two or more square brackets to. Example:
+
+```c++
+INIReaderNormal ini;
+ini["sec0"]["a"] = 1;
+ini["sec0"]["sec0_1"]["a"] = 1;
+ini["sec1"]["a"] = 1;
+```
+These C++ code will give an ini file like this:
 
 ```ini
 [sec0]
@@ -128,12 +137,6 @@ a=1
 a=1
 [sec1]
 a=1
-```
-```c++
-INIReader ini;
-ini["sec0"]["a"]=1;
-ini["sec0"]["sec0_1"]["a"]=1;
-ini["sec1"]["a"]=1;
 ```
 
 ## strfunc

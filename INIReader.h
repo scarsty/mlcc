@@ -32,10 +32,9 @@ public:
             }
             else
             {
-                std::list<Record<T>>::push_back({ key, T() });
+                std::list<Record<T>>::emplace_back(key, T());
                 auto p = &std::list<Record<T>>::back().value;
                 index.insert(std::pair(key1, p));
-                p->parent = this;
                 return *p;
             }
         }
@@ -52,26 +51,14 @@ public:
 public:
     struct KeyType1
     {
-        friend class ListWithIndex<KeyType1, COM_METHOD>;
-
     public:
         std::string value;
         ListWithIndex<KeyType1, COM_METHOD> sections;
         std::string other;
 
-    private:
-        ListWithIndex<KeyType1, COM_METHOD>* parent = nullptr;
-
     public:
         KeyType1() {}
         KeyType1(const std::string& value, const std::string& other = "") : value(value), other(other) {}
-        KeyType1& operator=(const KeyType1& k)
-        {
-            this->value = k.value;
-            this->sections = k.sections;
-            this->other = k.other;
-            return *this;
-        }
         KeyType1(const char* value) : value(value) {}
         template <typename T>
         KeyType1(const T& value) : value(std::to_string(value)) {}
@@ -100,21 +87,14 @@ public:
         {
             return sections.index.count(key);
         }
-        void eraseSelf()
+        void erase(const std::string& key)
         {
-            std::string key;
-            auto itr = parent->begin();
-            for (auto it = parent->begin(); it != parent->end(); it++)
-            {
-                if (&it->value == this)
+            auto& it = (*this)[key];
+            sections.remove_if([&](Record<KeyType1>& sec)
                 {
-                    key = it->key;
-                    itr = it;
-                    break;
-                }
-            }
-            parent->index.erase(key);
-            parent->erase(itr);
+                    return &sec.value == &it;
+                });
+            sections.index.erase(key);
         }
         std::vector<std::string> getAllKeys() const
         {
@@ -127,7 +107,8 @@ public:
         }
         void addWithoutIndex(const KeyType1& value)
         {
-            sections.push_back({ "", value });
+
+            sections.emplace_back("", value);
         }
         std::string allToString(int layer = 1, bool show_other = true, const std::string& line_break = "\n") const    //ignore the value of first layer
         {
@@ -421,23 +402,12 @@ public:
 
     void eraseKey(const std::string& section, const std::string& key)
     {
-        auto& it = keys[section];
-        auto& pkey = it[key];
-        it.sections.remove_if([&](Record<KeyType1>& value)
-            {
-                return &value.value == &pkey;
-            });
-        it.sections.index.erase(key);
+        keys[section].erase(key);
     }
 
     void eraseSection(const std::string& section)
     {
-        auto& it = keys[section];
-        keys.sections.remove_if([&](Record<KeyType1>& sec)
-            {
-                return &sec.value == &it;
-            });
-        keys.sections.index.erase(section);
+        keys.erase(section);
     }
 
     void clear()
