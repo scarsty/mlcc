@@ -21,28 +21,22 @@ public:
     template <typename T, class COM_METHOD>
     struct ListWithIndex : std::list<Record<T>>
     {
-        std::unordered_map<std::string, T*, COM_METHOD> index;
+        std::unordered_map<std::string, T*> index;
         T& operator[](const std::string& key)
         {
-            //auto it = index.find(key);
-            //if (it == index.end())
-            //{
-            //    std::list<Record<T>>::push_back({ key, T() });
-            //    it = std::list<Record<T>>::back();
-            //    it = index.insert(std::pair<std::string, Index>(section1, index)).first;
-            // too complexiable
-            //}
-            auto key1 = key;
-            auto p = index[key1];
-            if (p)
+            auto key1 = COM_METHOD()(key);
+            auto it = index.find(key1);
+            if (it != index.end())
             {
-                return *p;
+                return *it->second;
             }
             else
             {
                 std::list<Record<T>>::push_back({ key, T() });
-                index[key1] = &std::list<Record<T>>::back().value;
-                return std::list<Record<T>>::back().value;
+                auto p = &std::list<Record<T>>::back().value;
+                index.insert(std::pair(key1, p));
+                p->parent = this;
+                return *p;
             }
         }
         const T& at(const std::string& key) const
@@ -58,12 +52,26 @@ public:
 public:
     struct KeyType1
     {
+        friend class ListWithIndex<KeyType1, COM_METHOD>;
+
+    public:
         std::string value;
         ListWithIndex<KeyType1, COM_METHOD> sections;
         std::string other;
 
+    private:
+        ListWithIndex<KeyType1, COM_METHOD>* parent = nullptr;
+
+    public:
         KeyType1() {}
         KeyType1(const std::string& value, const std::string& other = "") : value(value), other(other) {}
+        KeyType1& operator=(const KeyType1& k)
+        {
+            this->value = k.value;
+            this->sections = k.sections;
+            this->other = k.other;
+            return *this;
+        }
         KeyType1(const char* value) : value(value) {}
         template <typename T>
         KeyType1(const T& value) : value(std::to_string(value)) {}
@@ -91,6 +99,31 @@ public:
         const int count(const std::string& key) const
         {
             return sections.index.count(key);
+        }
+        void eraseSelf()
+        {
+            std::string key;
+            auto itr = parent->begin();
+            for (auto it = parent->begin(); it != parent->end(); it++)
+            {
+                if (&it->value == this)
+                {
+                    key = it->key;
+                    itr = it;
+                    break;
+                }
+            }
+            parent->index.erase(key);
+            parent->erase(itr);
+        }
+        std::vector<std::string> getAllKeys() const
+        {
+            std::vector<std::string> ret;
+            for (auto& value : sections)
+            {
+                ret.push_back(value.key);
+            }
+            return ret;
         }
         void addWithoutIndex(const KeyType1& value)
         {
@@ -455,7 +488,6 @@ private:
         int status = 0;    //0: new line, 1: comment, 2: section, 3: key, 4: value
         std::string str;
         std::vector<KeyType1*> stack = { &keys };
-        int current_layer = 1;
         while (i < content.size())
         {
             auto& c = content[i];
@@ -482,7 +514,8 @@ private:
                 }
                 else if (square_count < stack.size())
                 {
-                    stack.pop_back();
+                    if (square_count < 1) { square_count = 1; }
+                    stack.resize(square_count);
                 }
                 if (end != std::string::npos)
                 {
@@ -699,19 +732,19 @@ public:
     }
 };
 
-struct CaseInsensitivityCompare
+struct CaseInsensitivity
 {
-    size_t operator()(const std::string& l) const
+    std::string operator()(const std::string& l) const
     {
         auto l1 = l;
         std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-        return std::hash<std::string>{}(l1);
+        return l1;
     }
 };
 
-struct NoUnderlineCompare
+struct NoUnderline
 {
-    size_t operator()(const std::string& l) const
+    std::string operator()(const std::string& l) const
     {
         auto l1 = l;
         auto replaceAllString = [](std::string& s, const std::string& oldstring, const std::string& newstring)
@@ -726,9 +759,9 @@ struct NoUnderlineCompare
         };
         replaceAllString(l1, "_", "");
         std::transform(l1.begin(), l1.end(), l1.begin(), ::tolower);
-        return std::hash<std::string>{}(l1);
+        return l1;
     }
 };
 
-using INIReaderNormal = INIReader<CaseInsensitivityCompare>;
-using INIReaderNoUnderline = INIReader<NoUnderlineCompare>;
+using INIReaderNormal = INIReader<CaseInsensitivity>;
+using INIReaderNoUnderline = INIReader<NoUnderline>;
