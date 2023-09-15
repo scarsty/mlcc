@@ -33,18 +33,18 @@ public:
             else
             {
                 std::list<Record<T>>::emplace_back(key, T());
-                auto p = &std::list<Record<T>>::back().value;
-                index.insert(std::pair(key1, p));
+                T* p = &std::list<Record<T>>::back().value;
+                index.insert({ key1, p });
                 return *p;
             }
         }
         const T& at(const std::string& key) const
         {
-            return *index.at(key);
+            return *index.at(COM_METHOD()(key));
         }
         int count(const std::string& key) const
         {
-            return index.count(key);
+            return index.count(COM_METHOD()(key));
         }
     };
 
@@ -85,7 +85,7 @@ public:
         }
         const int count(const std::string& key) const
         {
-            return sections.index.count(key);
+            return sections.index.count(COM_METHOD()(key));
         }
         void erase(const std::string& key)
         {
@@ -94,7 +94,7 @@ public:
                 {
                     return &sec.value == &it;
                 });
-            sections.index.erase(key);
+            sections.index.erase(COM_METHOD()(key));
         }
         std::vector<std::string> getAllKeys() const
         {
@@ -350,7 +350,7 @@ public:
     //check one section exist or not
     int hasSection(const std::string& section) const
     {
-        return keys.sections.index.count(section);
+        return keys.count(section);
     }
 
     //check one section and one key exist or not
