@@ -46,6 +46,15 @@ public:
         {
             return index.count(COM_METHOD()(key));
         }
+        void erase(const std::string& key)
+        {
+            auto& it = (*this)[key];
+            std::list<Record<T>>::remove_if([&](Record<KeyType1>& sec)
+                {
+                    return &sec.value == &it;
+                });
+            index.erase(COM_METHOD()(key));
+        }
     };
 
 public:
@@ -85,16 +94,11 @@ public:
         }
         const int count(const std::string& key) const
         {
-            return sections.index.count(COM_METHOD()(key));
+            return sections.count(key);
         }
         void erase(const std::string& key)
         {
-            auto& it = (*this)[key];
-            sections.remove_if([&](Record<KeyType1>& sec)
-                {
-                    return &sec.value == &it;
-                });
-            sections.index.erase(COM_METHOD()(key));
+            sections.erase(key);
         }
         std::vector<std::string> getAllKeys() const
         {
