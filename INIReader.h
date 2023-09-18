@@ -32,7 +32,7 @@ public:
             }
             else
             {
-                std::list<Record<T>>::emplace_back(key, T());
+                std::list<Record<T>>::push_back({ key, T() });
                 T* p = &std::list<Record<T>>::back().value;
                 index.insert({ key1, p });
                 return *p;
