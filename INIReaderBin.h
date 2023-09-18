@@ -1,9 +1,8 @@
 #pragma once
-#include <map>
-#include <string>
 
 #include "INIReader.h"
 #include "strfunc.h"
+#include "string.h"
 
 struct INIReaderBin
 {
