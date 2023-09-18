@@ -18,7 +18,7 @@ public:
         std::string key;
         T value;
     };
-    template <typename T, class COM_METHOD>
+    template <typename T>
     struct ListWithIndex : std::list<Record<T>>
     {
         std::unordered_map<std::string, T*> index;
@@ -62,7 +62,7 @@ public:
     {
     public:
         std::string value;
-        ListWithIndex<KeyType1, COM_METHOD> sections;
+        ListWithIndex<KeyType1> sections;
         std::string other;
 
     public:
