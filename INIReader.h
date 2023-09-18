@@ -112,7 +112,7 @@ public:
         void addWithoutIndex(const KeyType1& value)
         {
 
-            sections.emplace_back("", value);
+            sections.push_back({ "", value });
         }
         std::string allToString(int layer = 1, bool show_other = true, const std::string& line_break = "\n") const    //ignore the value of first layer
         {
