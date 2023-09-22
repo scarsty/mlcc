@@ -8,8 +8,16 @@
 #include <unordered_map>
 #include <vector>
 
+namespace INIReader
+{
+
+struct KeyType
+{
+    std::string key, value;
+};
+
 template <class COM_METHOD>
-class INIReader
+class INIReader_t
 {
 public:
     template <typename T>
@@ -192,17 +200,8 @@ private:
     }
 
 public:
-    INIReader()
+    INIReader_t()
     {
-        //compare_key_ = [](const std::string& l)
-        //{
-        //    return l;
-        //};
-    }
-
-    void setCompareKey(std::function<std::string(const std::string&)> com)
-    {
-        //compare_key_ = com;
     }
 
     KeyType1& operator[](const std::string& key)
@@ -394,6 +393,24 @@ public:
             if (!kv.key.empty())
             {
                 ret.push_back(kv.key);
+            }
+        }
+        return ret;
+    }
+
+    std::vector<KeyType> getAllKeyValues(const std::string& section) const
+    {
+        std::vector<KeyType> ret;
+        if (keys.count(section) == 0)
+        {
+            return ret;
+        }
+        auto& sec = keys[section].sections;
+        for (auto& kv : sec)
+        {
+            if (!kv.key.empty())
+            {
+                ret.push_back({ kv.key, kv.value.value });
             }
         }
         return ret;
@@ -706,6 +723,14 @@ public:
     }
 };
 
+struct CaseSensitivity
+{
+    std::string operator()(const std::string& l) const
+    {
+        return l;
+    }
+};
+
 struct CaseInsensitivity
 {
     std::string operator()(const std::string& l) const
@@ -736,6 +761,7 @@ struct NoUnderline
         return l1;
     }
 };
+};    //namespace INIReader
 
-using INIReaderNormal = INIReader<CaseInsensitivity>;
-using INIReaderNoUnderline = INIReader<NoUnderline>;
+using INIReaderNormal = INIReader::INIReader_t<INIReader::CaseInsensitivity>;
+using INIReaderNoUnderline = INIReader::INIReader_t<INIReader::NoUnderline>;
