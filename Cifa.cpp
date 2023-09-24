@@ -53,17 +53,15 @@ Object Cifa::eval(CalUnit& c)
                 {
                     if (c.v[1].v[0].type != CalUnitType::None)
                     {
-                        CalUnit c1;
-                        c1.type = CalUnitType::Operator;
-                        c1.str = ",";
-                        c1.v = { std::move(c.v[0]), std::move(c.v[1].v[0]) };
-                        c.v[1].v = { std::move(c1) };
+                        std::vector<CalUnit> v = { c.v[0] };
+                        expand_comma(c.v[1].v[0], v);
+                        return run_function(c.v[1].str, v);
                     }
                     else
                     {
-                        c.v[1].v = { std::move(c.v[0]) };
+                        std::vector<CalUnit> v = { c.v[0] };
+                        return run_function(c.v[1].str, v);
                     }
-                    return eval(c.v[1]);
                 }
             }
             if (c.str == "*") { return mul(eval(c.v[0]), eval(c.v[1])); }
