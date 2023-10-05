@@ -434,6 +434,7 @@ public:
     void clear()
     {
         keys.sections.clear();
+        keys.sections.index.clear();
     }
 
 private:
