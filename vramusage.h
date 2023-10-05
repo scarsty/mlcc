@@ -30,6 +30,14 @@ inline LUID get_luid_from_pcibus(int pcibus)
     if (CM_Get_Device_Interface_List((GUID*)&GUID_DISPLAY_DEVICE_ARRIVAL, NULL, deviceInterfaceList, deviceInterfaceListLength, CM_GET_DEVICE_INTERFACE_LIST_PRESENT)) { return luid; }
 
     auto p = deviceInterfaceList;
+
+    PBYTE buffer;
+    ULONG bufferSize;
+    DEVPROPTYPE propertyType;
+
+    bufferSize = 0x80;
+    buffer = (PBYTE)malloc(bufferSize);
+    propertyType = DEVPROP_TYPE_EMPTY;
     while (*p != L'\0')
     {
         deviceInterface = p;
@@ -46,14 +54,6 @@ inline LUID get_luid_from_pcibus(int pcibus)
         if (CM_Get_Device_Interface_Property(deviceInterface, &DEVPKEY_Device_InstanceId, &devicePropertyType, (PBYTE)deviceInstanceId, &deviceInstanceIdLength, 0)) { continue; }
         if (CM_Locate_DevNode(&deviceInstanceHandle, deviceInstanceId, CM_LOCATE_DEVNODE_NORMAL)) { continue; }
 
-        PBYTE buffer;
-        ULONG bufferSize;
-        DEVPROPTYPE propertyType;
-
-        bufferSize = 0x80;
-        buffer = (PBYTE)malloc(bufferSize);
-        propertyType = DEVPROP_TYPE_EMPTY;
-
         if (CM_Get_DevNode_Property(deviceInstanceHandle, &DEVPKEY_Device_BusNumber, &propertyType, buffer, &bufferSize, 0)) { continue; }
 
         if (*(int*)(buffer) == pcibus)
@@ -69,6 +69,10 @@ inline LUID get_luid_from_pcibus(int pcibus)
             break;
         }
     }
+
+    free(deviceInterfaceList);
+    free(buffer);
+
     return luid;
 }
 
