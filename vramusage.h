@@ -58,8 +58,7 @@ inline LUID get_luid_from_pcibus(int pcibus)
 
         if (*(int*)(buffer) == pcibus)
         {
-            D3DKMT_OPENADAPTERFROMDEVICENAME openAdapterFromDeviceName;
-            memset(&openAdapterFromDeviceName, 0, sizeof(D3DKMT_OPENADAPTERFROMDEVICENAME));
+            D3DKMT_OPENADAPTERFROMDEVICENAME openAdapterFromDeviceName {0};
             openAdapterFromDeviceName.pDeviceName = deviceInterface;
             D3DKMTOpenAdapterFromDeviceName(&openAdapterFromDeviceName);
             D3DKMT_CLOSEADAPTER closeAdapter;
@@ -78,8 +77,7 @@ inline LUID get_luid_from_pcibus(int pcibus)
 
 inline int get_free_mem_by_luid(LUID luid, uint64_t* resident, uint64_t* shared)
 {
-    D3DKMT_QUERYSTATISTICS queryStatistics;
-    memset(&queryStatistics, 0, sizeof(D3DKMT_QUERYSTATISTICS));
+    D3DKMT_QUERYSTATISTICS queryStatistics {0};
     queryStatistics.Type = D3DKMT_QUERYSTATISTICS_ADAPTER;
     queryStatistics.AdapterLuid = luid;
     auto ret = D3DKMTQueryStatistics(&queryStatistics);
@@ -93,8 +91,7 @@ inline int get_free_mem_by_luid(LUID luid, uint64_t* resident, uint64_t* shared)
     ULONG64 total = 0, sharedUsage = 0, residendUsage = 0;
     for (int i = 0; i < queryStatistics.QueryResult.AdapterInformation.NbSegments; i++)
     {
-        D3DKMT_QUERYSTATISTICS queryStatistics2;
-        memset(&queryStatistics2, 0, sizeof(D3DKMT_QUERYSTATISTICS));
+        D3DKMT_QUERYSTATISTICS queryStatistics2 {0};
         queryStatistics2.Type = D3DKMT_QUERYSTATISTICS_SEGMENT;
         queryStatistics2.AdapterLuid = luid;
         queryStatistics2.QuerySegment.SegmentId = i;
