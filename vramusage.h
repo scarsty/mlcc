@@ -48,8 +48,7 @@ inline LUID get_luid_from_pcibus(int pcibus)
 
         ULONG buffer;
         ULONG bufferSize = sizeof(ULONG);
-        DEVPROPTYPE propertyType;
-        propertyType = DEVPROP_TYPE_EMPTY;
+        DEVPROPTYPE propertyType = DEVPROP_TYPE_EMPTY;
 
         if (CM_Get_DevNode_Property(deviceInstanceHandle, &DEVPKEY_Device_BusNumber, &propertyType, (PBYTE)&buffer, &bufferSize, 0)) { continue; }
 
@@ -74,8 +73,7 @@ inline int get_free_mem_by_luid(LUID luid, uint64_t* resident, uint64_t* shared)
     D3DKMT_QUERYSTATISTICS queryStatistics{};
     queryStatistics.Type = D3DKMT_QUERYSTATISTICS_ADAPTER;
     queryStatistics.AdapterLuid = luid;
-    auto ret = D3DKMTQueryStatistics(&queryStatistics);
-    if (ret)
+    if (D3DKMTQueryStatistics(&queryStatistics))
     {
         //printf("D3DKMTQueryStatistics failed with %d\n", ret);
         return 1;
@@ -88,16 +86,14 @@ inline int get_free_mem_by_luid(LUID luid, uint64_t* resident, uint64_t* shared)
         queryStatistics2.Type = D3DKMT_QUERYSTATISTICS_SEGMENT;
         queryStatistics2.AdapterLuid = luid;
         queryStatistics2.QuerySegment.SegmentId = i;
-        auto r = D3DKMTQueryStatistics(&queryStatistics2);
         ULONG64 commitLimit = 0;
         ULONG aperture;
 
-        if (!r)
+        if (!D3DKMTQueryStatistics(&queryStatistics2))
         {
             commitLimit = queryStatistics2.QueryResult.SegmentInformation.BytesResident;
             aperture = queryStatistics2.QueryResult.SegmentInformation.Aperture;
         }
-
         if (aperture)
         {
             sharedUsage += commitLimit;
