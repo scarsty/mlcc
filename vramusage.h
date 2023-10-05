@@ -10,40 +10,32 @@
 
 #include <cstdio>
 #include <d3dkmthk.h>
-#include <iostream>
 #include <tchar.h>
+
+#include <vector>
 
 #pragma comment(lib, "cfgmgr32.lib")
 
 inline LUID get_luid_from_pcibus(int pcibus)
 {
-    LUID luid;
-    luid.HighPart = 0;
-    luid.LowPart = 0;
+    LUID luid{ 0, 0 };
 
     PWCHAR deviceInterfaceList;
     ULONG deviceInterfaceListLength = 0;
     PWCHAR deviceInterface;
     if (CM_Get_Device_Interface_List_Size(&deviceInterfaceListLength, (GUID*)&GUID_DISPLAY_DEVICE_ARRIVAL, NULL, CM_GET_DEVICE_INTERFACE_LIST_PRESENT)) { return luid; }
-    deviceInterfaceList = (PWSTR)malloc(deviceInterfaceListLength * sizeof(WCHAR));
+    std::vector<WCHAR> deviceInterfaceListBuffer(deviceInterfaceListLength);
+    deviceInterfaceList = (PWSTR)deviceInterfaceListBuffer.data();
 
     if (CM_Get_Device_Interface_List((GUID*)&GUID_DISPLAY_DEVICE_ARRIVAL, NULL, deviceInterfaceList, deviceInterfaceListLength, CM_GET_DEVICE_INTERFACE_LIST_PRESENT)) { return luid; }
 
     auto p = deviceInterfaceList;
-
-    PBYTE buffer;
-    ULONG bufferSize;
-    DEVPROPTYPE propertyType;
-
-    bufferSize = 0x80;
-    buffer = (PBYTE)malloc(bufferSize);
-    propertyType = DEVPROP_TYPE_EMPTY;
     while (*p != L'\0')
     {
         deviceInterface = p;
         p += wcslen(p) + 1;
 #ifdef _DEBUG
-        std::wcout << deviceInterface << std::endl;
+        //wprintf(L"%s\n", deviceInterface);
 #endif
 
         DEVPROPTYPE devicePropertyType;
@@ -54,11 +46,16 @@ inline LUID get_luid_from_pcibus(int pcibus)
         if (CM_Get_Device_Interface_Property(deviceInterface, &DEVPKEY_Device_InstanceId, &devicePropertyType, (PBYTE)deviceInstanceId, &deviceInstanceIdLength, 0)) { continue; }
         if (CM_Locate_DevNode(&deviceInstanceHandle, deviceInstanceId, CM_LOCATE_DEVNODE_NORMAL)) { continue; }
 
-        if (CM_Get_DevNode_Property(deviceInstanceHandle, &DEVPKEY_Device_BusNumber, &propertyType, buffer, &bufferSize, 0)) { continue; }
+        ULONG buffer;
+        ULONG bufferSize = sizeof(ULONG);
+        DEVPROPTYPE propertyType;
+        propertyType = DEVPROP_TYPE_EMPTY;
 
-        if (*(int*)(buffer) == pcibus)
+        if (CM_Get_DevNode_Property(deviceInstanceHandle, &DEVPKEY_Device_BusNumber, &propertyType, (PBYTE)&buffer, &bufferSize, 0)) { continue; }
+
+        if (buffer == pcibus)
         {
-            D3DKMT_OPENADAPTERFROMDEVICENAME openAdapterFromDeviceName {0};
+            D3DKMT_OPENADAPTERFROMDEVICENAME openAdapterFromDeviceName{};
             openAdapterFromDeviceName.pDeviceName = deviceInterface;
             D3DKMTOpenAdapterFromDeviceName(&openAdapterFromDeviceName);
             D3DKMT_CLOSEADAPTER closeAdapter;
@@ -69,19 +66,15 @@ inline LUID get_luid_from_pcibus(int pcibus)
         }
     }
 
-    free(deviceInterfaceList);
-    free(buffer);
-
     return luid;
 }
 
 inline int get_free_mem_by_luid(LUID luid, uint64_t* resident, uint64_t* shared)
 {
-    D3DKMT_QUERYSTATISTICS queryStatistics {0};
+    D3DKMT_QUERYSTATISTICS queryStatistics{};
     queryStatistics.Type = D3DKMT_QUERYSTATISTICS_ADAPTER;
     queryStatistics.AdapterLuid = luid;
     auto ret = D3DKMTQueryStatistics(&queryStatistics);
-
     if (ret)
     {
         //printf("D3DKMTQueryStatistics failed with %d\n", ret);
@@ -91,7 +84,7 @@ inline int get_free_mem_by_luid(LUID luid, uint64_t* resident, uint64_t* shared)
     ULONG64 total = 0, sharedUsage = 0, residendUsage = 0;
     for (int i = 0; i < queryStatistics.QueryResult.AdapterInformation.NbSegments; i++)
     {
-        D3DKMT_QUERYSTATISTICS queryStatistics2 {0};
+        D3DKMT_QUERYSTATISTICS queryStatistics2{};
         queryStatistics2.Type = D3DKMT_QUERYSTATISTICS_SEGMENT;
         queryStatistics2.AdapterLuid = luid;
         queryStatistics2.QuerySegment.SegmentId = i;
