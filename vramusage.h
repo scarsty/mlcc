@@ -25,7 +25,7 @@ inline LUID get_luid_from_pcibus(int pcibus)
     PWCHAR deviceInterface;
     if (CM_Get_Device_Interface_List_Size(&deviceInterfaceListLength, (GUID*)&GUID_DISPLAY_DEVICE_ARRIVAL, NULL, CM_GET_DEVICE_INTERFACE_LIST_PRESENT)) { return luid; }
     std::vector<WCHAR> deviceInterfaceListBuffer(deviceInterfaceListLength);
-    deviceInterfaceList = (PWSTR)deviceInterfaceListBuffer.data();
+    deviceInterfaceList = deviceInterfaceListBuffer.data();
 
     if (CM_Get_Device_Interface_List((GUID*)&GUID_DISPLAY_DEVICE_ARRIVAL, NULL, deviceInterfaceList, deviceInterfaceListLength, CM_GET_DEVICE_INTERFACE_LIST_PRESENT)) { return luid; }
 
@@ -87,9 +87,9 @@ inline int get_free_mem_by_luid(LUID luid, uint64_t* resident, uint64_t* shared)
         queryStatistics2.AdapterLuid = luid;
         queryStatistics2.QuerySegment.SegmentId = i;
         ULONG64 commitLimit = 0;
-        ULONG aperture;
+        ULONG aperture = 0;
 
-        if (!D3DKMTQueryStatistics(&queryStatistics2))
+        if (D3DKMTQueryStatistics(&queryStatistics2) != 0)
         {
             commitLimit = queryStatistics2.QueryResult.SegmentInformation.BytesResident;
             aperture = queryStatistics2.QueryResult.SegmentInformation.Aperture;
