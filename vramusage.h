@@ -68,7 +68,7 @@ inline LUID get_luid_from_pcibus(int pcibus)
     return luid;
 }
 
-inline int get_free_mem_by_luid(LUID luid, uint64_t* resident, uint64_t* shared)
+inline int get_free_mem_by_luid(LUID luid, size_t* resident, size_t* shared)
 {
     D3DKMT_QUERYSTATISTICS queryStatistics{};
     queryStatistics.Type = D3DKMT_QUERYSTATISTICS_ADAPTER;
@@ -110,7 +110,7 @@ inline int get_free_mem_by_luid(LUID luid, uint64_t* resident, uint64_t* shared)
     return 0;
 }
 
-inline int get_free_mem_by_pcibus(int pcibus, uint64_t* resident, uint64_t* shared)
+inline int get_free_mem_by_pcibus(int pcibus, size_t* resident, size_t* shared)
 {
     auto luid = get_luid_from_pcibus(pcibus);
     return get_free_mem_by_luid(luid, resident, shared);

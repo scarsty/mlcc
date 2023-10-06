@@ -300,3 +300,13 @@ A C++ warp for freetype and opencv Mat.
 Only for Windows.
 
 To check the dependencies of a exe or dll file. 
+
+# vramusage
+
+Only for Windows.
+
+CUDA and HIP supply the apis to get the usage of video memory, but on Windows the result is not right.
+
+This can help you to get that correctly. 
+
+First, get the LUID or PCI bus with cudaGetDeviceProperties / hipGetDeviceProperties, and get the memory usage of it.
