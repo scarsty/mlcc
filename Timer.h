@@ -17,7 +17,7 @@ public:
     static std::string getNowAsString(const std::string format = "%F %a %T")
     {
         auto t = std::chrono::system_clock::now();
-        auto time = std::chrono::system_clock::to_time_t(t);        
+        auto time = std::chrono::system_clock::to_time_t(t);
         return timeToString(time);
     }
 
@@ -78,6 +78,17 @@ public:
         {
             snprintf(buffer, size, "%.2f s", s);
         }
+        return std::string(buffer);
+    }
+
+    static std::string formatTime(double s, const std::string& format_str = "%d:%02d:%05.2f")
+    {
+        const int size = 80;
+        char buffer[size];
+        int h = s / 3600;
+        int m = (s - h * 3600) / 60;
+        s = s - h * 3600 - m * 60;
+        snprintf(buffer, size, format_str.c_str(), h, m, s);
         return std::string(buffer);
     }
 
