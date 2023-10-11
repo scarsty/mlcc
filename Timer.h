@@ -17,9 +17,14 @@ public:
     static std::string getNowAsString(const std::string format = "%F %a %T")
     {
         auto t = std::chrono::system_clock::now();
-        auto time = std::chrono::system_clock::to_time_t(t);
+        auto time = std::chrono::system_clock::to_time_t(t);        
+        return timeToString(time);
+    }
+
+    static std::string timeToString(time_t t, const std::string format = "%F %a %T")
+    {
         char buffer[80];
-        strftime(buffer, 80, format.c_str(), localtime(&time));
+        strftime(buffer, 80, format.c_str(), localtime(&t));
         return buffer;
     }
 

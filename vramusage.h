@@ -86,23 +86,20 @@ inline int get_free_mem_by_luid(LUID luid, size_t* resident, size_t* shared)
         queryStatistics2.Type = D3DKMT_QUERYSTATISTICS_SEGMENT;
         queryStatistics2.AdapterLuid = luid;
         queryStatistics2.QuerySegment.SegmentId = i;
-        ULONG64 commitLimit = 0;
-        ULONG aperture = 0;
-
         if (D3DKMTQueryStatistics(&queryStatistics2) == 0)
         {
-            commitLimit = queryStatistics2.QueryResult.SegmentInformation.BytesResident;
-            aperture = queryStatistics2.QueryResult.SegmentInformation.Aperture;
+            auto commitLimit = queryStatistics2.QueryResult.SegmentInformation.BytesResident;
+            auto aperture = queryStatistics2.QueryResult.SegmentInformation.Aperture;
+            if (aperture)
+            {
+                sharedUsage += commitLimit;
+            }
+            else
+            {
+                residendUsage += commitLimit;
+            }
+            total += commitLimit;
         }
-        if (aperture)
-        {
-            sharedUsage += commitLimit;
-        }
-        else
-        {
-            residendUsage += commitLimit;
-        }
-        total += commitLimit;
     }
     //printf("%g %g\n", sharedUsage / pow(2, 20), dedicatedUsage / pow(2, 20));
     if (resident) { *resident = residendUsage; }
