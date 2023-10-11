@@ -89,7 +89,7 @@ inline int get_free_mem_by_luid(LUID luid, size_t* resident, size_t* shared)
         ULONG64 commitLimit = 0;
         ULONG aperture = 0;
 
-        if (D3DKMTQueryStatistics(&queryStatistics2) != 0)
+        if (D3DKMTQueryStatistics(&queryStatistics2) == 0)
         {
             commitLimit = queryStatistics2.QueryResult.SegmentInformation.BytesResident;
             aperture = queryStatistics2.QueryResult.SegmentInformation.Aperture;

@@ -108,18 +108,36 @@ public:
         {
             sections.erase(key);
         }
+        bool isKey() const
+        {
+            return sections.size() == 0;
+        }
+        std::vector<std::string> getAllSections() const
+        {
+            std::vector<std::string> ret;
+            for (auto& value : sections)
+            {
+                if (!value.value.isKey())
+                {
+                    ret.push_back(value.key);
+                }
+            }
+            return ret;
+        }
         std::vector<std::string> getAllKeys() const
         {
             std::vector<std::string> ret;
             for (auto& value : sections)
             {
-                ret.push_back(value.key);
+                if (value.value.isKey())
+                {
+                    ret.push_back(value.key);
+                }
             }
             return ret;
         }
         void addWithoutIndex(const KeyType1& value)
         {
-
             sections.push_back({ "", value });
         }
         std::string allToString(int layer = 1, bool show_other = true, const std::string& line_break = "\n") const    //ignore the value of first layer
@@ -499,7 +517,7 @@ private:
             else if (new_line && c == '[')
             {
                 auto square_count = content.find_first_not_of("[", i + 1) - i;
-                auto end = content.find_first_of("]", i + square_count);
+                auto end = content.find(std::string(square_count, ']'), i + square_count);
                 if (square_count > stack.size())
                 {
                     stack.push_back(&stack.back()->sections[section]);
