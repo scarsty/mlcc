@@ -1,9 +1,9 @@
 ﻿#pragma once
+
 #include <chrono>
 #include <ctime>
 #include <string>
 
-//计时器类
 class Timer
 {
 private:
@@ -13,7 +13,7 @@ private:
 public:
     Timer() { start(); }
 
-    //以字符串返回当前时间
+    // Returns current time as a string
     static std::string getNowAsString(const std::string format = "%F %a %T")
     {
         auto t = std::chrono::system_clock::now();
