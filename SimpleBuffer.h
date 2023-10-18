@@ -56,8 +56,8 @@ struct SimpleBuffer
     }
 
 private:
-    T* data_ = nullptr;
-    size_t size_ = 0;
-    size_t capacity_ = 0;
-    int shared = 0;
+    T* data_{};
+    size_t size_{};
+    size_t capacity_{};
+    int shared{};
 };
