@@ -18,7 +18,7 @@ public:
     {
         auto t = std::chrono::system_clock::now();
         auto time = std::chrono::system_clock::to_time_t(t);
-        return timeToString(time);
+        return timeToString(time, format);
     }
 
     static std::string timeToString(time_t t, const std::string format = "%F %a %T")
