@@ -19,20 +19,20 @@ public:
     static std::string cp950toutf8(const std::string& src) { return conv(src, "cp950", "utf-8"); }
     static std::string cp950tocp936(const std::string& src) { return conv(src, "cp950", "cp936"); }
     static std::string utf8tocp936(const std::string& src) { return conv(src, "utf-8", "cp936"); }
-    static void fromCP950ToCP936(char* s)
+    static void fromCP950ToCP936(const char* s0, char* s1)
     {
-        auto str = PotConv::cp950tocp936(s);
-        memcpy(s, str.data(), str.length());
+        auto str = PotConv::cp950tocp936(s0);
+        memcpy(s1, str.data(), str.length());
     }
-    static void fromCP950ToUTF8(char* s)
+    static void fromCP950ToUTF8(const char* s0, char* s1)
     {
-        auto str = PotConv::cp950toutf8(s);
-        memcpy(s, str.data(), str.length());
+        auto str = PotConv::cp950toutf8(s0);
+        memcpy(s1, str.data(), str.length());
     }
-    static void fromCP936ToUTF8(char* s)
+    static void fromCP936ToUTF8(const char* s0, char* s1)
     {
-        auto str = PotConv::cp936toutf8(s);
-        memcpy(s, str.data(), str.length());
+        auto str = PotConv::cp936toutf8(s0);
+        memcpy(s1, str.data(), str.length());
     }
     static std::string to_read(const std::string& src);
 
