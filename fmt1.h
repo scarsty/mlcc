@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <cctype>
 #include <map>
 #include <string>
@@ -94,7 +94,7 @@ inline std::string sprintf1(const std::string& fmt, const T& t)
 {
     int len = snprintf(nullptr, 0, fmt.c_str(), t);
     std::string res(len + 1, '\0');
-    snprintf((char*)res.data(), len + 1, fmt.c_str(), t);    //C++11ÖĞÎ²²¿º¬\0µÄ¿Õ¼ä£¬¿ÉÒÔ²»´¦Àí´Ë´¦
+    snprintf((char*)res.data(), len + 1, fmt.c_str(), t);    //C++11ä¸­å°¾éƒ¨å«\0çš„ç©ºé—´ï¼Œå¯ä»¥ä¸å¤„ç†æ­¤å¤„
     res.pop_back();
     return res;
 }
