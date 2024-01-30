@@ -36,7 +36,7 @@ public:
             {
                 for (auto& key : assist.getAllKeys(section))
                 {
-                    auto vec = assist.getIntVector(section, key);
+                    auto vec = assist.getVector<int>(section, key);
                     if (vec.size() == 2)
                     {
                         if (begin + vec[0] + vec[1] > str.size())
