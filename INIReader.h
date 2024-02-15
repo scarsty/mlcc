@@ -346,21 +346,21 @@ public:
     std::vector<std::string> getStringVector(const std::string& section, const std::string& key, const std::string& split_chars = ",", const std::vector<std::string>& default_v = {}) const
     {
         auto v = splitString(getString(section, key), split_chars, true);
-        for (auto i = v.size(); i < default_v.size(); i++) { v.push_back(default_v[i]); }
+        for (auto i = v.size(); i < default_v.size(); i++) { v.push_back(default_v[i + 1]); }
         return v;
     }
     template <typename T>
     std::vector<T> getVector(const std::string& section, const std::string& key, const std::string& split_chars = ",", const std::vector<T>& default_v = {}) const
     {
         auto v = stringVectorToVector<T>(getStringVector(section, key, split_chars));
-        for (auto i = v.size(); i < default_v.size(); i++) { v.push_back(default_v[i]); }
+        for (auto i = v.size(); i < default_v.size(); i++) { v.push_back(default_v[i + 1]); }
         return v;
     }
     template <>
     std::vector<std::string> getVector(const std::string& section, const std::string& key, const std::string& split_chars, const std::vector<std::string>& default_v) const
     {
         auto v = splitString(getString(section, key), split_chars, true);
-        for (auto i = v.size(); i < default_v.size(); i++) { v.push_back(default_v[i]); }
+        for (auto i = v.size(); i < default_v.size(); i++) { v.push_back(default_v[i + 1]); }
         return v;
     }
     //check one section exist or not
