@@ -94,6 +94,8 @@ private:
     int switch_ = 0;
 
     int window_mode_ = 0;    //0-窗口和渲染器自行创建，1-窗口和渲染器由外部创建
+    bool renderer_self_ = false;
+
 public:
     int init(void* handle = nullptr, int handle_type = 0, int maximized = 0);
 

@@ -57,8 +57,13 @@ int Engine::init(void* handle /*= nullptr*/, int handle_type /*= 0*/, int maximi
     SDL_ShowWindow(window_);
     SDL_RaiseWindow(window_);
 #endif
-
-    renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE /*| SDL_RENDERER_PRESENTVSYNC*/);
+    renderer_ = SDL_GetRenderer(window_);
+    fmt1::print("{}\n", SDL_GetError());
+    if (renderer_ == nullptr)
+    {
+        renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE /*| SDL_RENDERER_PRESENTVSYNC*/);
+        renderer_self_ = true;
+    }
 
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
@@ -125,14 +130,23 @@ int Engine::init(void* handle /*= nullptr*/, int handle_type /*= 0*/, int maximi
 
 void Engine::destroy()
 {
-    //SDL_DestroyTexture(tex_);
+    destroyTexture(tex_);
     destroyAssistTexture();
-    SDL_DestroyRenderer(renderer_);
-    SDL_DestroyWindow(window_);
+    if (renderer_self_)
+    {
+        SDL_DestroyRenderer(renderer_);
+    }
+    if (window_mode_ == 0)
+    {
+        SDL_DestroyWindow(window_);
+    }
+
+#ifndef _WINDLL
+    SDL_Quit();
+#endif
 #if defined(_WIN32) && defined(WITH_SMALLPOT) && !defined(_DEBUG)
     PotDestory(tinypot_);
 #endif
-    SDL_Quit();
 }
 
 BP_Texture* Engine::createTexture(int pix_fmt, int w, int h)
