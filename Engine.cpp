@@ -50,8 +50,7 @@ int Engine::init(void* handle /*= nullptr*/, int handle_type /*= 0*/, int maximi
         {
             flags |= SDL_WINDOW_MAXIMIZED;
         }
-        window_ = SDL_CreateWindow(title_.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-            start_w_, start_h_, flags);
+        window_ = SDL_CreateWindow(title_.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, start_w_, start_h_, flags);
     }
     //SDL_CreateWindowFrom()
 #ifndef _WINDLL
