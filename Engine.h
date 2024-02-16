@@ -213,9 +213,7 @@ public:
         }
     }
     void getMouseState(int& x, int& y);
-    ;
     void setMouseState(int x, int y);
-    ;
     int pollEvent(BP_Event& e);
     static int pollEvent() { return SDL_PollEvent(nullptr); }
     static int pushEvent(BP_Event& e) { return SDL_PushEvent(&e); }
