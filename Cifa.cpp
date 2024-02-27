@@ -15,30 +15,32 @@ Cifa::Cifa()
     //parameters["false"] = Object(0, "__");
     //parameters["break"] = Object("break", "__");
     //parameters["continue"] = Object("continue", "__");
-    register_function("ifvalue", [](ObjectVector& x)
-        {
-            if (x.size() != 3) { return cifa::Object(); }
-            int x0 = x[0];
-            double x1 = x[1];
-            double x2 = x[2];
-            return (x0) ? x1 : x2;
-        });
+    auto ifv = [](ObjectVector& x) -> Object
+    {
+        if (x.size() != 3) { return cifa::Object(); }
+        int x0 = x[0];
+        double x1 = x[1];
+        double x2 = x[2];
+        return (x0) ? x1 : x2;
+    };
+    register_function("ifv", ifv);
+    register_function("ifvalue", ifv);
 
-    register_function("abs", [](ObjectVector& x)
+    register_function("abs", [](ObjectVector& x) -> Object
         {
             if (x.size() == 0) { return cifa::Object(); }
             double x0 = x[0];
             return abs(x0);
         });
 
-    register_function("sqrt", [](ObjectVector& x)
+    register_function("sqrt", [](ObjectVector& x) -> Object
         {
             if (x.size() == 0) { return cifa::Object(); }
             double x0 = x[0];
             return sqrt(x0);
         });
 
-    register_function("pow", [](ObjectVector& x)
+    register_function("pow", [](ObjectVector& x) -> Object
         {
             if (x.size() <= 1) { return cifa::Object(); }
             double x0 = x[0];
@@ -46,14 +48,14 @@ Cifa::Cifa()
             return pow(x0, x1);
         });
 
-    register_function("round", [](ObjectVector& x)
+    register_function("round", [](ObjectVector& x) -> Object
         {
             if (x.size() == 0) { return cifa::Object(); }
             double x0 = x[0];
             return round(x0);
         });
 
-    register_function("max", [](ObjectVector& x)
+    register_function("max", [](ObjectVector& x) -> Object
         {
             if (x.size() == 0) { return cifa::Object(); }
             if (x.size() == 1)
@@ -72,7 +74,7 @@ Cifa::Cifa()
             return max_val;
         });
 
-    register_function("min", [](ObjectVector& x)
+    register_function("min", [](ObjectVector& x) -> Object
         {
             if (x.size() == 0) { return cifa::Object(); }
             if (x.size() == 1)
