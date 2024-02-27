@@ -15,6 +15,81 @@ Cifa::Cifa()
     //parameters["false"] = Object(0, "__");
     //parameters["break"] = Object("break", "__");
     //parameters["continue"] = Object("continue", "__");
+    register_function("ifvalue", [](ObjectVector& x)
+        {
+            if (x.size() != 3) { return cifa::Object(); }
+            int x0 = x[0];
+            double x1 = x[1];
+            double x2 = x[2];
+            return (x0) ? x1 : x2;
+        });
+
+    register_function("abs", [](ObjectVector& x)
+        {
+            if (x.size() == 0) { return cifa::Object(); }
+            double x0 = x[0];
+            return abs(x0);
+        });
+
+    register_function("sqrt", [](ObjectVector& x)
+        {
+            if (x.size() == 0) { return cifa::Object(); }
+            double x0 = x[0];
+            return sqrt(x0);
+        });
+
+    register_function("pow", [](ObjectVector& x)
+        {
+            if (x.size() <= 1) { return cifa::Object(); }
+            double x0 = x[0];
+            double x1 = x[1];
+            return pow(x0, x1);
+        });
+
+    register_function("round", [](ObjectVector& x)
+        {
+            if (x.size() == 0) { return cifa::Object(); }
+            double x0 = x[0];
+            return round(x0);
+        });
+
+    register_function("max", [](ObjectVector& x)
+        {
+            if (x.size() == 0) { return cifa::Object(); }
+            if (x.size() == 1)
+            {
+                return x[0];
+            }
+            double max_val = x[0];
+            for (int i = 1; i < x.size(); i++)
+            {
+                double v = x[i];
+                if (max_val < v)
+                {
+                    max_val = v;
+                }
+            }
+            return max_val;
+        });
+
+    register_function("min", [](ObjectVector& x)
+        {
+            if (x.size() == 0) { return cifa::Object(); }
+            if (x.size() == 1)
+            {
+                return x[0];
+            }
+            double min_val = x[0];
+            for (int i = 1; i < x.size(); i++)
+            {
+                double v = x[i];
+                if (min_val > v)
+                {
+                    min_val = v;
+                }
+            }
+            return min_val;
+        });
 }
 
 Object Cifa::eval(CalUnit& c)
