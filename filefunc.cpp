@@ -1,4 +1,4 @@
-#include "filefunc.h"
+﻿#include "filefunc.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdio>

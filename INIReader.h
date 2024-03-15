@@ -338,28 +338,33 @@ public:
         }
     }
     template <typename T>
+    static T stringTo(const std::string& s)
+    {
+        double v = atof(s.c_str());
+        return T(v);
+    }
+    //only support int, float, double
+    template <typename T>
     T get(const std::string& section, const std::string& key, T default_value = T(0)) const
     {
         auto v = stringTo<T>(getString(section, key, std::to_string(default_value)));
         return v;
     }
+    //note if the result vector is shorter than default_v, the rest will be filled with default_v rest
     std::vector<std::string> getStringVector(const std::string& section, const std::string& key, const std::string& split_chars = ",", const std::vector<std::string>& default_v = {}) const
     {
         auto v = splitString(getString(section, key), split_chars, true);
         for (auto i = v.size(); i < default_v.size(); i++) { v.push_back(default_v[i]); }
         return v;
     }
+    //only support int, float, double
+    //note if the result vector is shorter than default_v, the rest will be filled with default_v rest
     template <typename T>
     std::vector<T> getVector(const std::string& section, const std::string& key, const std::string& split_chars = ",", const std::vector<T>& default_v = {}) const
     {
-        auto v = stringVectorToVector<T>(getStringVector(section, key, split_chars));
-        for (auto i = v.size(); i < default_v.size(); i++) { v.push_back(default_v[i]); }
-        return v;
-    }
-    template <>
-    std::vector<std::string> getVector(const std::string& section, const std::string& key, const std::string& split_chars, const std::vector<std::string>& default_v) const
-    {
-        auto v = splitString(getString(section, key), split_chars, true);
+        auto v_str = getStringVector(section, key, split_chars);
+        std::vector<T> v;
+        for (auto& s : v_str) { v.push_back(stringTo<T>(s)); }
         for (auto i = v.size(); i < default_v.size(); i++) { v.push_back(default_v[i]); }
         return v;
     }
@@ -678,23 +683,6 @@ private:
             }
         }
         return result;
-    }
-    //only support int, float, double
-    template <typename T>
-    static T stringTo(const std::string& s)
-    {
-        double v = atof(s.c_str());
-        return T(v);
-    }
-    template <typename T>
-    static std::vector<T> stringVectorToVector(const std::vector<std::string>& v0)
-    {
-        std::vector<T> v;
-        for (auto& s : v0)
-        {
-            v.push_back(stringTo<T>(s));
-        }
-        return v;
     }
 
 public:
