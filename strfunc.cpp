@@ -242,3 +242,111 @@ std::string strfunc::trim(const std::string& s)
 {
     return rtrim(ltrim(s));
 }
+
+bool strfunc::meet_utf8(const std::string& str)
+{
+    unsigned int n = 0;
+    bool all_ascii = true;
+    for (const unsigned char c : str)
+    {
+        if (all_ascii && c < 0x20 || c >= 0x80)
+        {
+            all_ascii = false;
+        }
+        if (n == 0)
+        {
+            //the first of multi byte
+            if (c >= 0x80)
+            {
+                if (c >= 0xFC && c <= 0xFD)
+                {
+                    n = 6;
+                }
+                else if (c >= 0xF8)
+                {
+                    n = 5;
+                }
+                else if (c >= 0xF0)
+                {
+                    n = 4;
+                }
+                else if (c >= 0xE0)
+                {
+                    n = 3;
+                }
+                else if (c >= 0xC0)
+                {
+                    n = 2;
+                }
+                else
+                {
+                    return false;
+                }
+                n--;
+            }
+        }
+        else
+        {
+            //it should be 10xxxxxx
+            if ((c & 0xC0) != 0x80)
+            {
+                return false;
+            }
+            n--;
+        }
+    }
+    if (n != 0)
+    {
+        return false;
+    }
+    if (all_ascii)
+    {
+        return true;
+    }
+    return true;
+}
+
+bool strfunc::meet_gbk(const std::string& str)
+{
+    unsigned int n = 0;
+    bool all_ascii = true;
+    for (const unsigned char c : str)
+    {
+        if (all_ascii && c < 0x20 || c >= 0x80)
+        {
+            all_ascii = false;
+        }
+        if (n == 0)
+        {
+            if (c >= 0x80)
+            {
+                if (c >= 0x81 && c <= 0xFE)
+                {
+                    n = +2;
+                }
+                else
+                {
+                    return false;
+                }
+                n--;
+            }
+        }
+        else
+        {
+            if (c < 0x40 || c > 0xFE)
+            {
+                return false;
+            }
+            n--;
+        }
+    }
+    if (n != 0)
+    {
+        return false;
+    }
+    if (all_ascii)
+    {
+        return true;
+    }
+    return true;
+}

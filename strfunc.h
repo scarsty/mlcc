@@ -32,6 +32,9 @@ std::string ltrim(const std::string& s);
 std::string rtrim(const std::string& s);
 std::string trim(const std::string& s);
 
+bool meet_utf8(const std::string& str);
+bool meet_gbk(const std::string& str);
+
 template <typename T>
 int findNumbers(const std::string& s, std::vector<T>* data)
 {
