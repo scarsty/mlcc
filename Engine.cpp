@@ -125,6 +125,7 @@ int Engine::init(void* handle /*= nullptr*/, int handle_type /*= 0*/, int maximi
 #if defined(_WIN32) && defined(WITH_SMALLPOT) && !defined(_DEBUG)
     tinypot_ = PotCreateFromWindow(window_);
 #endif
+    createMainTexture(start_w_, start_h_);
     return 0;
 }
 
@@ -212,8 +213,10 @@ void Engine::renderCopy(BP_Texture* t /*= nullptr*/, double angle)
 
 void Engine::renderPresent()
 {
+    renderMainTextureToWindow();
     SDL_RenderPresent(renderer_);
     SDL_RenderClear(renderer_);
+    setRenderMainTexture();
 }
 
 void Engine::renderCopy(BP_Texture* t, BP_Rect* rect0, BP_Rect* rect1, double angle, int inPresent /*= 0*/)
@@ -225,6 +228,10 @@ void Engine::renderCopy(BP_Texture* t, BP_Rect* rect0, BP_Rect* rect1, double an
 void Engine::getMouseState(int& x, int& y)
 {
     SDL_GetMouseState(&x, &y);
+    int w, h;
+    getWindowSize(w, h);
+    x = x * start_w_ / w;
+    y = y * start_h_ / h;
 }
 
 void Engine::setMouseState(int x, int y)
@@ -417,13 +424,13 @@ bool Engine::setKeepRatio(bool b)
     return keep_ratio_ = b;
 }
 
-void Engine::createMainTexture(int pix_fmt, int w, int h)
+void Engine::createMainTexture(int w, int h)
 {
     if (tex_)
     {
         SDL_DestroyTexture(tex_);
     }
-    tex_ = createTexture(pix_fmt, w, h);
+    tex_ = createARGBRenderedTexture(w, h);
     setPresentPosition(tex_);
 }
 
@@ -432,10 +439,12 @@ void Engine::resizeMainTexture(int w, int h)
     int w0, h0;
     uint32_t pix_fmt;
     if (!SDL_QueryTexture(tex_, &pix_fmt, nullptr, &w0, &h0))
+    {
         if (w0 != w || h0 != h)
         {
             //createMainTexture(pix_fmt, w, h);
         }
+    }
 }
 
 //创建一个专用于画场景的，后期放大
@@ -636,9 +645,15 @@ void Engine::fillColor(BP_Color color, int x, int y, int w, int h)
     SDL_RenderFillRect(renderer_, &r);
 }
 
-void Engine::renderAssistTextureToWindow()
+void Engine::renderMainTextureToWindow()
 {
     resetRenderTarget();
+    renderCopy(tex_, nullptr, nullptr);
+}
+
+void Engine::renderAssistTextureToWindow()
+{
+    setRenderTarget(tex_);
     renderCopy(tex2_, nullptr, nullptr);
 }
 

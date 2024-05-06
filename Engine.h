@@ -103,6 +103,8 @@ public:
     void getWindowMaxSize(int& w, int& h) { SDL_GetWindowMaximumSize(window_, &w, &h); }
     int getWindowWidth();
     int getWindowHeight();
+    int getStartWindowWidth() { return start_w_; }
+    int getStartWindowHeight() { return start_h_; }
     int getMaxWindowWidth() { return max_x_ - min_x_; }
     int getMaxWindowHeight() { return max_y_ - min_y_; }
     void getWindowPosition(int& x, int& y) { SDL_GetWindowPosition(window_, &x, &y); }
@@ -114,11 +116,16 @@ public:
         start_w_ = w;
         start_h_ = h;
     }
+    void getStartWindowSize(int& w, int& h)
+    {
+        w = start_w_;
+        h = start_h_;
+    }
     void setWindowPosition(int x, int y);
     void setWindowTitle(const std::string& str) { SDL_SetWindowTitle(window_, str.c_str()); }
     BP_Renderer* getRenderer() { return renderer_; }
 
-    void createMainTexture(int pix_fmt, int w, int h);
+    void createMainTexture(int w, int h);
     void resizeMainTexture(int w, int h);
     void createAssistTexture(int w, int h);
     void setPresentPosition(BP_Texture* tex);    //设置贴图的位置
@@ -173,6 +180,8 @@ public:
     }
     void setColor(BP_Texture* tex, BP_Color c);
     void fillColor(BP_Color color, int x, int y, int w, int h);
+    void setRenderMainTexture() { setRenderTarget(tex_); }
+    void renderMainTextureToWindow();
     void setRenderAssistTexture() { setRenderTarget(tex2_); }
     void renderAssistTextureToWindow();
     int setTextureBlendMode(BP_Texture* t) { return SDL_SetTextureBlendMode(t, SDL_BLENDMODE_BLEND); }
