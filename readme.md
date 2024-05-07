@@ -287,10 +287,6 @@ In this case, "argc" and "argv" in the program are NOT right with CMD, but are r
 
 A simple substitute of std::format. If you cannot stand the neglect of Clang and GCC, maybe you can try it.
 
-# Engine
-
-A C++ warp for SDL.
-
 # PotConv
 
 A C++ warp for iconv.
