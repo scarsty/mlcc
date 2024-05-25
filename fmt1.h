@@ -2,78 +2,11 @@
 #include <cctype>
 #include <map>
 #include <string>
-#include <vector>
 #include <typeinfo>
-
-#if __cplusplus >= 202002L
-#include <format>
-#endif
+#include <vector>
 
 namespace fmt1
 {
-
-#if __cplusplus >= 202002L
-
-template <typename T, typename CharT>
-struct std::formatter<std::vector<T>, CharT> : std::formatter<T, CharT>
-{
-    template <typename FormatContext>
-    auto format(const std::vector<T>& v, FormatContext& format_context)
-    {
-        auto&& out = format_context.out();
-        format_to(out, "[");
-        bool first = true;
-        for (const auto& item : v)
-        {
-            if (first)
-            {
-                first = false;
-            }
-            else
-            {
-                format_to(out, ", ");
-            }
-            formatter<T>::format(item, format_context);
-        }
-        return format_to(out, "]");
-    }
-};
-
-template <typename T1, typename T2, typename CharT>
-struct std::formatter<std::map<T1, T2>, CharT> : std::formatter<const char*, CharT>
-{
-    template <typename FormatContext>
-    auto format(const std::map<T1, T2>& v, FormatContext& format_context)
-    {
-        auto&& out = format_context.out();
-        typename FormatContext::iterator Ite = std::formatter<const char*, CharT>::format("[", format_context);
-        format_to(out, "[");
-        bool first = true;
-        for (const auto& item : v)
-        {
-            if (first)
-            {
-                first = false;
-            }
-            else
-            {
-                format_to(out, ", ");
-            }
-            Ite = std::formatter<T1, CharT>().format(item.first, format_context);
-            format_to(out, ": ");
-            Ite = std::formatter<T2, CharT>().format(item.second, format_context);
-        }
-        format_to(out, "]");
-        return Ite;
-    }
-};
-
-template <typename... Args>
-inline std::string format(Args&&... args)
-{
-    return std::format(args...);
-}
-#else
 
 inline std::string getfmt(const std::string& fmt, const std::string& fmt_s)
 {
@@ -270,7 +203,6 @@ inline void format2(size_t pos0, std::string& fmt, const T& t, Args&&... args)
     }
 }
 
-
 template <typename... Args>
 inline std::string format(const std::string& fmt, Args&&... args)
 {
@@ -278,7 +210,6 @@ inline std::string format(const std::string& fmt, Args&&... args)
     format2(0, res, args...);
     return res;
 }
-#endif
 
 template <typename... Args>
 inline void print(FILE* fout, const std::string& fmt, Args&&... args)
