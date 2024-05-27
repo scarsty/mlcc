@@ -310,3 +310,7 @@ CUDA and HIP supply the apis to get the usage of video memory, but on Windows th
 This can help you to get that correctly. 
 
 First, get the LUID or PCI bus with cudaGetDeviceProperties / hipGetDeviceProperties, and get the memory usage of it.
+
+# FunctionTrait
+
+Check the number of patameters anf the reture type of a class member function.
