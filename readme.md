@@ -90,7 +90,7 @@ password = ***
 ```
 A space will be added at both sides of "=", and the comments will be maintained.
 
-If the string includes some special charactors, such as ";" and "#" (which are the commont prefix), or line break, please use quote to surround it. Examples:
+If the string includes some special charactors, such as ";" and "#" (which are the comment prefix), or line break, please use quote to surround it. Examples:
 
 ```ini
 [sec]
