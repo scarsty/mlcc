@@ -8,8 +8,22 @@
 
 namespace strfunc
 {
+// string coding/type convertor functions
+#ifdef _MSC_VER
+std::string CvtStringToUTF8(const std::string& localstr);
+std::string CvtUTF8ToLocal(const std::string& utf8str);
+std::wstring CvtUTF8ToWChar(const std::string& utf8str, int utf8strlen = -1);
+#endif
+std::string CvtStringToUTF8(const char16_t& src);
+std::string CvtStringToUTF8(const std::u16string& src);
+std::string CvtStringToUTF8(const wchar_t* start, std::uint64_t len);
+std::string CvtStringToUTF8(const std::wstring& str);
+std::u16string CvtStringToUTF16(const std::string& src);
+std::u16string CvtStringToUTF16(const char* start, int len);
+std::wstring CvtStringToWString(const std::string& src);
+std::wstring CvtStringToWString(const char* start, std::uint64_t len);
 
-//string functions
+// read/write file about string functions
 std::string readStringFromFile(const std::string& filename);
 int writeStringToFile(const std::string& str, const std::string& filename);
 
