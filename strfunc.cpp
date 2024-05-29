@@ -1,17 +1,18 @@
 ﻿#include "strfunc.h"
 #include <algorithm>
+#include <codecvt>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <cstdint>
 #include <locale>
-#include <codecvt>
-
 #ifdef _MSC_VER
 #define vsprintf vsprintf_s
 //#define fopen fopen_s
-#include "stringapiset.h" //for MultiByteToWideChar() and WideCharToMultiByte()
-#endif
+#include <windows.h>
+// include windows.h before stringapiset.h
+#include <stringapiset.h>    //for MultiByteToWideChar() and WideCharToMultiByte()
 
+#endif
 
 #ifdef _MSC_VER
 std::string strfunc::CvtStringToUTF8(const std::string& localstr)
@@ -26,7 +27,7 @@ std::string strfunc::CvtStringToUTF8(const std::string& localstr)
     return result;
 }
 
-std::string strfunc::CvtUTF8ToLocal(const std::string &utf8str)
+std::string strfunc::CvtUTF8ToLocal(const std::string& utf8str)
 {
     int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, nullptr, 0);
     std::vector<wchar_t> wstr(wlen);
@@ -47,27 +48,26 @@ std::wstring strfunc::CvtUTF8ToWChar(const std::string& utf8str, int utf8strlen)
     return ret;
 }
 
-#endif // _WIN32
+#endif    // _WIN32
 
 std::string strfunc::CvtStringToUTF8(const char16_t& src)
 {
     std::wstring_convert<std::codecvt_utf8_utf16<std::int16_t>, std::int16_t> convert;
-    auto p = reinterpret_cast<const std::int16_t *>(&src);
+    auto p = reinterpret_cast<const std::int16_t*>(&src);
     return convert.to_bytes(p, p + 1);
 }
-
 
 std::string strfunc::CvtStringToUTF8(const std::u16string& src)
 {
     std::wstring_convert<std::codecvt_utf8_utf16<std::int16_t>, std::int16_t> convert;
-    auto p = reinterpret_cast<const std::int16_t *>(src.data());
+    auto p = reinterpret_cast<const std::int16_t*>(src.data());
     return convert.to_bytes(p, p + src.size());
 }
 
 std::string strfunc::CvtStringToUTF8(const wchar_t* start, std::uint64_t len)
 {
     std::wstring_convert<std::codecvt_utf8_utf16<std::int16_t>, std::int16_t> convert;
-    auto p = reinterpret_cast<const std::int16_t *>(start);
+    auto p = reinterpret_cast<const std::int16_t*>(start);
     return convert.to_bytes(p, p + len);
 }
 
@@ -80,17 +80,17 @@ std::string strfunc::CvtStringToUTF8(const std::wstring& str)
 std::u16string strfunc::CvtStringToUTF16(const std::string& src)
 {
     std::wstring_convert<std::codecvt_utf8_utf16<std::int16_t>, std::int16_t> convert;
-    auto p = reinterpret_cast<const char *>(src.data());
+    auto p = reinterpret_cast<const char*>(src.data());
     auto str = convert.from_bytes(p, p + src.size());
-    return std::u16string(str.begin(),str.end());
+    return std::u16string(str.begin(), str.end());
 }
 
 std::u16string strfunc::CvtStringToUTF16(const char* start, int len)
 {
     std::wstring_convert<std::codecvt_utf8_utf16<std::int16_t>, std::int16_t> convert;
-    auto p = reinterpret_cast<const char *>(start);
+    auto p = reinterpret_cast<const char*>(start);
     auto str = convert.from_bytes(p, p + len);
-    return std::u16string(str.begin(),str.end());
+    return std::u16string(str.begin(), str.end());
 }
 
 std::wstring strfunc::CvtStringToWString(const std::string& src)
@@ -100,9 +100,9 @@ std::wstring strfunc::CvtStringToWString(const std::string& src)
     return CvtUTF8ToWChar(src, -1);
 #else
     std::wstring_convert<std::codecvt_utf8<wchar_t>> convert;
-    auto p = reinterpret_cast<const char *>(src.data());
+    auto p = reinterpret_cast<const char*>(src.data());
     auto str = convert.from_bytes(p, p + src.size());
-    return std::wstring(str.begin(),str.end());
+    return std::wstring(str.begin(), str.end());
 #endif
 }
 
@@ -112,7 +112,7 @@ std::wstring strfunc::CvtStringToWString(const char* start, uint64_t len)
     return CvtUTF8ToWChar(start, len);
 #else
     std::wstring_convert<std::codecvt_utf8<wchar_t>> convert;
-    auto p = reinterpret_cast<const char *>(start);
+    auto p = reinterpret_cast<const char*>(start);
     auto str = convert.from_bytes(p, p + len);
     return std::wstring(str.begin(), str.end());
 #endif
