@@ -3,6 +3,9 @@
 #include <iostream>
 #include <sstream>
 
+#define BREAK_POINT(content) \
+    if (content) { int i = 0; }
+
 namespace cifa
 {
 
@@ -146,14 +149,14 @@ Object Cifa::eval(CalUnit& c)
             if (c.str == "%") { return int(eval(c.v[0])) % int(eval(c.v[1])); }
             if (c.str == "+") { return add(eval(c.v[0]), eval(c.v[1])); }
             if (c.str == "-") { return sub(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == ">") { return double(eval(c.v[0])) > double(eval(c.v[1])); }
-            if (c.str == "<") { return double(eval(c.v[0])) < double(eval(c.v[1])); }
-            if (c.str == ">=") { return double(eval(c.v[0])) >= double(eval(c.v[1])); }
-            if (c.str == "<=") { return double(eval(c.v[0])) <= double(eval(c.v[1])); }
-            if (c.str == "==") { return double(eval(c.v[0])) == double(eval(c.v[1])); }
-            if (c.str == "!=") { return double(eval(c.v[0])) != double(eval(c.v[1])); }
-            if (c.str == "&") { return int(eval(c.v[0])) & int(eval(c.v[1])); }
-            if (c.str == "|") { return int(eval(c.v[0])) | int(eval(c.v[1])); }
+            if (c.str == ">") { return more(eval(c.v[0]), eval(c.v[1])); }
+            if (c.str == "<") { return less(eval(c.v[0]), eval(c.v[1])); }
+            if (c.str == ">=") { return more_equal(eval(c.v[0]), eval(c.v[1])); }
+            if (c.str == "<=") { return less_equal(eval(c.v[0]), eval(c.v[1])); }
+            if (c.str == "==") { return equal(eval(c.v[0]), eval(c.v[1])); }
+            if (c.str == "!=") { return not_equal(eval(c.v[0]), eval(c.v[1])); }
+            if (c.str == "&") { return bit_and(eval(c.v[0]), eval(c.v[1])); }
+            if (c.str == "|") { return bit_or(eval(c.v[0]), eval(c.v[1])); }
             if (c.str == "&&") { return bool(eval(c.v[0])) && bool(eval(c.v[1])); }
             if (c.str == "||") { return bool(eval(c.v[0])) || bool(eval(c.v[1])); }
             if (c.str == "=") { return get_parameter(c.v[0]) = eval(c.v[1]); }
@@ -735,21 +738,26 @@ void Cifa::combine_ops(std::list<CalUnit>& ppp)
                     --it;
                     if (it->type == CalUnitType::Operator && it->str == op && it->v.size() == 0)
                     {
-                        if (it->str == "++")
-                        {
-                            int i = 0;
-                        }
+                        BREAK_POINT(it->str == "++" || it->str == "--");
                         if (it == ppp.begin() || vector_have(ops_single, it->str)
                             || !std::prev(it)->can_cal() && (op == "+" || op == "-"))    //+-退化为单目运算的情况
                         {
                             is_right = true;
                             auto itr = std::next(it);
+                            bool is_single = false;
                             if (itr != ppp.end())
                             {
-                                it->v = { std::move(*itr) };
-                                it = ppp.erase(itr);
+                                if ((it->str == "+" || it->str == "-")
+                                        && (itr->type == CalUnitType::Constant || itr->type == CalUnitType::Function || itr->type == CalUnitType::Parameter)
+                                    || (it->str == "++" || it->str == "--")
+                                        && itr->type == CalUnitType::Parameter)
+                                {
+                                    it->v = { std::move(*itr) };
+                                    it = ppp.erase(itr);
+                                    is_single = true;
+                                }                                
                             }
-                            else if (it != ppp.begin() && (it->str == "++" || it->str == "--") && std::prev(it)->type == CalUnitType::Parameter)
+                            if (!is_single && it != ppp.begin() && (it->str == "++" || it->str == "--") && std::prev(it)->type == CalUnitType::Parameter)
                             {
                                 it->v = { std::move(*std::prev(it)) };
                                 it->str = "()" + it->str;

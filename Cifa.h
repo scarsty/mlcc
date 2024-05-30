@@ -208,31 +208,50 @@ public:
 
     //四则运算准许用户增加自定义功能
 
-#define OPERATOR(o1, o2, op, op2) \
+#define OPERATOR(o1, o2, op, op2, trans_type) \
     if (o1.type == "" && o2.type == "") \
     { \
-        return Object(o1.value op o2.value); \
+        return Object(trans_type(o1.value) op trans_type(o2.value)); \
     } \
     if (op2) \
     { \
         return op2(o1, o2); \
     } \
-    return Object(o1.value op o2.value);
+    return Object(trans_type(o1.value) op trans_type(o2.value));
 
-    std::function<Object(const Object&, const Object&)> user_add, user_sub, user_mul, user_div;
+#define OPERATOR_DEF(name, op, trans_type) \
+    Object name(const Object& o1, const Object& o2) { OPERATOR(o1, o2, op, user_##name, trans_type); }
 
-    Object mul(const Object& o1, const Object& o2) { OPERATOR(o1, o2, *, user_mul); }
-    Object div(const Object& o1, const Object& o2) { OPERATOR(o1, o2, /, user_div); }
-    Object add(const Object& o1, const Object& o2)
-    {
-        if (o1.type == "string" && o2.type == "string")
-        {
-            return Object(o1.content + o2.content);
-        }
-        OPERATOR(o1, o2, +, user_add);
+#define OPERATOR_DEF_CONTENT(name, op, trans_type) \
+    Object name(const Object& o1, const Object& o2) \
+    { \
+        if (o1.type == "string" && o2.type == "string") \
+        { \
+            return Object(o1.content + o2.content); \
+        } \
+        OPERATOR(o1, o2, op, user_##name, trans_type); \
     }
-    Object sub(const Object& o1, const Object& o2) { OPERATOR(o1, o2, -, user_sub); }
+
+    std::function<Object(const Object&, const Object&)> user_add, user_sub, user_mul, user_div,
+        user_less, user_more, user_less_equal, user_more_equal,
+        user_equal, user_not_equal, user_bit_and, user_bit_or;
+
+    OPERATOR_DEF_CONTENT(add, +, double)
+    OPERATOR_DEF(sub, -, double)
+    OPERATOR_DEF(mul, *, double)
+    OPERATOR_DEF(div, /, double)
+    OPERATOR_DEF(less, <, double)
+    OPERATOR_DEF(more, >, double)
+    OPERATOR_DEF_CONTENT(less_equal, <=, double)
+    OPERATOR_DEF_CONTENT(more_equal, >=, double)
+    OPERATOR_DEF_CONTENT(equal, ==, double)
+    OPERATOR_DEF_CONTENT(not_equal, !=, double)
+    OPERATOR_DEF(bit_and, &, int)
+    OPERATOR_DEF(bit_or, |, int)
 };
+
+//#define OPERATOR_DEF_DOUBLE(op) \
+//    Object op(const Object& o1, const Object& o2) { return Object(double(o1.value) op double(o2.value)); }
 
 Object print(ObjectVector& d);
 Object to_string(ObjectVector& d);
