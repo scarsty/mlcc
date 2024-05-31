@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include <cctype>
+#include <iostream>
 #include <map>
+#include <stacktrace>
 #include <string>
 #include <typeinfo>
 #include <vector>
@@ -38,14 +40,16 @@ inline std::string sprintf2(const std::string& fmt, const std::string& fmt_s, co
     return sprintf1(getfmt(fmt, fmt_s), t);
 }
 
-template <typename T>
-inline std::string to_string(const std::string& fmt, const T& t)
-{
-    return typeid(T).name();    //unknown type
-}
+//template <typename T>
+//inline std::string to_string(const std::string& fmt, const T& t)
+//{
+//    std::cerr << std::stacktrace::current() << std::endl;
+//    return typeid(T).name();
+//}
 
 template <typename T>
-inline std::string to_string(const std::string& fmt, T* t)
+    requires std::is_pointer_v<T>
+inline std::string to_string(const std::string& fmt, const T t)
 {
     return sprintf2(fmt, "%p", t);
 }
@@ -165,26 +169,29 @@ inline std::string to_string(const std::string& fmt, const std::map<T1, T2>& t)
 }
 
 // array is conflict with pointer
-//
-//template <typename T, size_t N>
-//inline std::string to_string(const std::string& fmt, const T (&t)[N])
-//{
-//    if (N == 0)
-//    {
-//        return "[]";
-//    }
-//    std::string res = "[";
-//    for (int i = 0; i < N - 1; i++)
-//    {
-//        res += to_string(fmt, t[i]) + ", ";
-//    }
-//    res += to_string(fmt, t[N - 1]) + "]";
-//    return res;
-//}
+template <typename T, size_t N>
+    requires std::is_array_v<T[N]>
+inline std::string to_string(const std::string& fmt, const T (&t)[N])
+{
+    if (N == 0)
+    {
+        return "[]";
+    }
+    std::string res = "[";
+    for (int i = 0; i < N - 1; i++)
+    {
+        res += to_string(fmt, t[i]) + ", ";
+    }
+    res += to_string(fmt, t[N - 1]) + "]";
+    return res;
+}
 
 inline void format2(size_t pos0, std::string& fmt)
 {
 }
+
+template <typename T>
+concept is_printable = requires(T t) { to_string("", t); };
 
 template <typename T, typename... Args>
 inline void format2(size_t pos0, std::string& fmt, const T& t, Args&&... args)
@@ -203,7 +210,7 @@ inline void format2(size_t pos0, std::string& fmt, const T& t, Args&&... args)
     }
 }
 
-template <typename... Args>
+template <is_printable... Args>
 inline std::string format(const std::string& fmt, Args&&... args)
 {
     auto res = fmt;
@@ -211,14 +218,14 @@ inline std::string format(const std::string& fmt, Args&&... args)
     return res;
 }
 
-template <typename... Args>
+template <is_printable... Args>
 inline void print(FILE* fout, const std::string& fmt, Args&&... args)
 {
     auto res = format(fmt, args...);
     fprintf(fout, "%s", res.c_str());
 }
 
-template <typename... Args>
+template <is_printable... Args>
 inline void print(const std::string& fmt, Args&&... args)
 {
     print(stdout, fmt, args...);
