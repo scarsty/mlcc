@@ -148,9 +148,9 @@ int strfunc::writeStringToFile(const std::string& str, const std::string& filena
 {
     FILE* fp = nullptr;
 #ifdef _MSC_VER
-    int err = _wfopen_s(&fp, CvtStringToWString(filename.c_str()).c_str(), CvtStringToWString("rb").c_str());
+    int err = _wfopen_s(&fp, CvtStringToWString(filename.c_str()).c_str(), CvtStringToWString("wb").c_str());
 #else
-    fp = fopen(filename.c_str(), "rb");
+    fp = fopen(filename.c_str(), "wb");
 #endif
     if (fp)
     {
