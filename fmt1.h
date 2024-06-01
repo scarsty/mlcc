@@ -7,7 +7,15 @@
 #include <typeinfo>
 #include <vector>
 
-#ifndef USE_STD_FORMAT
+#ifdef __cpp_lib_format
+#ifndef FMT1_USE_STD_FORMAT
+#define FMT1_USE_STD_FORMAT 1
+#endif
+#else
+#define FMT1_USE_STD_FORMAT 0
+#endif
+
+#if !FMT1_USE_STD_FORMAT
 namespace fmt1
 {
 
@@ -242,23 +250,28 @@ template <typename T>
 concept is_printable = requires { std::formatter<std::remove_reference_t<T>>(); };
 
 template <is_printable... Args>
-inline std::string format(const std::string& fmt, Args&&... args)
+std::string vformat(const std::string& fmt, Args&&... args)
 {
-    auto res = std::vformat(fmt.c_str(), std::make_format_args(args...));
-    return res;
+    return std::vformat(fmt.c_str(), std::make_format_args(args...));
 }
 
 template <is_printable... Args>
-inline void print(FILE* fout, const std::string& fmt, Args&&... args)
+std::string format(const std::string_view& fmt, Args&&... args)
 {
-    auto res = format(fmt, args...);
+    return std::vformat(fmt,  std:: make_format_args (args...));
+}
+
+template <is_printable... Args>
+void print(FILE* fout, const std::string_view& fmt, Args&&... args)
+{
+    auto res = format(fmt, std::forward<Args>(args)...);
     fprintf(fout, "%s", res.c_str());
 }
 
 template <is_printable... Args>
-inline void print(const std::string& fmt, Args&&... args)
+void print(const std::string_view& fmt, Args&&... args)
 {
-    print(stdout, fmt, args...);
+    print(stdout, fmt, std::forward<Args>(args)...);
 }
 
 }    // namespace fmt1
