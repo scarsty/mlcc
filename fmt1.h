@@ -7,6 +7,7 @@
 #include <typeinfo>
 #include <vector>
 
+#ifndef USE_STD_FORMAT
 namespace fmt1
 {
 
@@ -230,5 +231,103 @@ inline void print(const std::string& fmt, Args&&... args)
 {
     print(stdout, fmt, args...);
 }
+}    // namespace fmt1
+#else
+#include <format>
+
+namespace fmt1
+{
+
+template <typename T>
+concept is_printable = requires { std::formatter<std::remove_reference_t<T>>(); };
+
+template <is_printable... Args>
+inline std::string format(const std::string& fmt, Args&&... args)
+{
+    auto res = std::vformat(fmt.c_str(), std::make_format_args(args...));
+    return res;
+}
+
+template <is_printable... Args>
+inline void print(FILE* fout, const std::string& fmt, Args&&... args)
+{
+    auto res = format(fmt, args...);
+    fprintf(fout, "%s", res.c_str());
+}
+
+template <is_printable... Args>
+inline void print(const std::string& fmt, Args&&... args)
+{
+    print(stdout, fmt, args...);
+}
 
 }    // namespace fmt1
+
+template <typename T, typename CharT>
+struct std::formatter<const T, CharT> : std::formatter<T, CharT>
+{
+};
+
+template <typename T, typename CharT>
+struct std::formatter<T*, CharT>
+{
+    constexpr auto parse(std::format_parse_context& context)
+    {
+        return context.begin();
+    }
+    auto format(const T* t, std::format_context& context) const
+    {
+        return std::format_to(context.out(), "{}", (uint64_t)t);
+    }
+};
+
+template <typename T, typename CharT>
+struct std::formatter<std::vector<T>, CharT> : std::formatter<T, CharT>
+{
+    auto format(const std::vector<T>& v, std::format_context& format_context) const
+    {
+        auto&& out = format_context.out();
+        format_to(out, "[");
+        bool first = true;
+        for (const auto& item : v)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                format_to(out, ", ");
+            }
+            formatter<T>::format(item, format_context);
+        }
+        return format_to(out, "]");
+    }
+};
+
+template <typename T1, typename T2, typename CharT>
+struct std::formatter<std::map<T1, T2>, CharT> : std::formatter<const char*, CharT>
+{
+    auto format(const std::map<T1, T2>& v, std::format_context& format_context) const
+    {
+        auto&& out = format_context.out();
+        format_to(out, "[");
+        bool first = true;
+        for (const auto& item : v)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                format_to(out, ", ");
+            }
+            std::formatter<T1, CharT>().format(item.first, format_context);
+            format_to(out, ": ");
+            std::formatter<T2, CharT>().format(item.second, format_context);
+        }
+        return format_to(out, "]");
+    }
+};
+#endif
