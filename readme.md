@@ -162,18 +162,9 @@ std::vector<std::string> strs = splitString(str, ",;");    //strs = {"123", "467
 
 "splitString" also supports treating continuous spaces as one pattern.
 
-checkFormatString can check a format string and the arguments are match or not for printf, fprintf, and sprintf. An example:
-
-```c++
-std::string s;
-checkFormatString("%s", s.c_str());    //nothing happen
-checkFormatString("%s", s);    //a runtime error "type not match" will be threw
-checkFormatString("%s%d", s.c_str());    //a runtime error "number of arguments" will be threw
-```
-Now it can only check %s, it is very easy to miss "c_str()" when using std::string.
-
-
 vectorToString can convert a std::vector<T> to a std::string, it is too bother to deal with the last splitting char manually.
+
+It also supplies some encoding converters.
 
 ## Timer
 
@@ -285,7 +276,11 @@ In this case, "argc" and "argv" in the program are NOT right with CMD, but are r
 
 # fmt1
 
-A simple substitute of std::format. If you cannot stand the neglect of Clang and GCC, maybe you can try it.
+A simple substitute of std::format. 
+
+If you cannot stand the neglect of Clang and GCC, maybe you can try it.
+
+It also provide the formatter of vector and map to use is C++20.
 
 # PotConv
 
@@ -293,7 +288,7 @@ A C++ warp for iconv.
 
 # DrawStringFT
 
-A C++ warp for freetype and opencv Mat.
+A C++ warp for freetype and opencv Mat. It can write charactors (such as Chinese) on an image. 
 
 # CheckDependency
 
@@ -313,4 +308,4 @@ First, get the LUID or PCI bus with cudaGetDeviceProperties / hipGetDeviceProper
 
 # FunctionTrait
 
-Check the number of patameters anf the reture type of a class member function.
+Check the number of patameters anf the return type of a class member function.
