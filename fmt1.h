@@ -243,6 +243,8 @@ inline void print(const std::string& fmt, Args&&... args)
 #else
 #include <format>
 
+#define FMT1_STRING const std::format_string<Args...>
+
 namespace fmt1
 {
 
@@ -255,10 +257,29 @@ std::string vformat(const std::string& fmt, Args&&... args)
     return std::vformat(fmt.c_str(), std::make_format_args(args...));
 }
 
+//template <is_printable... Args>
+//std::string format(FMT1_STRING fmt, Args&&... args)
+//{
+//    return std::format(fmt, std::forward<Args>(args)...);
+//}
+//
+//template <is_printable... Args>
+//void print(FILE* fout, FMT1_STRING fmt, Args&&... args)
+//{
+//    auto res = format(fmt, std::forward<Args>(args)...);
+//    fprintf(fout, "%s", res.c_str());
+//}
+//
+//template <is_printable... Args>
+//void print(FMT1_STRING fmt, Args&&... args)
+//{
+//    print(stdout, fmt, std::forward<Args>(args)...);
+//}
+
 template <is_printable... Args>
 std::string format(const std::string_view& fmt, Args&&... args)
 {
-    return std::vformat(fmt,  std:: make_format_args (args...));
+    return std::vformat(fmt, std::make_format_args(args...));
 }
 
 template <is_printable... Args>
