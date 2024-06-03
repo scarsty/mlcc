@@ -249,7 +249,7 @@ namespace fmt1
 {
 
 template <typename T>
-concept is_printable = requires { std::formatter<std::remove_reference_t<T>>(); };
+concept is_printable = requires { std::formatter<std::remove_cvref_t<T>>();  };
 
 template <is_printable... Args>
 std::string vformat(const std::string& fmt, Args&&... args)
@@ -296,11 +296,6 @@ void print(const std::string_view& fmt, Args&&... args)
 }
 
 }    // namespace fmt1
-
-template <typename T, typename CharT>
-struct std::formatter<const T, CharT> : std::formatter<T, CharT>
-{
-};
 
 template <typename T, typename CharT>
 struct std::formatter<T*, CharT>
