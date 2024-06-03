@@ -34,7 +34,7 @@ inline std::string getfmt(const std::string& fmt, const std::string& fmt_s)
 }
 
 template <typename T>
-inline std::string sprintf1(const std::string& fmt, const T& t)
+std::string sprintf1(const std::string& fmt, const T& t)
 {
     int len = snprintf(nullptr, 0, fmt.c_str(), t);
     std::string res(len + 1, '\0');
@@ -44,7 +44,7 @@ inline std::string sprintf1(const std::string& fmt, const T& t)
 }
 
 template <typename T>
-inline std::string sprintf2(const std::string& fmt, const std::string& fmt_s, const T& t)
+std::string sprintf2(const std::string& fmt, const std::string& fmt_s, const T& t)
 {
     return sprintf1(getfmt(fmt, fmt_s), t);
 }
@@ -58,7 +58,7 @@ inline std::string sprintf2(const std::string& fmt, const std::string& fmt_s, co
 
 template <typename T>
     requires std::is_pointer_v<T>
-inline std::string to_string(const std::string& fmt, const T t)
+std::string to_string(const std::string& fmt, const T t)
 {
     return sprintf2(fmt, "%p", t);
 }
@@ -144,7 +144,7 @@ inline std::string to_string(const std::string& fmt, const std::string& t)
 }
 
 template <typename T>
-inline std::string to_string(const std::string& fmt, const std::vector<T>& t)
+std::string to_string(const std::string& fmt, const std::vector<T>& t)
 {
     if (t.empty())
     {
@@ -161,7 +161,7 @@ inline std::string to_string(const std::string& fmt, const std::vector<T>& t)
 }
 
 template <typename T1, typename T2>
-inline std::string to_string(const std::string& fmt, const std::map<T1, T2>& t)
+std::string to_string(const std::string& fmt, const std::map<T1, T2>& t)
 {
     if (t.empty())
     {
@@ -180,7 +180,7 @@ inline std::string to_string(const std::string& fmt, const std::map<T1, T2>& t)
 // array is conflict with pointer
 template <typename T, size_t N>
     requires std::is_array_v<T[N]>
-inline std::string to_string(const std::string& fmt, const T (&t)[N])
+std::string to_string(const std::string& fmt, const T (&t)[N])
 {
     if (N == 0)
     {
@@ -203,7 +203,7 @@ template <typename T>
 concept is_printable = requires(T t) { to_string("", t); };
 
 template <typename T, typename... Args>
-inline void format2(size_t pos0, std::string& fmt, const T& t, Args&&... args)
+void format2(size_t pos0, std::string& fmt, const T& t, Args&&... args)
 {
     auto pos = fmt.find_first_of('{', pos0);
     if (pos != std::string::npos)
@@ -220,7 +220,7 @@ inline void format2(size_t pos0, std::string& fmt, const T& t, Args&&... args)
 }
 
 template <is_printable... Args>
-inline std::string format(const std::string& fmt, Args&&... args)
+std::string format(const std::string& fmt, Args&&... args)
 {
     auto res = fmt;
     format2(0, res, args...);
@@ -228,14 +228,14 @@ inline std::string format(const std::string& fmt, Args&&... args)
 }
 
 template <is_printable... Args>
-inline void print(FILE* fout, const std::string& fmt, Args&&... args)
+void print(FILE* fout, const std::string& fmt, Args&&... args)
 {
     auto res = format(fmt, args...);
     fprintf(fout, "%s", res.c_str());
 }
 
 template <is_printable... Args>
-inline void print(const std::string& fmt, Args&&... args)
+void print(const std::string& fmt, Args&&... args)
 {
     print(stdout, fmt, args...);
 }
