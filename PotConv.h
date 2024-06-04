@@ -1,8 +1,6 @@
 #pragma once
 
 #include "iconv.h"
-
-#include <algorithm>
 #include <cstring>
 #include <map>
 #include <string>

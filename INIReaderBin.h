@@ -2,7 +2,6 @@
 
 #include "INIReader.h"
 #include "strfunc.h"
-#include "string.h"
 
 struct INIReaderBin
 {

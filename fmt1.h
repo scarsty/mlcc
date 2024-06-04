@@ -1,10 +1,7 @@
 ﻿#pragma once
-#include <cctype>
-#include <iostream>
+
 #include <map>
-#include <stacktrace>
 #include <string>
-#include <typeinfo>
 #include <vector>
 
 #ifdef __cpp_lib_format
@@ -16,6 +13,9 @@
 #endif
 
 #if !FMT1_USE_STD_FORMAT
+#include <cctype>
+#include <iostream>
+#include <typeinfo>
 namespace fmt1
 {
 
@@ -249,7 +249,7 @@ namespace fmt1
 {
 
 template <typename T>
-concept is_printable = requires { std::formatter<std::remove_cvref_t<T>>();  };
+concept is_printable = requires { std::formatter<std::remove_cvref_t<T>>(); };
 
 template <is_printable... Args>
 std::string vformat(const std::string& fmt, Args&&... args)
