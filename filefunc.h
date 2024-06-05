@@ -49,6 +49,11 @@ void writeVectorToData(char* data, int length, std::vector<T>& v, int length_one
 }
 
 //other file operations
+
+bool is_path_char(char c);
+size_t getLastPathCharPos(const std::string& filename, int utf8 = 0);
+size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0);
+
 std::vector<std::string> getFilesInPath(const std::string& pathname, int recursive = 0, int include_path = 0);
 std::string getFileTime(std::string filename);
 void changePath(const std::string& path);

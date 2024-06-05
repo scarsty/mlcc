@@ -122,6 +122,110 @@ int filefunc::writeFile(const std::string& filename, void* s, int length)
     return length;
 }
 
+bool filefunc::is_path_char(char c)
+{
+#ifdef _WIN32
+    return c == '\\' || c == '/';
+#else
+    return c == '/';
+#endif
+}
+
+size_t filefunc::getLastPathCharPos(const std::string& filename, int utf8)
+{
+#ifndef _WIN32
+    utf8 = 1;
+#endif
+    size_t pos = std::string::npos;
+    if (utf8 == 0)
+    {
+        //ansi
+        for (int i = 0; i < filename.size(); i++)
+        {
+            if (utf8 == 0 && uint8_t(filename[i]) >= 128)
+            {
+                i++;
+            }
+            else if (is_path_char(filename[i]))
+            {
+                pos = i;
+            }
+        }
+    }
+    else
+    {
+        for (auto i = filename.size(); i--;)
+        {
+            if (is_path_char(filename[i]))
+            {
+                pos = i;
+                break;
+            }
+        }
+    }
+    return pos;
+}
+
+size_t filefunc::getLastEftPathCharPos(const std::string& filename, int utf8)
+{
+#ifndef _WIN32
+    utf8 = 1;
+#endif
+    size_t pos = std::string::npos;
+    //avoid mistakes for continued path char
+    if (utf8 == 0)
+    {
+        //ansi
+        bool found = false;
+        size_t pos1 = std::string::npos;
+        for (int i = 0; i < filename.size(); i++)
+        {
+            if (is_path_char(filename[i]))
+            {
+                if (!found)
+                {
+                    pos1 = i;
+                    found = true;
+                }
+            }
+            else
+            {
+                pos = pos1;
+                found = false;
+                if (uint8_t(filename[i]) >= 128)
+                {
+                    i++;
+                }
+            }
+        }
+    }
+    else
+    {
+        bool found_not_path = false;
+        int found_not_path_count = 0;
+        for (auto i = filename.size(); i--;)
+        {
+            if (is_path_char(filename[i]))
+            {
+                found_not_path = false;
+            }
+            else
+            {
+                if (!found_not_path)
+                {
+                    found_not_path_count++;
+                    if (found_not_path_count == 2)
+                    {
+                        return i + 1;
+                    }
+                }
+                found_not_path = true;
+            }
+        }
+    }
+    return pos;
+}
+
 std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/)
 {
     if (recursive == 0)
@@ -211,30 +315,6 @@ std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, i
     }
 }
 
-void filefunc::makePath(const std::string& path)
-{
-    std::vector<std::string> paths;
-    auto p = path + "/";
-    while (true)
-    {
-        if (pathExist(p) || p == "")
-        {
-            break;
-        }
-        paths.push_back(p);
-        p = getParentPath(p);
-    }
-    for (auto it = paths.rbegin(); it != paths.rend(); it++)
-    {
-        _mkdir(it->c_str());
-    }
-}
-
-void filefunc::removeFile(const std::string& filename)
-{
-    remove(filename.c_str());
-}
-
 std::string filefunc::getFileTime(std::string filename)
 {
 #if defined(__clang__) && defined(_WIN32)
@@ -267,48 +347,28 @@ void filefunc::changePath(const std::string& path)
     }
 }
 
-inline bool is_path_char(char c)
+void filefunc::makePath(const std::string& path)
 {
-#ifdef _WIN32
-    return c == '\\' || c == '/';
-#else
-    return c == '/';
-#endif
+    std::vector<std::string> paths;
+    auto p = path + "/";
+    while (true)
+    {
+        if (pathExist(p) || p == "")
+        {
+            break;
+        }
+        paths.push_back(p);
+        p = getParentPath(p);
+    }
+    for (auto it = paths.rbegin(); it != paths.rend(); it++)
+    {
+        _mkdir(it->c_str());
+    }
 }
 
-static size_t getLastPathCharPos(const std::string& filename, int utf8 = 0)
+void filefunc::removeFile(const std::string& filename)
 {
-#ifndef _WIN32
-    utf8 = 1;
-#endif
-    size_t pos = std::string::npos;
-    if (utf8 == 0)
-    {
-        //ansi
-        for (int i = 0; i < filename.size(); i++)
-        {
-            if (utf8 == 0 && uint8_t(filename[i]) >= 128)
-            {
-                i++;
-            }
-            else if (is_path_char(filename[i]))
-            {
-                pos = i;
-            }
-        }
-    }
-    else
-    {
-        for (auto i = filename.size(); i--;)
-        {
-            if (is_path_char(filename[i]))
-            {
-                pos = i;
-                break;
-            }
-        }
-    }
-    return pos;
+    remove(filename.c_str());
 }
 
 std::string filefunc::getFileExt(const std::string& filename)
@@ -352,66 +412,6 @@ std::string filefunc::changeFileExt(const std::string& filename, const std::stri
         e = "." + e;
     }
     return getFileMainname(filename) + e;
-}
-
-static size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0)
-{
-#ifndef _WIN32
-    utf8 = 1;
-#endif
-    size_t pos = std::string::npos;
-    //avoid mistakes for continued path char
-    if (utf8 == 0)
-    {
-        //ansi
-        bool found = false;
-        size_t pos1 = std::string::npos;
-        for (int i = 0; i < filename.size(); i++)
-        {
-            if (is_path_char(filename[i]))
-            {
-                if (!found)
-                {
-                    pos1 = i;
-                    found = true;
-                }
-            }
-            else
-            {
-                pos = pos1;
-                found = false;
-                if (uint8_t(filename[i]) >= 128)
-                {
-                    i++;
-                }
-            }
-        }
-    }
-    else
-    {
-        bool found_not_path = false;
-        int found_not_path_count = 0;
-        for (auto i = filename.size(); i--;)
-        {
-            if (is_path_char(filename[i]))
-            {
-                found_not_path = false;
-            }
-            else
-            {
-                if (!found_not_path)
-                {
-                    found_not_path_count++;
-                    if (found_not_path_count == 2)
-                    {
-                        return i + 1;
-                    }
-                }
-                found_not_path = true;
-            }
-        }
-    }
-    return pos;
 }
 
 std::string filefunc::getParentPath(const std::string& filename, int utf8)
