@@ -31,6 +31,8 @@ std::string trim(const std::string& s);
 bool meet_utf8(const std::string& str);
 bool meet_gbk(const std::string& str);
 
+std::string get_cmd_output(const std::string& cmdstring);
+
 template <typename T>
 int findNumbers(const std::string& s, std::vector<T>* data)
 {

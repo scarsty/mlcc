@@ -2,6 +2,12 @@
 #include <algorithm>
 #include <cstdio>
 
+#ifdef _WIN32
+#define popen _popen
+#define pclose _pclose
+#endif
+
+
 std::string strfunc::readStringFromFile(const std::string& filename)
 {
     FILE* fp =  fopen(filename.c_str(), "rb");
@@ -344,4 +350,23 @@ bool strfunc::meet_gbk(const std::string& str)
         return true;
     }
     return true;
+}
+
+std::string strfunc::get_cmd_output(const std::string& cmdstring)
+{
+    std::string str;
+    FILE* p_file = NULL;
+    const int BUF_SIZE = 1024;
+    char buf[BUF_SIZE];
+    p_file = popen(cmdstring.c_str(), "r");
+    if (!p_file)
+    {
+        return "";
+    }
+    while (fgets(buf, BUF_SIZE, p_file) != NULL)
+    {
+        str += buf;
+    }
+    pclose(p_file);
+    return str;
 }

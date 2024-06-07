@@ -13,6 +13,9 @@ std::vector<char> readFile(const std::string& filename, int length = -1);
 int readFile(const std::string& filename, void* s, int length);
 int writeFile(const std::string& filename, void* s, int length);
 
+std::string readStringFromFile(const std::string& filename);
+int writeStringToFile(const std::string& str, const std::string& filename);
+
 template <class T>
 void readDataToVector(const char* data, int length, std::vector<T>& v, int length_one)
 {
