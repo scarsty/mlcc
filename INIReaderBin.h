@@ -1,7 +1,7 @@
 #pragma once
 
+#include "filefunc.h"
 #include "INIReader.h"
-#include "strfunc.h"
 
 struct INIReaderBin
 {
@@ -76,12 +76,12 @@ public:
 
     int save(const std::string& filename)
     {
-        return strfunc::writeStringToFile(to_string(), filename);
+        return filefunc::writeStringToFile(to_string(), filename);
     }
 
     int load(const std::string& filename)
     {
-        return parse(strfunc::readStringFromFile(filename));
+        return parse(filefunc::readStringFromFile(filename));
     }
 
     std::string get_value(const std::string& key)

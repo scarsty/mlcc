@@ -4,17 +4,10 @@
 
 namespace strfunc
 {
-
-// read/write file about string functions
-std::string readStringFromFile(const std::string& filename);
-int writeStringToFile(const std::string& str, const std::string& filename);
-
 void replaceOneSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 = 0);
 void replaceAllSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring);
 std::string replaceOneSubString(const std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 = 0);
 std::string replaceAllSubString(const std::string& s, const std::string& oldstring, const std::string& newstring);
-void replaceOneStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring);
-void replaceAllStringInFile(const std::string& oldfilename, const std::string& newfilename, const std::string& oldstring, const std::string& newstring);
 
 std::string findANumber(const std::string& s);
 unsigned findTheLast(const std::string& s, const std::string& content);
