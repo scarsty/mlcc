@@ -95,34 +95,6 @@ std::vector<char> filefunc::readFile(const std::string& filename, int length)
     return s;
 }
 
-int filefunc::readFile(const std::string& filename, void* s, int length)
-{
-    FILE* fp = fopen(filename.c_str(), "rb");
-    if (!fp)
-    {
-        //fprintf(stderr, "Cannot open file %s\n", filename.c_str());
-        return 0;
-    }
-    int r = fread(s, 1, length, fp);
-    fclose(fp);
-    return r;
-}
-
-int filefunc::writeFile(const std::string& filename, void* s, int length)
-{
-    FILE* fp = fopen(filename.c_str(), "wb");
-    if (!fp)
-    {
-        //fprintf(stderr, "Cannot write file %s\n", filename.c_str());
-        return 0;
-    }
-    fseek(fp, 0, 0);
-    fwrite(s, 1, length, fp);
-    fclose(fp);
-    return length;
-}
-
-
 std::string filefunc::readStringFromFile(const std::string& filename)
 {
     FILE* fp = fopen(filename.c_str(), "rb");
