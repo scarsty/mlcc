@@ -1,5 +1,4 @@
 ﻿#include "filefunc.h"
-#include <algorithm>
 #include <cctype>
 #include <cstdio>
 #include <ctime>
