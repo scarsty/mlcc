@@ -4,6 +4,10 @@
 
 namespace strfunc
 {
+// read and write file, same to filefunc
+[[deprecated]] std::string readFromFile(const std::string& filename);
+[[deprecated]] int writeToFile(const std::string& str, const std::string& filename);
+
 void replaceOneSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 = 0);
 void replaceAllSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring);
 std::string replaceOneSubString(const std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 = 0);

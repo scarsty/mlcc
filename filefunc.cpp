@@ -95,7 +95,7 @@ std::vector<char> filefunc::readFile(const std::string& filename, int length)
     return s;
 }
 
-std::string filefunc::readStringFromFile(const std::string& filename)
+std::string filefunc::readFileToString(const std::string& filename)
 {
     FILE* fp = fopen(filename.c_str(), "rb");
     if (fp)

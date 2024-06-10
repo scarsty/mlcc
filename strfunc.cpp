@@ -7,6 +7,40 @@
 #define pclose _pclose
 #endif
 
+std::string strfunc::readFromFile(const std::string& filename)
+{
+    FILE* fp = fopen(filename.c_str(), "rb");
+    if (fp)
+    {
+        fseek(fp, 0, SEEK_END);
+        int length = ftell(fp);
+        fseek(fp, 0, 0);
+        std::string str;
+        str.resize(length, '\0');
+        if (fread((void*)str.c_str(), 1, length, fp) < length)
+        {
+            //fprintf(stderr, "Read file %s unfinished!\n", filename.c_str());
+        }
+        fclose(fp);
+        return str;
+    }
+    //fprintf(stderr, "Cannot open file %s!\n", filename.c_str());
+    return "";
+}
+int strfunc::writeToFile(const std::string& str, const std::string& filename)
+{
+    FILE* fp = fopen(filename.c_str(), "wb");
+    if (fp)
+    {
+        int length = str.length();
+        fwrite(str.c_str(), 1, length, fp);
+        fflush(fp);
+        fclose(fp);
+        return length;
+    }
+    //fprintf(stderr, "Cannot write file %s!\n", filename.c_str());
+    return -1;
+}
 void strfunc::replaceOneSubStringRef(std::string& s, const std::string& oldstring, const std::string& newstring, int pos0 /*=0*/)
 {
     if (oldstring.empty() || oldstring == newstring)

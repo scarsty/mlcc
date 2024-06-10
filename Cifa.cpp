@@ -28,33 +28,12 @@ Cifa::Cifa()
     register_function("ifv", ifv);
     register_function("ifvalue", ifv);
 
-    register_function("abs", [](ObjectVector& x) -> Object
-        {
-            if (x.size() == 0) { return cifa::Object(); }
-            double x0 = x[0];
-            return abs(x0);
-        });
-
-    register_function("sqrt", [](ObjectVector& x) -> Object
-        {
-            if (x.size() == 0) { return cifa::Object(); }
-            double x0 = x[0];
-            return sqrt(x0);
-        });
-
     register_function("pow", [](ObjectVector& x) -> Object
         {
             if (x.size() <= 1) { return cifa::Object(); }
             double x0 = x[0];
             double x1 = x[1];
             return pow(x0, x1);
-        });
-
-    register_function("round", [](ObjectVector& x) -> Object
-        {
-            if (x.size() == 0) { return cifa::Object(); }
-            double x0 = x[0];
-            return round(x0);
         });
 
     register_function("max", [](ObjectVector& x) -> Object
@@ -94,6 +73,27 @@ Cifa::Cifa()
             }
             return min_val;
         });
+#define REGISTER_FUNCTION(func) \
+    register_function(#func, [](ObjectVector& x) -> Object { \
+        if (x.size() == 0) { return cifa::Object(); } \
+        double x0 = x[0]; \
+        return func(x0); \
+    });
+    REGISTER_FUNCTION(abs);
+    REGISTER_FUNCTION(sqrt);
+    REGISTER_FUNCTION(round);
+    REGISTER_FUNCTION(sin);
+    REGISTER_FUNCTION(cos);
+    REGISTER_FUNCTION(tan);
+    REGISTER_FUNCTION(asin);
+    REGISTER_FUNCTION(acos);
+    REGISTER_FUNCTION(atan);
+    REGISTER_FUNCTION(sinh);
+    REGISTER_FUNCTION(cosh);
+    REGISTER_FUNCTION(tanh);
+    REGISTER_FUNCTION(exp);
+    REGISTER_FUNCTION(log);
+    REGISTER_FUNCTION(log10);    
 }
 
 Object Cifa::eval(CalUnit& c)
@@ -754,7 +754,7 @@ void Cifa::combine_ops(std::list<CalUnit>& ppp)
                                     it->v = { std::move(*itr) };
                                     it = ppp.erase(itr);
                                     is_single = true;
-                                }                                
+                                }
                             }
                             if (!is_single && it != ppp.begin() && (it->str == "++" || it->str == "--") && std::prev(it)->type == CalUnitType::Parameter)
                             {

@@ -81,7 +81,7 @@ public:
 
     int load(const std::string& filename)
     {
-        return parse(filefunc::readStringFromFile(filename));
+        return parse(filefunc::readFileToString(filename));
     }
 
     std::string get_value(const std::string& key)
