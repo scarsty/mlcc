@@ -10,6 +10,8 @@ bool fileExist(const std::string& name);
 bool pathExist(const std::string& name);
 
 std::vector<char> readFile(const std::string& filename, int length = -1);
+int writeFile(const char* data, int length, const std::string& filename);
+int writeFile(const std::vector<char>& data, const std::string& filename);
 
 std::string readFileToString(const std::string& filename);
 int writeStringToFile(const std::string& str, const std::string& filename);
@@ -47,6 +49,12 @@ void writeVectorToData(char* data, int length, std::vector<T>& v, int length_one
     {
         memcpy(data + length_one * i, &v[i], length_one);
     }
+}
+
+template <class T>
+int writeVectorToFile(const std::vector<T>& v, const std::string& filename)
+{
+    return writeFile((const char*)v.data(), v.size() * sizeof(T), filename);
 }
 
 //other file operations
