@@ -127,7 +127,7 @@ Cifa::Cifa()
     REGISTER_FUNCTION(log10);
 }
 
-Object Cifa::eval(CalUnit& c, std::map<std::string, Object>& p)
+Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
 {
     if (p.count("return"))
     {
@@ -961,7 +961,7 @@ void* Cifa::get_user_data(const std::string& name)
     return user_data[name];
 }
 
-Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc, std::map<std::string, Object>& p)
+Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc, std::unordered_map<std::string, Object>& p)
 {
     if (functions.count(name))
     {
@@ -989,12 +989,12 @@ Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc, std
     }
 }
 
-Object& Cifa::get_parameter(CalUnit& c, std::map<std::string, Object>& p)
+Object& Cifa::get_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p)
 {
     return p[convert_parameter_name(c, p)];
 }
 
-std::string Cifa::convert_parameter_name(CalUnit& c, std::map<std::string, Object>& p)
+std::string Cifa::convert_parameter_name(CalUnit& c, std::unordered_map<std::string, Object>& p)
 {
     std::string parameter_name = c.str;
     if (c.v.size() > 0 && c.v[0].str == "[]")
@@ -1017,12 +1017,12 @@ std::string Cifa::convert_parameter_name(CalUnit& c, std::map<std::string, Objec
     return parameter_name;
 }
 
-bool Cifa::check_parameter(CalUnit& c, std::map<std::string, Object>& p)
+bool Cifa::check_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p)
 {
     return p.count(convert_parameter_name(c, p));
 }
 
-void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::map<std::string, Object>& p)
+void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::string, Object>& p)
 {
     //若提前return，表示不再检查其下的结构
     if (c.type == CalUnitType::Operator)

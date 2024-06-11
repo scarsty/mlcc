@@ -2,9 +2,9 @@
 #include <cmath>
 #include <functional>
 #include <list>
-#include <map>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace cifa
@@ -120,11 +120,11 @@ private:
 
     //两个函数表都是全局的
     using func_type = std::function<Object(ObjectVector&)>;
-    std::map<std::string, func_type> functions;     //在宿主程序中注册的函数
-    std::map<std::string, Function2> functions2;    //在cifa程序中定义的函数
+    std::unordered_map<std::string, func_type> functions;     //在宿主程序中注册的函数
+    std::unordered_map<std::string, Function2> functions2;    //在cifa程序中定义的函数
 
-    std::map<std::string, void*> user_data;
-    std::map<std::string, Object> parameters;    //变量表，注意每次定义的函数调用都是独立的
+    std::unordered_map<std::string, void*> user_data;
+    std::unordered_map<std::string, Object> parameters;    //变量表，注意每次定义的函数调用都是独立的
 
     struct ErrorMessage
     {
@@ -150,7 +150,7 @@ private:
 
 public:
     Cifa();
-    Object eval(CalUnit& c, std::map<std::string, Object>& p);
+    Object eval(CalUnit& c, std::unordered_map<std::string, Object>& p);
     void expand_comma(CalUnit& c1, std::vector<CalUnit>& v);
     CalUnit& find_right_side(CalUnit& c1);
     //bool need_suffix(CalUnit& c) { return c.can_cal() || vector_have(keys[0], c.str); }
@@ -183,12 +183,12 @@ public:
     }
 
     void* get_user_data(const std::string& name);
-    Object run_function(const std::string& name, std::vector<CalUnit>& vc, std::map<std::string, Object>& p);
-    Object& get_parameter(CalUnit& c, std::map<std::string, Object>& p);
-    std::string convert_parameter_name(CalUnit& c, std::map<std::string, Object>& p);
-    bool check_parameter(CalUnit& c, std::map<std::string, Object>& p);
+    Object run_function(const std::string& name, std::vector<CalUnit>& vc, std::unordered_map<std::string, Object>& p);
+    Object& get_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p);
+    std::string convert_parameter_name(CalUnit& c, std::unordered_map<std::string, Object>& p);
+    bool check_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p);
 
-    void check_cal_unit(CalUnit& c, CalUnit* father, std::map<std::string, Object>& p);
+    void check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::string, Object>& p);
 
     Object run_script(std::string str);    //运行脚本，注意实际上使用独立的变量表
 
@@ -259,5 +259,36 @@ public:
 
 //#define OPERATOR_DEF_DOUBLE(op) \
 //    Object op(const Object& o1, const Object& o2) { return Object(double(o1.value) op double(o2.value)); }
+
+template <typename T>
+class CifaT : public Cifa
+{
+private:
+    std::unordered_map<double, T> map_t;
+    int count_ = 0;
+
+public:
+    template <typename T1>
+    std::enable_if_t<std::is_same_v<T, T1>, Object> reg(T1 t)
+    {
+        Object o(count_++, typeid(T).name());
+        map_t[o.value] = t;
+        return o;
+    }
+    template <typename T1>
+    std::enable_if_t<std::is_same_v<T, T1>, T1&> get(const cifa::Object& o)
+    {
+        return map_t[o.value];
+    }
+    template <typename T1>
+    std::enable_if_t<std::is_same_v<T, T1>, void> reg(const std::string& name, T t)
+    {
+        register_parameter(name, { reg(t) });
+    }
+};
+
+//这里的扩展模板只支持一种类型，如果需要同时支持多种类型，一般需要这个形式：
+//class CifaT<T> + public C {};
+//CifaT<T2, CifaT<T1, C>>，以此类推，但是这时类的结构会出现多层，会造成调试的复杂
 
 }    // namespace cifa
