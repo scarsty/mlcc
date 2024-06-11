@@ -14,13 +14,13 @@ Cifa::Cifa()
         {
             for (auto& d1 : d)
             {
-                if (d1.type == "string")
+                if (d1.isType<std::string>())
                 {
-                    std::cout << d1.content;
+                    std::cout << d1.toString();
                 }
                 else
                 {
-                    std::cout << d1.value;
+                    std::cout << d1.toDouble();
                 }
             }
             std::cout << "\n";
@@ -33,7 +33,7 @@ Cifa::Cifa()
                 return Object("");
             }
             std::ostringstream stream;
-            stream << d[0].value;
+            stream << d[0].toDouble();
             return Object(stream.str());
         });
     register_function("to_number", [](ObjectVector& d)
@@ -42,7 +42,7 @@ Cifa::Cifa()
             {
                 return Object();
             }
-            return Object(atof(d[0].content.c_str()));
+            return Object(atof(d[0].toString().c_str()));
         });
     //parameters["true"] = Object(1, "__");
     //parameters["false"] = Object(0, "__");
@@ -138,7 +138,7 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
         if (c.v.size() == 1)
         {
             if (c.str == "+") { return eval(c.v[0], p); }
-            if (c.str == "-") { return sub(Object(0), eval(c.v[0], p)); }
+            if (c.str == "-") { return sub(Object(0.0), eval(c.v[0], p)); }
             if (c.str == "!") { return !eval(c.v[0], p); }
             if (c.str == "++") { return get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(1)); }
             if (c.str == "--") { return get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(-1)); }
@@ -246,11 +246,11 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             for (eval(c.v[0].v[0], p); eval(c.v[0].v[1], p); eval(c.v[0].v[2], p))
             {
                 o = eval(c.v[1], p);
-                if (o.type == "__" && o.content == "break") { break; }
-                if (o.type == "__" && o.content == "continue") { continue; }
+                if (o.type1 == "__" && o.toString() == "break") { break; }
+                if (o.type1 == "__" && o.toString() == "continue") { continue; }
                 if (p.count("return")) { return p["return"]; }
             }
-            o.type = "";
+            //o.type = "";
             return o;
         }
         if (c.str == "while")
@@ -259,11 +259,11 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             while (eval(c.v[0], p))
             {
                 o.v.emplace_back(eval(c.v[1], p));
-                if (o.type == "__" && o.content == "break") { break; }
-                if (o.type == "__" && o.content == "continue") { continue; }
+                if (o.type1 == "__" && o.toString() == "break") { break; }
+                if (o.type1 == "__" && o.toString() == "continue") { continue; }
                 if (p.count("return")) { return p["return"]; }
             }
-            o.type = "";
+            //o.type = "";
             return o;
         }
         if (c.str == "return")
@@ -294,8 +294,8 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
         for (auto& c1 : c.v)
         {
             o = eval(c1, p);
-            if (o.type == "__" && o.content == "break") { break; }
-            if (o.type == "__" && o.content == "continue") { break; }
+            if (o.type1 == "__" && o.toString() == "break") { break; }
+            if (o.type1 == "__" && o.toString() == "continue") { break; }
             if (p.count("return")) { return p["return"]; }
         }
         return o;
@@ -1003,13 +1003,13 @@ std::string Cifa::convert_parameter_name(CalUnit& c, std::unordered_map<std::str
         {
             auto e = eval(c.v[0].v[0], p);
             std::string str;
-            if (e.type == "string")
+            if (e.isType<std::string>())
             {
-                str = e.content;
+                str = e.toString();
             }
             else
             {
-                str = std::to_string(int(e.value));
+                str = std::to_string(e.toInt());
             }
             parameter_name += "[" + str + "]";
         }
@@ -1044,7 +1044,7 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
                     get_parameter(c.v[0], p);         //record a parameter at left of "="
                     //this will check twice things at right of "="
                 }
-                if (c.v[0].type == CalUnitType::Parameter && get_parameter(c.v[0], p).type == "__"
+                if (c.v[0].type == CalUnitType::Parameter && get_parameter(c.v[0], p).type1 == "__"
                     || c.v[0].type != CalUnitType::Parameter)
                 {
                     add_error(c, "%s cannot be assigned", c.v[0].str.c_str());
@@ -1230,14 +1230,15 @@ Object Cifa::run_script(std::string str)
     }
     else
     {
-        result.type = "Error";
+        result = std::string("");
+        result.type1 = "Error";
         for (auto& e : errors)
         {
-            result.content += "Error (" + std::to_string(e.line) + ", " + std::to_string(e.col) + "): " + e.message + "\n";
+            result.toString() += "Error (" + std::to_string(e.line) + ", " + std::to_string(e.col) + "): " + e.message + "\n";
         }
         if (output_error)
         {
-            std::cerr << result.content;
+            std::cerr << result.toString();
         }
     }
     return result;

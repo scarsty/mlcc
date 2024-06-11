@@ -64,7 +64,7 @@ return sum;
 
 若脚本只有一个表达式，则结果就是表达式的求值。若脚本包含多行，则需用return来指定返回值，否则返回值是nan。
 
-### 自定义函数
+### 宿主程序添加自定义函数
 
 自定义函数必须可以转化为`std::function<cifa::Object(cifa::ObjectVector&)>`，其中`cifa::ObjectVector`即`std::vector<cifa::Object>`。
 
@@ -111,6 +111,22 @@ print(pow(2, 10));
 ```
 需注意语言已经内置了3个函数：print，to_number和to_string。
 
+### 脚本中的自定义函数
+
+例如脚本为：
+
+```c++
+myfun(i)
+{
+    return i*i*i+i*i+i+1;
+}
+
+print(myfun(i));
+```
+可以得到输出为40。
+
+注意这种函数不能做类型检查。
+
 ### 预定义变量
 
 通过预定义变量可以模拟一些外置函数的效果。下面这个例子中，将pi预先定义好，并将degree视作一个C++送到Cifa的参数:
@@ -124,15 +140,63 @@ print(sin(degree*pi/180));
 ```
 输出应为0.5。
 
+### 用户的数据类型
+
+一般来说，Cifa可以容纳任何类型。目前数值相关的类型实际都是double，另内置了std::string的支持。
+
+如果用户希望使用自己的类型，一般来说需要增加一些功能函数，和对应的运算符重载。
+
+例如，增加以下几个函数支持OpenCV中cv::Mat相关的一些功能：
+
+```c++
+    c.register_function("imread", [](cifa::ObjectVector& v) -> cifa::Object
+        {
+            int flag = -1;
+            if (v.size() >= 2)
+            {
+                flag = int(v[1]);
+            }
+            return cv::Mat(cv::imread(v[0].toString(), flag));
+        });
+    c.register_function("imshow", [](cifa::ObjectVector& v) -> cifa::Object
+        {
+            cv::imshow(v[0].toString(), v[1].to<cv::Mat>());
+            return cifa::Object();
+        });
+    c.register_function("imwrite", [](cifa::ObjectVector& v) -> cifa::Object
+        {
+            cv::imwrite(v[0].toString(), v[1].to<cv::Mat>());
+            return cifa::Object();
+        });
+```
+除此之外，也可以支持用户自定义某些运算符的重载，但是需注意应进行类型检查。下面以增加加号和减号的重载为例：
+```c++
+    c.user_add.push_back([](const cifa::Object& l, const cifa::Object& r) -> cifa::Object
+        {
+            if (l.isType<cv::Mat>() && r.isType<cv::Mat>())
+            {
+                return cv::Mat(l.to<cv::Mat>() + r.to<cv::Mat>());
+            }
+            return cifa::Object();
+        });
+    c.user_sub.push_back([](const cifa::Object& l, const cifa::Object& r) -> cifa::Object
+        {
+            if (l.isType<cv::Mat>() && r.isType<cv::Mat>())
+            {
+                return cv::Mat(l.to<cv::Mat>() - r.to<cv::Mat>());
+            }
+            return cifa::Object();
+        });
+```
+
+
 ### 语法上的注意事项
 
-- 实际仅有double和string类型，如需自定义类型请自行扩展。
 - auto、int、float、double等类型名会被忽略，若想无脑复制可以在C++部分使用auto。
 - 未经初始化即出现在赋值号右侧的变量值为nan，相当于强制要求显式初始化。
 - 函数调用时，a.func(c)等价于func(a, c)。
 - 自加算符不支持++++或----这种写法，请不要瞎折腾。
 - 没有switch，do...while，goto，?:。
-- 不支持脚本中自定义函数。
 
 ## 其他
 

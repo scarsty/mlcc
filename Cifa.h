@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <any>
 #include <cmath>
 #include <functional>
 #include <list>
@@ -9,27 +10,77 @@
 
 namespace cifa
 {
+struct CalUnit;
+class Cifa;
 
 struct Object
 {
+    friend CalUnit;
+    friend Cifa;
     Object() {}
-    Object(double v, const std::string& ty = "")
+    Object(double v)
     {
         value = v;
-        type = ty;
     }
-    Object(const std::string& str, const std::string& ty = "string")
+    Object(double v, const std::string& t)
     {
-        content = str;
-        type = ty;
+        value = v;
+        type1 = t;
     }
-    double value = nan("");
-    std::string content;
-    std::string type;
-    std::vector<Object> v;
-    operator bool() { return value; }
-    operator int() { return value; }
-    operator double() { return value; }
+    Object(const std::string& str)
+    {
+        value = str;
+    }
+    Object(const std::string& str, const std::string& t)
+    {
+        value = str;
+        type1 = t;
+    }
+    template <typename T>
+    Object(const T& v)
+    {
+        value = v;
+    }
+    Object(int v)
+    {
+        value = double(v);
+    }
+    Object(bool v)
+    {
+        value = double(v);
+    }
+    operator bool() const { return toDouble() != 0; }
+    operator int() const { return int(toDouble()); }
+    operator double() const { return toDouble(); }
+    operator std::string() const { return toString(); }
+    bool toBool() const { return toDouble() != 0; }
+    int toInt() const { return int(toDouble()); }
+    double toDouble() const
+    {
+        if (value.type() == typeid(double))
+        {
+            return std::any_cast<double>(value);
+        }
+        return NAN;
+    }
+    const std::string& toString() const { return std::any_cast<const std::string&>(value); }
+    std::string& toString() { return std::any_cast<std::string&>(value); }
+    //const与非const版本，按需使用
+    template <typename T>
+    const T& to() const { return std::any_cast<const T&>(value); }
+    template <typename T>
+    T& to() { return std::any_cast<T&>(value); }
+    template <typename T>
+    bool isType() const { return value.type() == typeid(T); }
+    bool isNumber() const { return value.type() == typeid(double); }
+    bool hasValue() const { return value.has_value(); }
+    const std::vector<Object>& subV() const { return v; }
+    const std::string& getSpecialType() const { return type1; }
+
+private:
+    std::any value;
+    std::string type1;        //特别的类型
+    std::vector<Object> v;    //仅用于处理逗号表达式
 };
 
 using ObjectVector = std::vector<Object>;
@@ -215,31 +266,35 @@ public:
 
     //四则运算准许用户增加自定义功能
 
-#define OPERATOR(o1, o2, op, op2, trans_type) \
-    if (o1.type == "" && o2.type == "") \
+#define OPERATOR(o1, o2, op, userop_v, trans_type) \
+    if (o1.isNumber() && o2.isNumber()) \
     { \
-        return Object(trans_type(o1.value) op trans_type(o2.value)); \
+        return double(trans_type(o1) op trans_type(o2)); \
     } \
-    if (op2) \
+    for (auto& f : userop_v) \
     { \
-        return op2(o1, o2); \
-    } \
-    return Object(trans_type(o1.value) op trans_type(o2.value));
-
-#define OPERATOR_DEF(name, op, trans_type) \
-    Object name(const Object& o1, const Object& o2) { OPERATOR(o1, o2, op, user_##name, trans_type); }
-
-#define OPERATOR_DEF_CONTENT(name, op, trans_type) \
-    Object name(const Object& o1, const Object& o2) \
-    { \
-        if (o1.type == "string" && o2.type == "string") \
+        auto o = f(o1, o2); \
+        if (!o.isNumber()) \
         { \
-            return Object(o1.content + o2.content); \
+            return o; \
         } \
-        OPERATOR(o1, o2, op, user_##name, trans_type); \
+    } \
+    return Object();
+
+#define OPERATOR_DEF(opname, op, trans_type) \
+    Object opname(const Object& o1, const Object& o2) { OPERATOR(o1, o2, op, user_##opname, trans_type); }
+
+#define OPERATOR_DEF_CONTENT(opname, op, trans_type) \
+    Object opname(const Object& o1, const Object& o2) \
+    { \
+        if (o1.isType<std::string>() && o2.isType<std::string>()) \
+        { \
+            return Object(std::any_cast<std::string>(o1.value) + std::any_cast<std::string>(o2.value)); \
+        } \
+        OPERATOR(o1, o2, op, user_##opname, trans_type); \
     }
 
-    std::function<Object(const Object&, const Object&)> user_add, user_sub, user_mul, user_div,
+    std::vector<std::function<Object(const Object&, const Object&)>> user_add, user_sub, user_mul, user_div,
         user_less, user_more, user_less_equal, user_more_equal,
         user_equal, user_not_equal, user_bit_and, user_bit_or;
 
@@ -259,36 +314,5 @@ public:
 
 //#define OPERATOR_DEF_DOUBLE(op) \
 //    Object op(const Object& o1, const Object& o2) { return Object(double(o1.value) op double(o2.value)); }
-
-template <typename T>
-class CifaT : public Cifa
-{
-private:
-    std::unordered_map<double, T> map_t;
-    int count_ = 0;
-
-public:
-    template <typename T1>
-    std::enable_if_t<std::is_same_v<T, T1>, Object> reg(T1 t)
-    {
-        Object o(count_++, typeid(T).name());
-        map_t[o.value] = t;
-        return o;
-    }
-    template <typename T1>
-    std::enable_if_t<std::is_same_v<T, T1>, T1&> get(const cifa::Object& o)
-    {
-        return map_t[o.value];
-    }
-    template <typename T1>
-    std::enable_if_t<std::is_same_v<T, T1>, void> reg(const std::string& name, T t)
-    {
-        register_parameter(name, { reg(t) });
-    }
-};
-
-//这里的扩展模板只支持一种类型，如果需要同时支持多种类型，一般需要这个形式：
-//class CifaT<T> + public C {};
-//CifaT<T2, CifaT<T1, C>>，以此类推，但是这时类的结构会出现多层，会造成调试的复杂
 
 }    // namespace cifa
