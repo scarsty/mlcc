@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <cmath>
 #include <functional>
 #include <list>
@@ -46,7 +46,7 @@ enum class CalUnitType
     Key,
     Type,
     Union,
-    //UnionRound,    //()ºÏ²¢Ä£Ê½£¬½öforÓï¾äÊ¹ÓÃ
+    //UnionRound,    //()åˆå¹¶æ¨¡å¼ï¼Œä»…forè¯­å¥ä½¿ç”¨
 };
 
 struct CalUnit
@@ -55,7 +55,8 @@ struct CalUnit
     std::vector<CalUnit> v;
     std::string str;
     size_t line = 0, col = 0;
-    bool suffix = false;
+    bool suffix = false;       //æœ‰åç¼€ï¼Œå¯è§†ä¸ºä¸€ä¸ªè¯­å¥
+    bool with_type = false;    //æœ‰å‰ç½®çš„ç±»å‹
     CalUnit(CalUnitType s, std::string s1)
     {
         type = s;
@@ -70,6 +71,12 @@ struct CalUnit
     {
         return suffix || !can_cal();
     }
+};
+
+struct Function2
+{
+    std::vector<std::string> arguments;
+    CalUnit body;
 };
 
 template <typename T>
@@ -103,21 +110,21 @@ bool vector_have(const std::vector<std::vector<T>>& ops, const T& op)
 class Cifa
 {
 private:
-    //ÔËËã·û£¬´Ë´¦µÄË³Ğò¼´ÓÅÏÈ¼¶£¬µ¥Ä¿ºÍÓÒ½áºÏÓÉÏÂÃæµÄÁĞ±íÅĞ¶Ï
+    //è¿ç®—ç¬¦ï¼Œæ­¤å¤„çš„é¡ºåºå³ä¼˜å…ˆçº§ï¼Œå•ç›®å’Œå³ç»“åˆç”±ä¸‹é¢çš„åˆ—è¡¨åˆ¤æ–­
     std::vector<std::vector<std::string>> ops = { { ".", "++", "--" }, { "!" }, { "*", "/", "%" }, { "+", "-" }, { ">", "<", ">=", "<=" }, { "==", "!=" }, { "&" }, { "|" }, { "&&" }, { "||" }, { "=", "*=", "/=", "+=", "-=" }, { "," } };
-    std::vector<std::string> ops_single = { "++", "--", "!", "()++", "()--" };    //µ¥Ä¿È«²¿ÊÇÓÒ½áºÏ
-    std::vector<std::string> ops_right = { "=", "*=", "/=", "+=", "-=" };         //ÓÒ½áºÏ
-    //¹Ø¼ü×Ö£¬ÔÚ±íÖĞµÄÎ»ÖÃÎªÆäËùĞè²ÎÊı¸öÊı
+    std::vector<std::string> ops_single = { "++", "--", "!", "()++", "()--" };    //å•ç›®å…¨éƒ¨æ˜¯å³ç»“åˆ
+    std::vector<std::string> ops_right = { "=", "*=", "/=", "+=", "-=" };         //å³ç»“åˆ
+    //å…³é”®å­—ï¼Œåœ¨è¡¨ä¸­çš„ä½ç½®ä¸ºå…¶æ‰€éœ€å‚æ•°ä¸ªæ•°
     std::vector<std::vector<std::string>> keys = { { "true", "false" }, { "break", "continue", "else", "return" }, { "if", "for", "while" } };
     std::vector<std::string> types = { "auto", "int", "float", "double" };
 
-    std::map<std::string, void*> user_data;
-    std::map<std::string, Object> parameters;
+    //ä¸¤ä¸ªå‡½æ•°è¡¨éƒ½æ˜¯å…¨å±€çš„
     using func_type = std::function<Object(ObjectVector&)>;
-    std::map<std::string, func_type> functions;
+    std::map<std::string, func_type> functions;     //åœ¨å®¿ä¸»ç¨‹åºä¸­æ³¨å†Œçš„å‡½æ•°
+    std::map<std::string, Function2> functions2;    //åœ¨cifaç¨‹åºä¸­å®šä¹‰çš„å‡½æ•°
 
-    bool force_return = false;
-    Object result;
+    std::map<std::string, void*> user_data;
+    std::map<std::string, Object> parameters;    //å˜é‡è¡¨ï¼Œæ³¨æ„æ¯æ¬¡å®šä¹‰çš„å‡½æ•°è°ƒç”¨éƒ½æ˜¯ç‹¬ç«‹çš„
 
     struct ErrorMessage
     {
@@ -143,7 +150,7 @@ private:
 
 public:
     Cifa();
-    Object eval(CalUnit& c);
+    Object eval(CalUnit& c, std::map<std::string, Object>& p);
     void expand_comma(CalUnit& c1, std::vector<CalUnit>& v);
     CalUnit& find_right_side(CalUnit& c1);
     //bool need_suffix(CalUnit& c) { return c.can_cal() || vector_have(keys[0], c.str); }
@@ -153,13 +160,14 @@ public:
 
     CalUnit combine_all_cal(std::list<CalUnit>& ppp, bool curly = true, bool square = true, bool round = true);
     std::list<CalUnit>::iterator inside_bracket(std::list<CalUnit>& ppp, std::list<CalUnit>& ppp2, const std::string& bl, const std::string& br);
-    void combine_curly_backet(std::list<CalUnit>& ppp);
-    void combine_square_backet(std::list<CalUnit>& ppp);
-    void combine_round_backet(std::list<CalUnit>& ppp);
+    void combine_curly_bracket(std::list<CalUnit>& ppp);
+    void combine_square_bracket(std::list<CalUnit>& ppp);
+    void combine_round_bracket(std::list<CalUnit>& ppp);
     void combine_ops(std::list<CalUnit>& ppp);
     void combine_semi(std::list<CalUnit>& ppp);
     void combine_keys(std::list<CalUnit>& ppp);
     void combine_types(std::list<CalUnit>& ppp);
+    void combine_functions2(std::list<CalUnit>& ppp);
 
     void register_function(const std::string& name, func_type func);
     void register_user_data(const std::string& name, void* p);
@@ -175,14 +183,14 @@ public:
     }
 
     void* get_user_data(const std::string& name);
-    Object run_function(const std::string& name, std::vector<CalUnit>& vc);
-    Object& get_parameter(CalUnit& c);
-    std::string convert_parameter_name(CalUnit& c);
-    bool check_parameter(CalUnit& c);
+    Object run_function(const std::string& name, std::vector<CalUnit>& vc, std::map<std::string, Object>& p);
+    Object& get_parameter(CalUnit& c, std::map<std::string, Object>& p);
+    std::string convert_parameter_name(CalUnit& c, std::map<std::string, Object>& p);
+    bool check_parameter(CalUnit& c, std::map<std::string, Object>& p);
 
-    void check_cal_unit(CalUnit& c, CalUnit* father);
+    void check_cal_unit(CalUnit& c, CalUnit* father, std::map<std::string, Object>& p);
 
-    Object run_script(std::string str);
+    Object run_script(std::string str);    //è¿è¡Œè„šæœ¬ï¼Œæ³¨æ„å®é™…ä¸Šä½¿ç”¨ç‹¬ç«‹çš„å˜é‡è¡¨
 
     template <typename... Args>
     void add_error(CalUnit& c, Args... args)
@@ -205,7 +213,7 @@ public:
 
     void setOutputError(bool oe) { output_error = oe; }
 
-    //ËÄÔòÔËËã×¼ĞíÓÃ»§Ôö¼Ó×Ô¶¨Òå¹¦ÄÜ
+    //å››åˆ™è¿ç®—å‡†è®¸ç”¨æˆ·å¢åŠ è‡ªå®šä¹‰åŠŸèƒ½
 
 #define OPERATOR(o1, o2, op, op2, trans_type) \
     if (o1.type == "" && o2.type == "") \
@@ -251,9 +259,5 @@ public:
 
 //#define OPERATOR_DEF_DOUBLE(op) \
 //    Object op(const Object& o1, const Object& o2) { return Object(double(o1.value) op double(o2.value)); }
-
-Object print(ObjectVector& d);
-Object to_string(ObjectVector& d);
-Object to_number(ObjectVector& d);
 
 }    // namespace cifa

@@ -10,9 +10,40 @@ namespace cifa
 
 Cifa::Cifa()
 {
-    register_function("print", print);
-    register_function("to_string", to_string);
-    register_function("to_number", to_number);
+    register_function("print", [](ObjectVector& d)
+        {
+            for (auto& d1 : d)
+            {
+                if (d1.type == "string")
+                {
+                    std::cout << d1.content;
+                }
+                else
+                {
+                    std::cout << d1.value;
+                }
+            }
+            std::cout << "\n";
+            return Object(double(d.size()));
+        });
+    register_function("to_string", [](ObjectVector& d)
+        {
+            if (d.empty())
+            {
+                return Object("");
+            }
+            std::ostringstream stream;
+            stream << d[0].value;
+            return Object(stream.str());
+        });
+    register_function("to_number", [](ObjectVector& d)
+        {
+            if (d.empty())
+            {
+                return Object();
+            }
+            return Object(atof(d[0].content.c_str()));
+        });
     //parameters["true"] = Object(1, "__");
     //parameters["false"] = Object(0, "__");
     //parameters["break"] = Object("break", "__");
@@ -93,34 +124,34 @@ Cifa::Cifa()
     REGISTER_FUNCTION(tanh);
     REGISTER_FUNCTION(exp);
     REGISTER_FUNCTION(log);
-    REGISTER_FUNCTION(log10);    
+    REGISTER_FUNCTION(log10);
 }
 
-Object Cifa::eval(CalUnit& c)
+Object Cifa::eval(CalUnit& c, std::map<std::string, Object>& p)
 {
-    if (force_return)
+    if (p.count("return"))
     {
-        return Object();
+        return p["return"];
     }
     else if (c.type == CalUnitType::Operator)
     {
         if (c.v.size() == 1)
         {
-            if (c.str == "+") { return eval(c.v[0]); }
-            if (c.str == "-") { return sub(Object(0), eval(c.v[0])); }
-            if (c.str == "!") { return !eval(c.v[0]); }
-            if (c.str == "++") { return get_parameter(c.v[0]) = add(get_parameter(c.v[0]), Object(1)); }
-            if (c.str == "--") { return get_parameter(c.v[0]) = add(get_parameter(c.v[0]), Object(-1)); }
+            if (c.str == "+") { return eval(c.v[0], p); }
+            if (c.str == "-") { return sub(Object(0), eval(c.v[0], p)); }
+            if (c.str == "!") { return !eval(c.v[0], p); }
+            if (c.str == "++") { return get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(1)); }
+            if (c.str == "--") { return get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(-1)); }
             if (c.str == "()++")
             {
-                auto v = get_parameter(c);
-                get_parameter(c.v[0]) = add(get_parameter(c.v[0]), Object(1));
+                auto v = get_parameter(c, p);
+                get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(1));
                 return v;
             }
             if (c.str == "()--")
             {
-                auto v = get_parameter(c);
-                get_parameter(c.v[0]) = add(get_parameter(c.v[0]), Object(-1));
+                auto v = get_parameter(c, p);
+                get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(-1));
                 return v;
             }
         }
@@ -134,40 +165,40 @@ Object Cifa::eval(CalUnit& c)
                     {
                         std::vector<CalUnit> v = { c.v[0] };
                         expand_comma(c.v[1].v[0], v);
-                        return run_function(c.v[1].str, v);
+                        return run_function(c.v[1].str, v, p);
                     }
                     else
                     {
                         std::vector<CalUnit> v = { c.v[0] };
-                        return run_function(c.v[1].str, v);
+                        return run_function(c.v[1].str, v, p);
                     }
                 }
             }
-            if (c.str == "*") { return mul(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == "/") { return div(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == "%") { return int(eval(c.v[0])) % int(eval(c.v[1])); }
-            if (c.str == "+") { return add(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == "-") { return sub(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == ">") { return more(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == "<") { return less(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == ">=") { return more_equal(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == "<=") { return less_equal(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == "==") { return equal(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == "!=") { return not_equal(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == "&") { return bit_and(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == "|") { return bit_or(eval(c.v[0]), eval(c.v[1])); }
-            if (c.str == "&&") { return bool(eval(c.v[0])) && bool(eval(c.v[1])); }
-            if (c.str == "||") { return bool(eval(c.v[0])) || bool(eval(c.v[1])); }
-            if (c.str == "=") { return get_parameter(c.v[0]) = eval(c.v[1]); }
-            if (c.str == "+=") { return get_parameter(c.v[0]) = add(get_parameter(c.v[0]), eval(c.v[1])); }
-            if (c.str == "-=") { return get_parameter(c.v[0]) = sub(get_parameter(c.v[0]), eval(c.v[1])); }
-            if (c.str == "*=") { return get_parameter(c.v[0]) = mul(get_parameter(c.v[0]), eval(c.v[1])); }
-            if (c.str == "/=") { return get_parameter(c.v[0]) = div(get_parameter(c.v[0]), eval(c.v[1])); }
+            if (c.str == "*") { return mul(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "/") { return div(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "%") { return int(eval(c.v[0], p)) % int(eval(c.v[1], p)); }
+            if (c.str == "+") { return add(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "-") { return sub(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == ">") { return more(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "<") { return less(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == ">=") { return more_equal(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "<=") { return less_equal(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "==") { return equal(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "!=") { return not_equal(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "&") { return bit_and(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "|") { return bit_or(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "&&") { return bool(eval(c.v[0], p)) && bool(eval(c.v[1], p)); }
+            if (c.str == "||") { return bool(eval(c.v[0], p)) || bool(eval(c.v[1], p)); }
+            if (c.str == "=") { return get_parameter(c.v[0], p) = eval(c.v[1], p); }
+            if (c.str == "+=") { return get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "-=") { return get_parameter(c.v[0], p) = sub(get_parameter(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "*=") { return get_parameter(c.v[0], p) = mul(get_parameter(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "/=") { return get_parameter(c.v[0], p) = div(get_parameter(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == ",")
             {
                 Object o;
-                o.v.emplace_back(eval(c.v[0]));
-                o.v.emplace_back(eval(c.v[1]));
+                o.v.emplace_back(eval(c.v[0], p));
+                o.v.emplace_back(eval(c.v[1], p));
                 return o;
             }
         }
@@ -183,7 +214,7 @@ Object Cifa::eval(CalUnit& c)
     }
     else if (c.type == CalUnitType::Parameter)
     {
-        return get_parameter(c);
+        return get_parameter(c, p);
     }
     else if (c.type == CalUnitType::Function)
     {
@@ -192,19 +223,19 @@ Object Cifa::eval(CalUnit& c)
         {
             expand_comma(c.v[0], v);
         }
-        return run_function(c.str, v);
+        return run_function(c.str, v, p);
     }
     else if (c.type == CalUnitType::Key)
     {
         if (c.str == "if")
         {
-            if (eval(c.v[0]))
+            if (eval(c.v[0], p))
             {
-                return eval(c.v[1]);
+                return eval(c.v[1], p);
             }
             else if (c.v.size() >= 3)
             {
-                return eval(c.v[2]);
+                return eval(c.v[2], p);
             }
             return Object(0);
         }
@@ -212,12 +243,12 @@ Object Cifa::eval(CalUnit& c)
         {
             Object o;
             //此处v[0]应是一个组合语句
-            for (eval(c.v[0].v[0]); eval(c.v[0].v[1]); eval(c.v[0].v[2]))
+            for (eval(c.v[0].v[0], p); eval(c.v[0].v[1], p); eval(c.v[0].v[2], p))
             {
-                o = eval(c.v[1]);
+                o = eval(c.v[1], p);
                 if (o.type == "__" && o.content == "break") { break; }
                 if (o.type == "__" && o.content == "continue") { continue; }
-                if (force_return) { return Object(); }
+                if (p.count("return")) { return p["return"]; }
             }
             o.type = "";
             return o;
@@ -225,21 +256,20 @@ Object Cifa::eval(CalUnit& c)
         if (c.str == "while")
         {
             Object o;
-            while (eval(c.v[0]))
+            while (eval(c.v[0], p))
             {
-                o.v.emplace_back(eval(c.v[1]));
+                o.v.emplace_back(eval(c.v[1], p));
                 if (o.type == "__" && o.content == "break") { break; }
                 if (o.type == "__" && o.content == "continue") { continue; }
-                if (force_return) { return Object(); }
+                if (p.count("return")) { return p["return"]; }
             }
             o.type = "";
             return o;
         }
         if (c.str == "return")
         {
-            result = eval(c.v[0]);
-            force_return = true;
-            return result;
+            p["return"] = eval(c.v[0], p);
+            return p["return"];
         }
         if (c.str == "break")
         {
@@ -263,10 +293,10 @@ Object Cifa::eval(CalUnit& c)
         Object o;
         for (auto& c1 : c.v)
         {
-            o = eval(c1);
+            o = eval(c1, p);
             if (o.type == "__" && o.content == "break") { break; }
             if (o.type == "__" && o.content == "continue") { break; }
-            if (force_return) { return Object(); }
+            if (p.count("return")) { return p["return"]; }
         }
         return o;
     }
@@ -479,9 +509,17 @@ std::list<CalUnit> Cifa::split(std::string& str)
         //括号前的变量视为函数
         if (it->str == "(")
         {
-            if (it != rv.begin() && std::prev(it)->type == CalUnitType::Parameter && functions.count(std::prev(it)->str) > 0)
+            if (it != rv.begin() && std::prev(it)->type == CalUnitType::Parameter)
             {
                 std::prev(it)->type = CalUnitType::Function;
+                if (functions.count(std::prev(it)->str))
+                {
+                }
+                else
+                {
+                    //脚本中的自定义函数
+                    functions2[std::prev(it)->str] = {};
+                }
             }
         }
         for (auto& keys1 : keys)
@@ -528,7 +566,18 @@ std::list<CalUnit> Cifa::split(std::string& str)
     {
         if (it->type == CalUnitType::Type)
         {
-            it = rv.erase(it);
+            //记录下类型符号曾经存在的位置
+            auto itr = std::next(it);
+            if (itr != rv.end()
+                && (itr->type == CalUnitType::Parameter || itr->type == CalUnitType::Function))
+            {
+                itr->with_type = true;
+                it = rv.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
         }
         else
         {
@@ -544,11 +593,11 @@ std::list<CalUnit> Cifa::split(std::string& str)
 CalUnit Cifa::combine_all_cal(std::list<CalUnit>& ppp, bool curly, bool square, bool round)
 {
     //合并{}
-    if (curly) { combine_curly_backet(ppp); }
+    if (curly) { combine_curly_bracket(ppp); }
     //合并[]
-    if (square) { combine_square_backet(ppp); }
+    if (square) { combine_square_bracket(ppp); }
     //合并()
-    if (round) { combine_round_backet(ppp); }
+    if (round) { combine_round_bracket(ppp); }
 
     //合并算符
     combine_ops(ppp);
@@ -558,6 +607,8 @@ CalUnit Cifa::combine_all_cal(std::list<CalUnit>& ppp, bool curly, bool square, 
 
     //合并关键字
     combine_keys(ppp);
+
+    combine_functions2(ppp);
 
     //到此处应仅剩余单独分号（空语句）、语句、语句组，只需简单合并即可
     //即使只有一条语句也必须返回Union！
@@ -630,7 +681,7 @@ std::list<CalUnit>::iterator Cifa::inside_bracket(std::list<CalUnit>& ppp, std::
     return itl0;
 }
 
-void Cifa::combine_curly_backet(std::list<CalUnit>& ppp)
+void Cifa::combine_curly_bracket(std::list<CalUnit>& ppp)
 {
     while (true)
     {
@@ -649,7 +700,7 @@ void Cifa::combine_curly_backet(std::list<CalUnit>& ppp)
     }
 }
 
-void Cifa::combine_square_backet(std::list<CalUnit>& ppp)
+void Cifa::combine_square_bracket(std::list<CalUnit>& ppp)
 {
     while (true)
     {
@@ -676,7 +727,7 @@ void Cifa::combine_square_backet(std::list<CalUnit>& ppp)
     }
 }
 
-void Cifa::combine_round_backet(std::list<CalUnit>& ppp)
+void Cifa::combine_round_bracket(std::list<CalUnit>& ppp)
 {
     while (true)
     {
@@ -864,6 +915,32 @@ void Cifa::combine_keys(std::list<CalUnit>& ppp)
 
 void Cifa::combine_types(std::list<CalUnit>& ppp) {}
 
+void Cifa::combine_functions2(std::list<CalUnit>& ppp)
+{
+    //合并关键字，从右向左
+    auto it = ppp.end();
+    while (it != ppp.begin())
+    {
+        --it;
+        if (it->type == CalUnitType::Function && !it->suffix)
+        {
+            auto itr = std::next(it);
+            if (itr != ppp.end() && itr->type == CalUnitType::Union && itr->str == "{}")
+            {
+                Function2 f;
+                f.body = std::move(*itr);
+                for (auto& c : it->v)
+                {
+                    f.arguments.emplace_back(std::move(c.str));
+                }
+                functions2[it->str] = std::move(f);
+                ppp.erase(itr);
+                it = ppp.erase(it);
+            }
+        }
+    }
+}
+
 void Cifa::register_function(const std::string& name, func_type func)
 {
     functions[name] = func;
@@ -884,17 +961,27 @@ void* Cifa::get_user_data(const std::string& name)
     return user_data[name];
 }
 
-Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc)
+Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc, std::map<std::string, Object>& p)
 {
     if (functions.count(name))
     {
-        auto p = functions[name];
+        auto f = functions[name];
         std::vector<Object> v;
         for (auto& c : vc)
         {
-            v.emplace_back(eval(c));
+            v.emplace_back(eval(c, p));
         }
-        return p(v);
+        return f(v);
+    }
+    else if (functions2.count(name))
+    {
+        auto& f = functions2[name];
+        auto p1 = parameters;    //新的变量表
+        for (int i = 0; i < std::min(vc.size(), f.arguments.size()); i++)
+        {
+            p1[f.arguments[i]] = eval(vc[i], p);
+        }
+        return eval(f.body, p1);
     }
     else
     {
@@ -902,19 +989,19 @@ Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc)
     }
 }
 
-Object& Cifa::get_parameter(CalUnit& c)
+Object& Cifa::get_parameter(CalUnit& c, std::map<std::string, Object>& p)
 {
-    return parameters[convert_parameter_name(c)];
+    return p[convert_parameter_name(c, p)];
 }
 
-std::string Cifa::convert_parameter_name(CalUnit& c)
+std::string Cifa::convert_parameter_name(CalUnit& c, std::map<std::string, Object>& p)
 {
     std::string parameter_name = c.str;
     if (c.v.size() > 0 && c.v[0].str == "[]")
     {
         if (c.v[0].v.size() > 0)
         {
-            auto e = eval(c.v[0].v[0]);
+            auto e = eval(c.v[0].v[0], p);
             std::string str;
             if (e.type == "string")
             {
@@ -930,12 +1017,12 @@ std::string Cifa::convert_parameter_name(CalUnit& c)
     return parameter_name;
 }
 
-bool Cifa::check_parameter(CalUnit& c)
+bool Cifa::check_parameter(CalUnit& c, std::map<std::string, Object>& p)
 {
-    return parameters.count(convert_parameter_name(c));
+    return p.count(convert_parameter_name(c, p));
 }
 
-void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
+void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::map<std::string, Object>& p)
 {
     //若提前return，表示不再检查其下的结构
     if (c.type == CalUnitType::Operator)
@@ -953,11 +1040,11 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
             {
                 if (c.v[0].type == CalUnitType::Parameter)
                 {
-                    check_cal_unit(c.v[1], &c);    //here make sure no undefined parameters at right of "="
-                    get_parameter(c.v[0]);         //record a parameter at left of "="
+                    check_cal_unit(c.v[1], &c, p);    //here make sure no undefined parameters at right of "="
+                    get_parameter(c.v[0], p);         //record a parameter at left of "="
                     //this will check twice things at right of "="
                 }
-                if (c.v[0].type == CalUnitType::Parameter && get_parameter(c.v[0]).type == "__"
+                if (c.v[0].type == CalUnitType::Parameter && get_parameter(c.v[0], p).type == "__"
                     || c.v[0].type != CalUnitType::Parameter)
                 {
                     add_error(c, "%s cannot be assigned", c.v[0].str.c_str());
@@ -989,7 +1076,7 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
         {
             add_error(c, "cannot calculate parameter %s with operands", c.str.c_str());
         }
-        if (!check_parameter(c))
+        if (!check_parameter(c, p))
         {
             add_error(c, "parameter %s is at right of = but not been initialized", c.str.c_str());    //parameters at left of "=" have been added
         }
@@ -1102,33 +1189,44 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father)
             }
         }
     }
+    else if (c.type == CalUnitType::Type)
+    {
+        //不应存在类型符号
+        add_error(c, "type %s has operands", c.str.c_str());
+    }
     for (auto& c1 : c.v)
     {
-        check_cal_unit(c1, &c);
+        check_cal_unit(c1, &c, p);
     }
 }
 
 Object Cifa::run_script(std::string str)
 {
     errors.clear();
-    force_return = false;
-    result = Object();
+    Object result;
 
     str += ";";    //方便处理仅有一行的情况
     auto rv = split(str);
     auto c = combine_all_cal(rv);    //结果必定是一个Union
     if (errors.empty())
     {
-        check_cal_unit(c, nullptr);
+        auto p = parameters;
+        check_cal_unit(c, nullptr, p);
+        for (auto& f : functions2)
+        {
+            auto p = parameters;
+            for (auto& a : f.second.arguments)
+            {
+                p[a] = Object();
+            }
+            check_cal_unit(f.second.body, nullptr, p);
+        }
     }
     if (errors.empty())
     {
-        auto o = eval(c);
-        //如果只有一个表达式，则返回其值，否则为return返回的值
-        if (c.v.size() <= 1)
-        {
-            return o;
-        }
+        auto p = parameters;
+        auto o = eval(c, p);
+        return o;
     }
     else
     {
@@ -1143,43 +1241,6 @@ Object Cifa::run_script(std::string str)
         }
     }
     return result;
-}
-
-Object print(ObjectVector& d)
-{
-    for (auto& d1 : d)
-    {
-        if (d1.type == "string")
-        {
-            std::cout << d1.content;
-        }
-        else
-        {
-            std::cout << d1.value;
-        }
-    }
-    std::cout << "\n";
-    return Object(double(d.size()));
-}
-
-Object to_string(ObjectVector& d)
-{
-    if (d.empty())
-    {
-        return Object("");
-    }
-    std::ostringstream stream;
-    stream << d[0].value;
-    return Object(stream.str());
-}
-
-Object to_number(ObjectVector& d)
-{
-    if (d.empty())
-    {
-        return Object();
-    }
-    return Object(atof(d[0].content.c_str()));
 }
 
 }    // namespace cifa
