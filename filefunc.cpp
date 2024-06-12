@@ -2,6 +2,8 @@
 #include <cctype>
 #include <cstdio>
 #include <ctime>
+#include <filesystem>
+#include <functional>
 #include <sstream>
 
 #ifdef _WIN32
@@ -28,48 +30,12 @@
 
 bool filefunc::fileExist(const std::string& name)
 {
-    if (name.empty())
-    {
-        return false;
-    }
-#ifdef _WIN32
-    WIN32_FILE_ATTRIBUTE_DATA attrs = { 0 };
-    auto exist = ::GetFileAttributesExA(name.c_str(), ::GetFileExInfoStandard, &attrs);
-    if (exist)
-    {
-        return !(attrs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-    }
-    return false;
-#else
-    if (access(name.c_str(), 0) == -1)
-    {
-        return false;
-    }
-    struct stat sb;
-    stat(name.c_str(), &sb);
-    return !(sb.st_mode & S_IFDIR);
-#endif
+    return std::filesystem::is_regular_file(name);
 }
 
 bool filefunc::pathExist(const std::string& name)
 {
-    if (name.empty())
-    {
-        return false;
-    }
-#ifdef _WIN32
-    WIN32_FILE_ATTRIBUTE_DATA attrs = { 0 };
-    ::GetFileAttributesExA(name.c_str(), ::GetFileExInfoStandard, &attrs);
-    return attrs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-#else
-    if (access(name.c_str(), 0) == -1)
-    {
-        return false;
-    }
-    struct stat sb;
-    stat(name.c_str(), &sb);
-    return sb.st_mode & S_IFDIR;
-#endif
+    return std::filesystem::is_directory(name);
 }
 
 std::vector<char> filefunc::readFile(const std::string& filename, int length)
@@ -157,6 +123,15 @@ bool filefunc::is_path_char(char c)
     return c == '\\' || c == '/';
 #else
     return c == '/';
+#endif
+}
+
+char filefunc::get_path_char()
+{
+#ifdef _WIN32
+    return '\\';
+#else
+    return '/';
 #endif
 }
 
@@ -255,117 +230,51 @@ size_t filefunc::getLastEftPathCharPos(const std::string& filename, int utf8)
     return pos;
 }
 
-std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/)
+std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/, int full_name /*= 0*/)
 {
-    if (recursive == 0)
+    if (!std::filesystem::is_directory(pathname)) { return {}; }
+    std::vector<std::string> ret;
+    std::filesystem::directory_entry path(pathname);
+    std::filesystem::directory_iterator it(path);
+    int sub_begin = 0;
+    if (full_name == 0)
     {
-#ifdef _WIN32
-        WIN32_FIND_DATAA find_data;
-        //LARGE_INTEGER filesize;
-        std::string dir;
-        HANDLE h_find = INVALID_HANDLE_VALUE;
-        DWORD error = 0;
-        std::vector<std::string> files;
-
-        dir = pathname + "\\*";
-        h_find = FindFirstFileA(dir.c_str(), &find_data);
-
-        if (h_find == INVALID_HANDLE_VALUE)
+        sub_begin = path.path().string().size();
+        if (sub_begin > 0 && !is_path_char(path.path().string().back()))
         {
-            //fprintf(stderr, "Get files error in %s\n", pathname.c_str());
-            return files;
+            sub_begin++;
         }
-        do
-        {
-            std::string filename = find_data.cFileName;    //(const char*)
-            if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !pathExist(pathname + "/" + filename))))
-            {
-                files.push_back(filename);
-            }
-        } while (FindNextFileA(h_find, &find_data) != 0);
-
-        error = GetLastError();
-        if (error != ERROR_NO_MORE_FILES)
-        {
-            //fprintf(stderr, "Find first file error\n");
-            return files;
-        }
-        FindClose(h_find);
-#else
-        DIR* dir;
-        struct dirent* ptr;
-        dir = opendir(pathname.c_str());
-        std::vector<std::string> files;
-        if (dir == nullptr)
-        {
-            fprintf(stderr, "Get files error in %s\n", pathname.c_str());
-            return files;
-        }
-        while ((ptr = readdir(dir)) != nullptr)
-        {
-            std::string filename = std::string(ptr->d_name);
-            if (filename != "." && filename != ".." && (include_path != 0 || (include_path == 0 && !pathExist(pathname + "/" + filename))))
-            {
-                files.push_back(filename);
-            }
-        }
-        closedir(dir);
-        //std::sort(ret.begin(), ret.end());
-#endif
-        return files;
     }
-    else
+    std::function<void(std::filesystem::path)> getFiles = [&](std::filesystem::path path)
     {
-        std::vector<std::string> files, paths;
-        paths = getFilesInPath(pathname, 0, 1);
-        while (!paths.empty())
+        for (auto const& dir_entry : std::filesystem::directory_iterator{ path })
         {
-            auto p = paths.back();
-            paths.pop_back();
-            if (pathExist(pathname + "/" + p))
+            if (std::filesystem::is_directory(dir_entry.path()))
             {
-                auto new_paths = getFilesInPath(pathname + "/" + p, 0, 1);
-                for (auto& np : new_paths)
+                if (recursive == 1)
                 {
-                    paths.push_back(p + "/" + np);
+                    getFiles(dir_entry.path());
                 }
-                if (include_path)
+                if (include_path == 1)
                 {
-                    files.push_back(p);
+                    ret.push_back(dir_entry.path().string().substr(sub_begin));
                 }
             }
             else
             {
-                files.push_back(p);
+                ret.push_back(dir_entry.path().string().substr(sub_begin));
             }
         }
-        std::reverse(files.begin(), files.end());
-        return files;
-    }
+    };
+    getFiles(path);
+    return ret;
 }
 
-std::string filefunc::getFileTime(std::string filename)
+std::string filefunc::getFileTime(const std::string& filename)
 {
-#if defined(__clang__) && defined(_WIN32)
-    struct __stat64 s;
-    int sss = __stat64(filename.c_str(), &s);
-#else
-    struct stat s;
-    int sss = stat(filename.c_str(), &s);
-#endif
-    struct tm* filedate = NULL;
-    time_t tm_t = 0;
-    uint32_t dos_date;
-    if (sss == 0)
-    {
-        tm_t = s.st_mtime;
-        filedate = localtime(&tm_t);
-        char buf[128] = { 0 };
-        strftime(buf, 64, "%Y-%m-%d  %H:%M:%S", filedate);
-        //fprintf(stdout, "%s: %s\n", filename.c_str(), buf);
-        return buf;
-    }
-    return "";
+    auto t = std::filesystem::last_write_time(filename);
+    auto t1 = std::chrono::clock_cast<std::chrono::system_clock>(t);
+    return std::format("{:%F %a %H:%M:%S}", std::chrono::current_zone()->to_local(t1));
 }
 
 void filefunc::changePath(const std::string& path)
@@ -402,35 +311,23 @@ void filefunc::removeFile(const std::string& filename)
 
 std::string filefunc::getFileExt(const std::string& filename)
 {
-    auto pos_p = getLastPathCharPos(filename);
-    auto pos_d = filename.find_last_of('.');
-    if (pos_d != std::string::npos && (pos_p < pos_d || pos_p == std::string::npos))
-    {
-        return filename.substr(pos_d + 1);
-    }
-    return "";
+    return std::filesystem::path(filename).extension().string();
 }
 
 //find the last point as default, and find the first when mode is 1
-std::string filefunc::getFileMainname(const std::string& filename)
+std::string filefunc::getFileMainName(const std::string& filename)
 {
-    auto pos_p = getLastPathCharPos(filename);
-    auto pos_d = filename.find_last_of('.');
-    if (pos_d != std::string::npos && (pos_p < pos_d || pos_p == std::string::npos))
-    {
-        return filename.substr(0, pos_d);
-    }
-    return filename;
+    return std::filesystem::path(filename).parent_path().string() + get_path_char() + std::filesystem::path(filename).stem().string();
 }
 
 std::string filefunc::getFilenameWithoutPath(const std::string& filename)
 {
-    auto pos_p = getLastPathCharPos(filename);
-    if (pos_p != std::string::npos)
-    {
-        return filename.substr(pos_p + 1);
-    }
-    return filename;
+    return std::filesystem::path(filename).filename().string();
+}
+
+std::string filefunc::getFileMainNameWithoutPath(const std::string& filename)
+{
+    return std::filesystem::path(filename).stem().string();
 }
 
 std::string filefunc::changeFileExt(const std::string& filename, const std::string& ext)
@@ -440,17 +337,19 @@ std::string filefunc::changeFileExt(const std::string& filename, const std::stri
     {
         e = "." + e;
     }
-    return getFileMainname(filename) + e;
+    return getFileMainName(filename) + e;
 }
 
 std::string filefunc::getParentPath(const std::string& filename, int utf8)
 {
-    auto pos_p = getLastEftPathCharPos(filename, utf8);
-    if (pos_p != std::string::npos)
+    if (filename.size() > 0 && is_path_char(filename.back()))
     {
-        return filename.substr(0, pos_p);
+        return std::filesystem::path(filename).parent_path().parent_path().string();
     }
-    return "";
+    else
+    {
+        return std::filesystem::path(filename).parent_path().string();
+    }
 }
 
 std::string filefunc::getFilePath(const std::string& filename, int utf8)

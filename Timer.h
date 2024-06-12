@@ -17,18 +17,20 @@ public:
     Timer() { start(); }
 
     // Returns current time as a string
-    static std::string getNowAsString(const std::string format = "%F %a %T")
+    static std::string getNowAsString(const std::string& format = "%F %a %H:%M:%S")
     {
-        auto t = std::chrono::system_clock::now();
-        auto time = std::chrono::system_clock::to_time_t(t);
-        return timeToString(time, format);
-    }
-
-    static std::string timeToString(time_t t, const std::string format = "%F %a %T")
-    {
+#ifdef __cpp_lib_format
+        auto t = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
+        auto t1 = std::chrono::current_zone()->to_local(t);
+        auto fmt = "{:" + format + "}";
+        return std::vformat(fmt, std::make_format_args(t1));
+#else
+        auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        auto tm = *localtime(&t);
         char buffer[80];
-        strftime(buffer, 80, format.c_str(), localtime(&t));
-        return buffer;
+        strftime(buffer, 80, format.c_str(), &tm);
+        return std::string(buffer);
+#endif
     }
 
     void start()

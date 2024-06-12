@@ -60,19 +60,21 @@ int writeVectorToFile(const std::vector<T>& v, const std::string& filename)
 //other file operations
 
 bool is_path_char(char c);
+char get_path_char();
 size_t getLastPathCharPos(const std::string& filename, int utf8 = 0);
 size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0);
 
-std::vector<std::string> getFilesInPath(const std::string& pathname, int recursive = 0, int include_path = 0);
-std::string getFileTime(std::string filename);
+std::vector<std::string> getFilesInPath(const std::string& pathname, int recursive = 0, int include_path = 0, int full_name = 0);
+std::string getFileTime(const std::string& filename);
 void changePath(const std::string& path);
 void makePath(const std::string& path);
 void removeFile(const std::string& filename);
 
 //functions about file name
 std::string getFileExt(const std::string& filename);
-std::string getFileMainname(const std::string& filename);
+std::string getFileMainName(const std::string& filename);
 std::string getFilenameWithoutPath(const std::string& filename);
+std::string getFileMainNameWithoutPath(const std::string& filename);
 std::string changeFileExt(const std::string& filename, const std::string& ext);
 std::string getParentPath(const std::string& filename, int utf8 = 0);    //utf8 has no effect on non-win32
 std::string getFilePath(const std::string& filename, int utf8 = 0);
