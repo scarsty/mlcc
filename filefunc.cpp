@@ -273,7 +273,7 @@ std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, i
 std::string filefunc::getFileTime(const std::string& filename)
 {
     auto t = std::filesystem::last_write_time(filename);
-    auto t1 = std::chrono::clock_cast<std::chrono::system_clock>(t);
+    auto t1 = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::clock_cast<std::chrono::system_clock>(t));
     return std::format("{:%F %a %H:%M:%S}", std::chrono::current_zone()->to_local(t1));
 }
 
