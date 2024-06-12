@@ -3,6 +3,10 @@
 #include <chrono>
 #include <string>
 
+#ifdef _WIN32
+#define localtime _localtime64
+#endif
+
 class Timer
 {
 private:
