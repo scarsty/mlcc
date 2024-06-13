@@ -9,10 +9,7 @@
 #ifdef _WIN32
 #include <Windows.h>
 #include <direct.h>
-#include <io.h>
 #include <strsafe.h>
-#define localtime _localtime64
-#define stat _stat64
 #else
 #include "dirent.h"
 #ifndef __APPLE__
