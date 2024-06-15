@@ -27,12 +27,12 @@
 
 bool filefunc::fileExist(const std::string& name)
 {
-    return std::filesystem::is_regular_file(name);
+    return std::filesystem::is_regular_file(name.c_str());
 }
 
 bool filefunc::pathExist(const std::string& name)
 {
-    return std::filesystem::is_directory(name);
+    return std::filesystem::is_directory(name.c_str());
 }
 
 std::vector<char> filefunc::readFile(const std::string& filename, int length)
@@ -308,7 +308,12 @@ void filefunc::removeFile(const std::string& filename)
 
 std::string filefunc::getFileExt(const std::string& filename)
 {
-    return std::filesystem::path(filename).extension().string();
+    auto ext = std::filesystem::path(filename).extension().string();
+    if (!ext.empty() && ext[0] == '.')
+    {
+        ext = ext.substr(1);
+    }
+    return ext;
 }
 
 //find the last point as default, and find the first when mode is 1

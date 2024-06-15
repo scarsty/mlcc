@@ -11,39 +11,39 @@ namespace cifa
 Cifa::Cifa()
 {
     register_function("print", [](ObjectVector& d)
-    {
-        for (auto& d1 : d)
         {
-            if (d1.isType<std::string>())
+            for (auto& d1 : d)
             {
-                std::cout << d1.toString();
+                if (d1.isType<std::string>())
+                {
+                    std::cout << d1.toString();
+                }
+                else
+                {
+                    std::cout << d1.toDouble();
+                }
             }
-            else
-            {
-                std::cout << d1.toDouble();
-            }
-        }
-        std::cout << "\n";
-        return Object(double(d.size()));
-    });
+            std::cout << "\n";
+            return Object(double(d.size()));
+        });
     register_function("to_string", [](ObjectVector& d)
-    {
-        if (d.empty())
         {
-            return Object("");
-        }
-        std::ostringstream stream;
-        stream << d[0].toDouble();
-        return Object(stream.str());
-    });
+            if (d.empty())
+            {
+                return Object("");
+            }
+            std::ostringstream stream;
+            stream << d[0].toDouble();
+            return Object(stream.str());
+        });
     register_function("to_number", [](ObjectVector& d)
-    {
-        if (d.empty())
         {
-            return Object();
-        }
-        return Object(atof(d[0].toString().c_str()));
-    });
+            if (d.empty())
+            {
+                return Object();
+            }
+            return Object(atof(d[0].toString().c_str()));
+        });
     //parameters["true"] = Object(1, "__");
     //parameters["false"] = Object(0, "__");
     //parameters["break"] = Object("break", "__");
@@ -60,57 +60,57 @@ Cifa::Cifa()
     register_function("ifvalue", ifv);
 
     register_function("pow", [](ObjectVector& x) -> Object
-    {
-        if (x.size() <= 1) { return cifa::Object(); }
-        double x0 = x[0];
-        double x1 = x[1];
-        return pow(x0, x1);
-    });
+        {
+            if (x.size() <= 1) { return cifa::Object(); }
+            double x0 = x[0];
+            double x1 = x[1];
+            return pow(x0, x1);
+        });
 
     register_function("max", [](ObjectVector& x) -> Object
-    {
-        if (x.size() == 0) { return cifa::Object(); }
-        if (x.size() == 1)
         {
-            return x[0];
-        }
-        double max_val = x[0];
-        for (int i = 1; i < x.size(); i++)
-        {
-            double v = x[i];
-            if (max_val < v)
+            if (x.size() == 0) { return cifa::Object(); }
+            if (x.size() == 1)
             {
-                max_val = v;
+                return x[0];
             }
-        }
-        return max_val;
-    });
+            double max_val = x[0];
+            for (int i = 1; i < x.size(); i++)
+            {
+                double v = x[i];
+                if (max_val < v)
+                {
+                    max_val = v;
+                }
+            }
+            return max_val;
+        });
 
     register_function("min", [](ObjectVector& x) -> Object
-    {
-        if (x.size() == 0) { return cifa::Object(); }
-        if (x.size() == 1)
         {
-            return x[0];
-        }
-        double min_val = x[0];
-        for (int i = 1; i < x.size(); i++)
-        {
-            double v = x[i];
-            if (min_val > v)
+            if (x.size() == 0) { return cifa::Object(); }
+            if (x.size() == 1)
             {
-                min_val = v;
+                return x[0];
             }
-        }
-        return min_val;
-    });
+            double min_val = x[0];
+            for (int i = 1; i < x.size(); i++)
+            {
+                double v = x[i];
+                if (min_val > v)
+                {
+                    min_val = v;
+                }
+            }
+            return min_val;
+        });
 #define REGISTER_FUNCTION(func) \
     register_function(#func, [](ObjectVector& x) -> Object \
-    { \
-        if (x.size() == 0) { return cifa::Object(); } \
-        double x0 = x[0]; \
-        return func(x0); \
-    });
+        { \
+            if (x.size() == 0) { return cifa::Object(); } \
+            double x0 = x[0]; \
+            return func(x0); \
+        });
     REGISTER_FUNCTION(abs);
     REGISTER_FUNCTION(sqrt);
     REGISTER_FUNCTION(round);
