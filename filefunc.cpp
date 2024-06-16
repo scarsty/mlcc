@@ -229,7 +229,7 @@ size_t filefunc::getLastEftPathCharPos(const std::string& filename, int utf8)
 
 std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/, int full_name /*= 0*/)
 {
-    if (!std::filesystem::is_directory(pathname)) { return {}; }
+    if (!std::filesystem::is_directory(pathname.c_str())) { return {}; }
     std::vector<std::string> ret;
     std::filesystem::directory_entry path(pathname);
     std::filesystem::directory_iterator it(path);
