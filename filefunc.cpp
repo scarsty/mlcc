@@ -1,15 +1,11 @@
 ﻿#include "filefunc.h"
 #include <cctype>
-#include <cstdio>
-#include <ctime>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <sstream>
 
 #ifdef _WIN32
-#include <Windows.h>
-#include <direct.h>
-#include <strsafe.h>
 #else
 #include "dirent.h"
 #ifndef __APPLE__
@@ -37,40 +33,24 @@ bool filefunc::pathExist(const std::string& name)
 
 std::vector<char> filefunc::readFile(const std::string& filename, int length)
 {
-    std::vector<char> s;
-    FILE* fp = fopen(filename.c_str(), "rb");
-    if (!fp)
-    {
-        //fprintf(stderr, "Cannot open file %s\n", filename.c_str());
-        return s;
-    }
+    std::ifstream ifs(filename, std::fstream::binary);
+    if (!ifs) { return {}; }
     if (length <= 0)
     {
-        fseek(fp, 0, SEEK_END);
-        length = ftell(fp);
-        fseek(fp, 0, 0);
+        ifs.seekg(0, std::ios::end);
+        length = ifs.tellg();
+        ifs.seekg(0, std::ios::beg);
     }
-    s.resize(length);
-    if (fread(s.data(), 1, length, fp) < length)
-    {
-        //fprintf(stderr, "Read file %s unfinished!\n", filename.c_str());
-    }
-    fclose(fp);
-    return s;
+    std::vector<char> buffer(length);
+    buffer.assign((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+    return buffer;
 }
 
 int filefunc::writeFile(const char* data, int length, const std::string& filename)
 {
-    FILE* fp = fopen(filename.c_str(), "wb");
-    if (fp)
-    {
-        fwrite(data, 1, length, fp);
-        fflush(fp);
-        fclose(fp);
-        return length;
-    }
-    //fprintf(stderr, "Cannot write file %s!\n", filename.c_str());
-    return -1;
+    std::ofstream ofs(filename, std::fstream::binary);
+    ofs.write(data, length);
+    return length;
 }
 
 int filefunc::writeFile(const std::vector<char>& data, const std::string& filename)
@@ -80,38 +60,18 @@ int filefunc::writeFile(const std::vector<char>& data, const std::string& filena
 
 std::string filefunc::readFileToString(const std::string& filename)
 {
-    FILE* fp = fopen(filename.c_str(), "rb");
-    if (fp)
-    {
-        fseek(fp, 0, SEEK_END);
-        int length = ftell(fp);
-        fseek(fp, 0, 0);
-        std::string str;
-        str.resize(length, '\0');
-        if (fread((void*)str.c_str(), 1, length, fp) < length)
-        {
-            //fprintf(stderr, "Read file %s unfinished!\n", filename.c_str());
-        }
-        fclose(fp);
-        return str;
-    }
-    //fprintf(stderr, "Cannot open file %s!\n", filename.c_str());
-    return "";
+    std::ifstream ifs(filename, std::fstream::binary);
+    if (!ifs) { return {}; }
+    std::string str;
+    str.assign((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+    return str;
 }
 
 int filefunc::writeStringToFile(const std::string& str, const std::string& filename)
 {
-    FILE* fp = fopen(filename.c_str(), "wb");
-    if (fp)
-    {
-        int length = str.length();
-        fwrite(str.c_str(), 1, length, fp);
-        fflush(fp);
-        fclose(fp);
-        return length;
-    }
-    //fprintf(stderr, "Cannot write file %s!\n", filename.c_str());
-    return -1;
+    std::ofstream ofs(filename, std::fstream::binary);
+    ofs << str;
+    return str.size();
 }
 
 bool filefunc::is_path_char(char c)
@@ -227,21 +187,11 @@ size_t filefunc::getLastEftPathCharPos(const std::string& filename, int utf8)
     return pos;
 }
 
-std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/, int full_name /*= 0*/)
+std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/)
 {
     if (!std::filesystem::is_directory(pathname.c_str())) { return {}; }
     std::vector<std::string> ret;
-    std::filesystem::directory_entry path(pathname);
-    std::filesystem::directory_iterator it(path);
-    int sub_begin = 0;
-    if (full_name == 0)
-    {
-        sub_begin = path.path().string().size();
-        if (sub_begin > 0 && !is_path_char(path.path().string().back()))
-        {
-            sub_begin++;
-        }
-    }
+    std::filesystem::directory_entry path0(pathname);
     std::function<void(std::filesystem::path)> getFiles = [&](std::filesystem::path path)
     {
         for (auto const& dir_entry : std::filesystem::directory_iterator{ path })
@@ -254,16 +204,18 @@ std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, i
                 }
                 if (include_path == 1)
                 {
-                    ret.push_back(dir_entry.path().string().substr(sub_begin));
+                    auto r_path = std::filesystem::relative(dir_entry.path(), path0);
+                    ret.push_back(r_path.string());
                 }
             }
             else
             {
-                ret.push_back(dir_entry.path().string().substr(sub_begin));
+                auto r_path = std::filesystem::relative(dir_entry.path(), path0);
+                ret.push_back(r_path.string());
             }
         }
     };
-    getFiles(path);
+    getFiles(path0);
     return ret;
 }
 
@@ -276,34 +228,27 @@ std::string filefunc::getFileTime(const std::string& filename)
 
 void filefunc::changePath(const std::string& path)
 {
-    if (chdir(path.c_str()) != 0)
-    {
-        fprintf(stderr, "Failed to change work path %s\n", path.c_str());
-    }
+    std::filesystem::current_path(path);
+}
+
+std::string filefunc::getCurrentPath()
+{
+    return std::filesystem::current_path().string();
 }
 
 void filefunc::makePath(const std::string& path)
 {
-    std::vector<std::string> paths;
-    auto p = path + "/";
-    while (true)
-    {
-        if (pathExist(p) || p == "")
-        {
-            break;
-        }
-        paths.push_back(p);
-        p = getParentPath(p);
-    }
-    for (auto it = paths.rbegin(); it != paths.rend(); it++)
-    {
-        _mkdir(it->c_str());
-    }
+    std::filesystem::create_directories(path);
+}
+
+void filefunc::copyFile(const std::string& src, const std::string& dst)
+{
+    std::filesystem::copy_file(src, dst, std::filesystem::copy_options::overwrite_existing);
 }
 
 void filefunc::removeFile(const std::string& filename)
 {
-    remove(filename.c_str());
+    std::filesystem::remove_all(filename);
 }
 
 std::string filefunc::getFileExt(const std::string& filename)
