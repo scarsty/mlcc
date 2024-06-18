@@ -15,6 +15,7 @@
 #include <vector>
 
 #pragma comment(lib, "cfgmgr32.lib")
+#pragma comment(lib, "Gdi32.lib")
 
 inline LUID get_luid_from_pcibus(int pcibus)
 {

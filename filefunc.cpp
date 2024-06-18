@@ -1,6 +1,8 @@
 ﻿#include "filefunc.h"
 #include <cctype>
+#include <chrono>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <functional>
 #include <sstream>
@@ -48,6 +50,7 @@ std::vector<char> filefunc::readFile(const std::string& filename, int length)
 
 int filefunc::writeFile(const char* data, int length, const std::string& filename)
 {
+    if (filename.empty()) { return 0; }
     std::ofstream ofs(filename, std::fstream::binary);
     ofs.write(data, length);
     return length;
@@ -69,6 +72,7 @@ std::string filefunc::readFileToString(const std::string& filename)
 
 int filefunc::writeStringToFile(const std::string& str, const std::string& filename)
 {
+    if (filename.empty()) { return 0; }
     std::ofstream ofs(filename, std::fstream::binary);
     ofs << str;
     return str.size();
@@ -189,9 +193,17 @@ size_t filefunc::getLastEftPathCharPos(const std::string& filename, int utf8)
 
 std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/)
 {
-    if (!std::filesystem::is_directory(pathname.c_str())) { return {}; }
+    if (!pathname.empty() && !std::filesystem::is_directory(pathname.c_str())) { return {}; }
     std::vector<std::string> ret;
-    std::filesystem::directory_entry path0(pathname);
+    std::filesystem::directory_entry path0;
+    if (pathname.empty())
+    {
+        path0.assign(".");
+    }
+    else
+    {
+        path0.assign(pathname);
+    }
     std::function<void(std::filesystem::path)> getFiles = [&](std::filesystem::path path)
     {
         for (auto const& dir_entry : std::filesystem::directory_iterator{ path })
@@ -221,6 +233,7 @@ std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, i
 
 std::string filefunc::getFileTime(const std::string& filename)
 {
+    if (!fileExist(filename)) { return ""; }
     auto t = std::filesystem::last_write_time(filename);
     auto t1 = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::clock_cast<std::chrono::system_clock>(t));
     return std::format("{:%F %a %H:%M:%S}", std::chrono::current_zone()->to_local(t1));
@@ -238,7 +251,10 @@ std::string filefunc::getCurrentPath()
 
 void filefunc::makePath(const std::string& path)
 {
-    std::filesystem::create_directories(path);
+    if (!path.empty())
+    {
+        std::filesystem::create_directories(path);
+    }
 }
 
 void filefunc::copyFile(const std::string& src, const std::string& dst)
@@ -264,7 +280,12 @@ std::string filefunc::getFileExt(const std::string& filename)
 //find the last point as default, and find the first when mode is 1
 std::string filefunc::getFileMainName(const std::string& filename)
 {
-    return std::filesystem::path(filename).parent_path().string() + get_path_char() + std::filesystem::path(filename).stem().string();
+    auto name = std::filesystem::path(filename).parent_path().string();
+    if (!name.empty() && !is_path_char(name.back()))
+    {
+        name += get_path_char();
+    }
+    return name + std::filesystem::path(filename).stem().string();
 }
 
 std::string filefunc::getFilenameWithoutPath(const std::string& filename)
