@@ -1,7 +1,6 @@
 #pragma once
-#include <string>
 #include <Windows.h>
-#include "fmt1.h"
+#include <string>
 
 #pragma comment(lib, "version.lib")
 
@@ -34,11 +33,11 @@ inline std::string get_version(const std::string& filename, InfoType it)
                         // Doesn't matter if you are on 32 bit or 64 bit,
                         // DWORD is always 32 bits, so first two revision numbers
                         // come from dwFileVersionMS, last two come from dwFileVersionLS
-                        return fmt1::format("{}.{}.{}.{}",
-                            (verInfo->dwFileVersionMS >> 16) & 0xffff,
-                            (verInfo->dwFileVersionMS >> 0) & 0xffff,
-                            (verInfo->dwFileVersionLS >> 16) & 0xffff,
-                            (verInfo->dwFileVersionLS >> 0) & 0xffff);
+
+                        return std::to_string((verInfo->dwFileVersionMS >> 16) & 0xffff)
+                            + "." + std::to_string((verInfo->dwFileVersionMS >> 0) & 0xffff)
+                            + "." + std::to_string((verInfo->dwFileVersionLS >> 16) & 0xffff)
+                            + "." + std::to_string((verInfo->dwFileVersionLS >> 0) & 0xffff);
                     }
                 }
             }

@@ -10,7 +10,7 @@
 class Timer
 {
 private:
-    std::chrono::time_point<std::chrono::system_clock> t0_, t1_;
+    std::chrono::time_point<std::chrono::system_clock> t0_, t1_, t_last_;
     bool running_ = false;
 
 public:
@@ -19,21 +19,25 @@ public:
     // Returns current time as a string
     static std::string getNowAsString(const std::string& format = "%F %a %H:%M:%S")
     {
+#ifdef __cpp_lib_format
         auto t = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
         auto t1 = std::chrono::current_zone()->to_local(t);
         auto fmt = "{:" + format + "}";
         return std::vformat(fmt, std::make_format_args(t1));
-        //auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        //auto tm = *localtime(&t);
-        //char buffer[80];
-        //strftime(buffer, 80, format.c_str(), &tm);
-        //return std::string(buffer);
+#else
+        auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        auto tm = *localtime(&t);
+        char buffer[80];
+        strftime(buffer, 80, format.c_str(), &tm);
+        return std::string(buffer);
+#endif
     }
 
     void start()
     {
         running_ = true;
         t0_ = std::chrono::system_clock::now();
+        t_last_ = t0_;
     }
 
     void stop()
@@ -97,5 +101,17 @@ public:
     static int64_t getNanoTime()
     {
         return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    }
+
+    // return the time within two callings of getLastPeriod2, no restart
+    double getLastPeriod2()
+    {
+        if (running_)
+        {
+            t1_ = std::chrono::system_clock::now();
+        }
+        auto s = std::chrono::duration_cast<std::chrono::duration<double>>(t1_ - t_last_);
+        t_last_ = t1_;
+        return s.count();
     }
 };

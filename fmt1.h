@@ -57,7 +57,6 @@ std::string sprintf2(const std::string& fmt, const std::string& fmt_s, const T& 
 //}
 
 template <typename T>
-    requires std::is_pointer_v<T>
 std::string to_string(const std::string& fmt, const T t)
 {
     return sprintf2(fmt, "%p", t);
@@ -179,7 +178,6 @@ std::string to_string(const std::string& fmt, const std::map<T1, T2>& t)
 
 // array is conflict with pointer
 template <typename T, size_t N>
-    requires std::is_array_v<T[N]>
 std::string to_string(const std::string& fmt, const T (&t)[N])
 {
     if (N == 0)
@@ -199,8 +197,8 @@ inline void format2(size_t pos0, std::string& fmt)
 {
 }
 
-template <typename T>
-concept is_printable = requires(T t) { to_string("", t); };
+//template <typename T>
+//concept is_printable = requires(T t) { to_string("", t); };
 
 template <typename T, typename... Args>
 void format2(size_t pos0, std::string& fmt, const T& t, Args&&... args)
@@ -219,7 +217,7 @@ void format2(size_t pos0, std::string& fmt, const T& t, Args&&... args)
     }
 }
 
-template <is_printable... Args>
+template <typename... Args>
 std::string format(const std::string& fmt, Args&&... args)
 {
     auto res = fmt;
@@ -227,14 +225,14 @@ std::string format(const std::string& fmt, Args&&... args)
     return res;
 }
 
-template <is_printable... Args>
+template <typename... Args>
 void print(FILE* fout, const std::string& fmt, Args&&... args)
 {
     auto res = format(fmt, args...);
     fprintf(fout, "%s", res.c_str());
 }
 
-template <is_printable... Args>
+template <typename... Args>
 void print(const std::string& fmt, Args&&... args)
 {
     print(stdout, fmt, args...);
