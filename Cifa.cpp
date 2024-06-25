@@ -320,7 +320,7 @@ void Cifa::expand_comma(CalUnit& c1, std::vector<CalUnit>& v)
             v.push_back(c1);
         }
     }
-};
+}
 
 CalUnit& Cifa::find_right_side(CalUnit& c1)
 {
@@ -789,7 +789,6 @@ void Cifa::combine_ops(std::list<CalUnit>& ppp)
                     --it;
                     if (it->type == CalUnitType::Operator && it->str == op && it->v.size() == 0)
                     {
-                        BREAK_POINT(it->str == "++" || it->str == "--");
                         if (it == ppp.begin() || vector_have(ops_single, it->str)
                             || !std::prev(it)->can_cal() && (op == "+" || op == "-"))    //+-退化为单目运算的情况
                         {
@@ -1209,7 +1208,8 @@ Object Cifa::run_script(std::string str)
     str += ";";    //方便处理仅有一行的情况
     auto rv = split(str);
     auto c = combine_all_cal(rv);    //结果必定是一个Union
-    if (errors.empty())
+    //此处设定为在语法树检查不正确时，仍然尝试运行并检查执行时的错误
+    //if (errors.empty())
     {
         auto p = parameters;
         check_cal_unit(c, nullptr, p);
