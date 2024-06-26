@@ -235,8 +235,11 @@ std::string filefunc::getFileTime(const std::string& filename)
 {
     if (!fileExist(filename)) { return ""; }
     auto t = std::filesystem::last_write_time(filename);
-    auto t1 = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::clock_cast<std::chrono::system_clock>(t));
-    return std::format("{:%F %a %H:%M:%S}", std::chrono::current_zone()->to_local(t1));
+    auto t1 = std::chrono::time_point_cast<std::chrono::system_clock::duration>(t - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
+    auto t2 = std::chrono::system_clock::to_time_t(t1);
+    char buf[64] = {};
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", localtime(&t2));
+    return buf;
 }
 
 void filefunc::changePath(const std::string& path)
