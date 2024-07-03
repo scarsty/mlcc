@@ -76,6 +76,7 @@ struct Object
     bool hasValue() const { return value.has_value(); }
     const std::vector<Object>& subV() const { return v; }
     const std::string& getSpecialType() const { return type1; }
+    std::type_info const& getType() const { return value.type(); }
 
 private:
     std::any value;
