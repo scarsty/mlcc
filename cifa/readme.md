@@ -207,6 +207,7 @@ print(sin(degree*pi/180));
     if (cifa.has_error())    //检查语法错误
     {
         //可以选择输出语法错误
+        //一般错误也会在stderr输出
         auto errors = cifa.get_errors();
         for (auto e : errors)
         {
