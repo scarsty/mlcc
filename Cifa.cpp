@@ -1,4 +1,5 @@
 ﻿#include "Cifa.h"
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 
@@ -1233,16 +1234,24 @@ Object Cifa::run_script(std::string str)
     {
         result = std::string("");
         result.type1 = "Error";
-        for (auto& e : errors)
-        {
-            result.toString() += "Error (" + std::to_string(e.line) + ", " + std::to_string(e.col) + "): " + e.message + "\n";
-        }
         if (output_error)
         {
-            std::cerr << result.toString();
+            for (auto& e : errors)
+            {
+                fprintf(stderr, "Error (%zu, %zu): %s\n", e.line, e.col, e.message.c_str());
+            }
         }
     }
     return result;
 }
 
+std::vector<Cifa::ErrorMessage> Cifa::get_errors() const
+{
+    std::vector<Cifa::ErrorMessage> es;
+    for (auto& e : errors)
+    {
+        es.push_back(e);
+    }
+    return es;
+}
 }    // namespace cifa

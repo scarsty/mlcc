@@ -17,65 +17,127 @@ struct Object
 {
     friend CalUnit;
     friend Cifa;
+
     Object() {}
+
     Object(double v)
     {
         value = v;
     }
+
     Object(double v, const std::string& t)
     {
         value = v;
         type1 = t;
     }
+
     Object(const std::string& str)
     {
         value = str;
     }
+
     Object(const std::string& str, const std::string& t)
     {
         value = str;
         type1 = t;
     }
+
     template <typename T>
+        requires !std::is_same_v<T, Object>
     Object(const T& v)
     {
         value = v;
     }
+
     Object(int v)
     {
         value = double(v);
     }
+
     Object(bool v)
     {
         value = double(v);
     }
+
     operator bool() const { return toDouble() != 0; }
+
     operator int() const { return int(toDouble()); }
+
     operator double() const { return toDouble(); }
+
     operator std::string() const { return toString(); }
+
     bool toBool() const { return toDouble() != 0; }
+
     int toInt() const { return int(toDouble()); }
+
     double toDouble() const
     {
         if (value.type() == typeid(double))
         {
             return std::any_cast<double>(value);
         }
+        fprintf(stderr, "Error: Object %s to double failed.\n", value.type().name());
         return NAN;
     }
-    const std::string& toString() const { return std::any_cast<const std::string&>(value); }
-    std::string& toString() { return std::any_cast<std::string&>(value); }
+
+    std::string toString() const
+    {
+        if (value.type() == typeid(std::string))
+        {
+            return std::any_cast<std::string>(value);
+        }
+        fprintf(stderr, "Error: Object %s to string failed.\n", value.type().name());
+        return "";
+    }
+
+    //复制，不会改变原来的值
+    template <typename T>
+    T to() const
+    {
+        if (value.type() == typeid(T))
+        {
+            return std::any_cast<T>(value);
+        }
+        fprintf(stderr, "Error: Object %s to %s failed.\n", value.type().name(), typeid(T).name());
+        return T();
+    }
+
     //const与非const版本，按需使用
+    //如果转换失败，后续使用时也不会正常，因此应谨慎使用，或者在isType()判断后使用
     template <typename T>
-    const T& to() const { return std::any_cast<const T&>(value); }
+    const T& ref() const
+    {
+        if (value.type() == typeid(T))
+        {
+            return std::any_cast<const T&>(value);
+        }
+        fprintf(stderr, "Error: Object %s to %s failed.\n", value.type().name(), typeid(T).name());
+    }
+
     template <typename T>
-    T& to() { return std::any_cast<T&>(value); }
+    T& ref()
+    {
+        if (value.type() == typeid(T))
+        {
+            return std::any_cast<T&>(value);
+        }
+        fprintf(stderr, "Error: Object %s to %s failed.\n", value.type().name(), typeid(T).name());
+    }
+
     template <typename T>
     bool isType() const { return value.type() == typeid(T); }
+
     bool isNumber() const { return value.type() == typeid(double); }
+
+    bool isEffectNumber() const { return isNumber() && !std::isnan(toDouble()) && !std::isinf(toDouble()); }
+
     bool hasValue() const { return value.has_value(); }
+
     const std::vector<Object>& subV() const { return v; }
+
     const std::string& getSpecialType() const { return type1; }
+
     std::type_info const& getType() const { return value.type(); }
 
 private:
@@ -109,16 +171,20 @@ struct CalUnit
     size_t line = 0, col = 0;
     bool suffix = false;       //有后缀，可视为一个语句
     bool with_type = false;    //有前置的类型
+
     CalUnit(CalUnitType s, std::string s1)
     {
         type = s;
         str = s1;
     }
+
     CalUnit() {}
+
     bool can_cal()
     {
         return type == CalUnitType::Constant || type == CalUnitType::String || type == CalUnitType::Parameter || type == CalUnitType::Function || type == CalUnitType::Operator && v.size() > 0;
     }
+
     bool is_statement()
     {
         return suffix || !can_cal();
@@ -143,6 +209,7 @@ bool vector_have(const std::vector<T>& ops, const T& op)
     }
     return false;
 }
+
 template <typename T>
 bool vector_have(const std::vector<std::vector<T>>& ops, const T& op)
 {
@@ -224,6 +291,7 @@ public:
     void register_function(const std::string& name, func_type func);
     void register_user_data(const std::string& name, void* p);
     void register_parameter(const std::string& name, Object o);
+
     template <typename T>
     void register_vector(const std::string& name, const std::vector<T>& v)
     {
@@ -243,6 +311,10 @@ public:
     void check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::string, Object>& p);
 
     Object run_script(std::string str);    //运行脚本，注意实际上使用独立的变量表
+
+    bool has_error() const { return !errors.empty(); }
+
+    std::vector<ErrorMessage> get_errors() const;
 
     template <typename... Args>
     void add_error(CalUnit& c, Args... args)

@@ -121,7 +121,7 @@ myfun(i)
     return i*i*i+i*i+i+1;
 }
 
-print(myfun(i));
+print(myfun(3));
 ```
 可以得到输出为40。
 
@@ -198,6 +198,34 @@ print(sin(degree*pi/180));
 - 自加算符不支持++++或----这种写法，请不要瞎折腾。
 - 没有switch，do...while，goto，?:。
 
+### 一个完整的用例
+
+```c++
+    cifa::Cifa cifa;
+    std::string str1 = "a1 = 2;\na3=a1;\nreturn 5+4*9*(a1+3)/23;";
+    auto c = cifa.run_script(str1);
+    if (cifa.has_error())    //检查语法错误
+    {
+        //可以选择输出语法错误
+        auto errors = cifa.get_errors();
+        for (auto e : errors)
+        {
+            std::print("error({}, {}): {}\n", e.line, e.col, e.message);
+        }
+    }
+    //无语法错误，判断结果是否是一个数值
+    if (c.isNumber())
+    {
+        std::print("{}\n", c.toDouble());
+    }
+    //若需正常继续计算，需要排除nan和inf
+    if (c.isEffectNumber())
+    {
+        //do something
+    }
+```
+
+
 ## 其他
 
 ### 已知问题
@@ -208,5 +236,4 @@ print(sin(degree*pi/180));
 ### 有可能会加的
 
 - 变量的括号初始化。
-- 若支持自定义函数，则需为每个函数都构造语法树，且必须类似C语言在使用之前声明或定义，暂时搁置。
 - 遍历最终语法树可以生成执行码，不再处理。
