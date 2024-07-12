@@ -2,7 +2,6 @@
 #include <cctype>
 #include <chrono>
 #include <filesystem>
-#include <format>
 #include <fstream>
 #include <functional>
 #include <sstream>
