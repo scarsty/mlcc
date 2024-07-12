@@ -42,8 +42,7 @@ struct Object
         type1 = t;
     }
 
-    template <typename T>
-        requires !std::is_same_v<T, Object>
+    template <typename T, typename std::enable_if<!std::is_same_v<std::decay_t<T>, Object>, int>::type = 0>
     Object(const T& v)
     {
         value = v;
