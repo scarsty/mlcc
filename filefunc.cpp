@@ -244,7 +244,10 @@ std::string filefunc::getFileTime(const std::string& filename)
 
 void filefunc::changePath(const std::string& path)
 {
-    std::filesystem::current_path(path);
+    if (!path.empty())
+    {
+        std::filesystem::current_path(path);
+    }
 }
 
 std::string filefunc::getCurrentPath()
