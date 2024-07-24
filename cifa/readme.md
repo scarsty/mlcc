@@ -35,7 +35,10 @@ int main()
     std::string str;
     getline(ifs, str, '\0');
     auto o = c1.run_script(str);
-    std::cout << "Cifa value is: " << o.value << "\n";
+    if(o.hasValue() && o.isNumber() && o.isType<double>())
+    {
+        std::cout << "Cifa value is: " << o.ref<double>() << "\n";
+    }
 }
 ```
 
