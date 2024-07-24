@@ -286,6 +286,26 @@ It also provide the formatter of vector and map to use is C++20.
 
 A C++ warp for iconv.
 
+# StrCvt
+
+Some practical functions involving string coding, wide characters, and multi-byte characters.
+Requires >= C++11 and < C++26.
+
+```c++
+std::string strfunc::CvtStringToUTF8(const std::string& localstr); //windows only
+std::string strfunc::CvtUTF8ToLocal(const std::string& utf8str); //windows only
+
+std::string strfunc::CvtStringToUTF8(const char16_t& src);
+std::string strfunc::CvtStringToUTF8(const std::u16string& src);
+std::string strfunc::CvtStringToUTF8(const wchar_t* start, std::uint64_t len);
+std::string strfunc::CvtStringToUTF8(const std::wstring& str);
+std::u16string strfunc::CvtStringToUTF16(const std::string& src);
+std::u16string strfunc::CvtStringToUTF16(const char* start, int len);
+std::wstring strfunc::CvtStringToWString(const std::string& src);
+std::wstring strfunc::CvtStringToWString(const char* start, uint64_t len);
+
+```
+
 # DrawStringFT
 
 A C++ warp for freetype and opencv Mat. It can write charactors (such as Chinese) on an image. 
