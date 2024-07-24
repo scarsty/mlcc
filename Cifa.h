@@ -334,7 +334,7 @@ public:
         errors.emplace(std::move(e));
     }
 
-    void setOutputError(bool oe) { output_error = oe; }
+    void set_output_error(bool oe) { output_error = oe; }
 
     //四则运算准许用户增加自定义功能
 

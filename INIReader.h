@@ -460,7 +460,7 @@ private:
         /* Return pointer to first non-whitespace char in given string */
         auto lskip = [](std::string& s) -> void
         {
-            auto pre = s.find_first_not_of(" ");
+            auto pre = s.find_first_not_of(" \t");
             if (pre != std::string::npos)
             {
                 s = s.substr(pre);
@@ -470,7 +470,7 @@ private:
         /* Strip whitespace chars off end of given string */
         auto rstrip = [](std::string& s, size_t& suf) -> void
         {
-            auto pos = s.find_last_not_of(" ");
+            auto pos = s.find_last_not_of(" \t");
             if (pos != std::string::npos)
             {
                 suf = s.size() - pos - 1;
