@@ -316,6 +316,35 @@ Only for Windows.
 
 To check the dependencies of a exe or dll file. 
 
+The CheckDependency is similar to the data viewed using the command `dumpbin /DEPENDENTS`.
+It can help you get the platform (x64 or x86) of each dll that this exe or dll depends on, as well as the functions exported by each dll, the functions of each dll used by this file, and each problem Dlls (missing functions).
+
+An example:
+
+```c++
+CheckDependency dep;
+auto problem_dlls = dep.Check("myself.dll");
+std::cout << "Problem Dlls : " << std::endl;
+for(auto& item : problem_dlls)
+{
+    std::cout << "(" << item.second.machine.c_str() << ")"
+    << item.first << ", lost functions: " << item.second.lost_functions.size()
+    << std::endl;
+}
+std::cout << "Import Table: " << std::endl;
+for(auto& item : dep.ImportTable())
+{
+    std::cout << "(" << item.second.machine.c_str() << ")"
+    << item.first << ", used functions: " << item.second.used_functions.size()
+    << std::endl;
+}
+std::cout << "Export Table: " << std::endl;
+for(auto& item : dep.ExportTable())
+{
+    std::cout << item.first << ", export functions: " << item.second.size() << std::endl;
+}
+```
+
 # vramusage
 
 Only for Windows.

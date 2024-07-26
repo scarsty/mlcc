@@ -173,6 +173,14 @@ public:
     {
         return dlls_not_good_;
     }
+    std::map<std::string, ImportInfo> ImportTable()
+    {
+        return import_table_;
+    }
+    std::map<std::string, std::map<std::string, int>> ExportTable()
+    {
+        return export_table_;
+    }
     std::map<std::string, NotGoodInfo> Check(const std::string& file)
     {
         std::map<std::string, int> check_map;
