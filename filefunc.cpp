@@ -356,6 +356,11 @@ std::string filefunc::toLegalFilename(const std::string& filename, int allow_pat
     return f;
 }
 
+std::string filefunc::getAbsolutePath(const std::string& filename)
+{
+    return std::filesystem::absolute(filename).string();
+}
+
 bool filefunc::compareNature(const std::string& a, const std::string& b)
 {
     if (a.empty() && b.empty()) { return false; }

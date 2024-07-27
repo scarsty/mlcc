@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include <map>
 #include <string>
 
@@ -26,6 +27,7 @@ private:
     DynamicLibrary()
     {
     }
+
     //free loaded dynamic libraries automatically when destruction
     ~DynamicLibrary()
     {
@@ -63,6 +65,10 @@ public:
         auto dl = getInstance();
         if (dl->dynamic_libraries_.count(library_name) == 0)
         {
+            if (library_name.find_first_of("/\\") != std::string::npos)
+            {
+                library_name = std::filesystem::absolute(library_name).string();
+            }
 #ifdef _WIN32
             auto hlib = LoadLibraryA(library_name.c_str());
 #else
@@ -80,6 +86,7 @@ public:
         }
         return dl->dynamic_libraries_[library_name];
     }
+
     static void* getFunction(const std::string& library_name, const std::string& function_name)
     {
         auto dl = getInstance()->loadDynamicLibrary(library_name);
@@ -99,6 +106,7 @@ public:
         }
         return func;
     }
+
     static void freeDynamicLibrary(const std::string& library_name)
     {
         auto dl = getInstance();
