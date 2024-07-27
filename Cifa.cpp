@@ -260,7 +260,7 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             Object o;
             while (eval(c.v[0], p))
             {
-                o.v.emplace_back(eval(c.v[1], p));
+                o = eval(c.v[1], p);
                 if (o.type1 == "__" && o.toString() == "break") { break; }
                 if (o.type1 == "__" && o.toString() == "continue") { continue; }
                 if (p.count("return")) { return p["return"]; }
