@@ -3,6 +3,7 @@
 #include <cmath>
 #include <functional>
 #include <list>
+#include <map>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -229,7 +230,7 @@ class Cifa
 {
 private:
     //运算符，此处的顺序即优先级，单目和右结合由下面的列表判断
-    std::vector<std::vector<std::string>> ops = { { ".", "++", "--" }, { "!" }, { "*", "/", "%" }, { "+", "-" }, { ">", "<", ">=", "<=" }, { "==", "!=" }, { "&" }, { "|" }, { "&&" }, { "||" }, { "=", "*=", "/=", "+=", "-=" }, { "," } };
+    std::vector<std::vector<std::string>> ops = { { "::", ".", "++", "--" }, { "!" }, { "*", "/", "%" }, { "+", "-" }, { ">", "<", ">=", "<=" }, { "==", "!=" }, { "&" }, { "|" }, { "&&" }, { ":", "?" }, { "||" }, { "=", "*=", "/=", "+=", "-=" }, { "," } };
     std::vector<std::string> ops_single = { "++", "--", "!", "()++", "()--" };    //单目全部是右结合
     std::vector<std::string> ops_right = { "=", "*=", "/=", "+=", "-=" };         //右结合
     //关键字，在表中的位置为其所需参数个数
@@ -292,6 +293,17 @@ public:
     void register_parameter(const std::string& name, Object o);
 
     template <typename T>
+    void register_parameter(const std::string& name, std::map<std::string, T> m)
+    {
+        //两重的暂时如此处理
+        parameters[name] = "";
+        for (auto& o : m)
+        {
+            parameters[name + "::" + o.first] = Object(o.second);
+        }
+    }
+
+    template <typename T>
     void register_vector(const std::string& name, const std::vector<T>& v)
     {
         int i = 0;
@@ -306,6 +318,8 @@ public:
     Object& get_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p);
     std::string convert_parameter_name(CalUnit& c, std::unordered_map<std::string, Object>& p);
     bool check_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p);
+    Object& get_parameter(const std::string& name, std::unordered_map<std::string, Object>& p);
+    bool check_parameter(const std::string& name, std::unordered_map<std::string, Object>& p);
 
     void check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::string, Object>& p);
 

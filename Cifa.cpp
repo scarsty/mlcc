@@ -175,7 +175,13 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
                         return run_function(c.v[1].str, v, p);
                     }
                 }
+                if (c.v[1].type == CalUnitType::Parameter)
+                {
+                    return get_parameter(c.v[0].str + "::" + c.v[1].str, p);
+                }
             }
+            //.和::作为取成员运算符时，目前只保证一层
+            if (c.str == "::") { return get_parameter(c.v[0].str + "::" + c.v[1].str, p); }
             if (c.str == "*") { return mul(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "/") { return div(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "%") { return int(eval(c.v[0], p)) % int(eval(c.v[1], p)); }
@@ -202,6 +208,17 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
                 o.v.emplace_back(eval(c.v[0], p));
                 o.v.emplace_back(eval(c.v[1], p));
                 return o;
+            }
+            if (c.str == "?")
+            {
+                if (eval(c.v[0], p))
+                {
+                    return eval(c.v[1].v[0], p);
+                }
+                else
+                {
+                    return eval(c.v[1].v[1], p);
+                }
             }
         }
         return Object();
@@ -339,11 +356,11 @@ CalUnitType Cifa::guess_char(char c)
     {
         return CalUnitType::Constant;
     }
-    if (std::string("+-*/%=.!<>&|,").find(c) != std::string::npos)
+    if (std::string("+-*/%=.!<>&|,?:").find(c) != std::string::npos)
     {
         return CalUnitType::Operator;
     }
-    if (std::string("_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:").find(c) != std::string::npos)
+    if (std::string("_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ").find(c) != std::string::npos)
     {
         return CalUnitType::Parameter;
     }
@@ -1023,6 +1040,16 @@ bool Cifa::check_parameter(CalUnit& c, std::unordered_map<std::string, Object>& 
     return p.count(convert_parameter_name(c, p));
 }
 
+Object& Cifa::get_parameter(const std::string& name, std::unordered_map<std::string, Object>& p)
+{
+    return p[name];
+}
+
+bool Cifa::check_parameter(const std::string& name, std::unordered_map<std::string, Object>& p)
+{
+    return p.count(name);
+}
+
 void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::string, Object>& p)
 {
     //若提前return，表示不再检查其下的结构
@@ -1051,6 +1078,45 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
                     add_error(c, "%s cannot be assigned", c.v[0].str.c_str());
                 }
             }
+            if (c.str == "::" || c.str == ".")
+            {
+                if (c.v.size() == 2)
+                {
+                    if (c.v[0].type == CalUnitType::Parameter && !check_parameter(c.v[0], p))
+                    {
+                        add_error(c, "parameter %s is at right of = but not been initialized", c.v[0].str.c_str());
+                    }
+                    else if (c.v[1].type == CalUnitType::Parameter)
+                    {
+                        if (!check_parameter(c.v[0].str + "::" + c.v[1].str, p))
+                        {
+                            add_error(c.v[0], "parameter %s in %s is at right of = but not been initialized", c.v[1].str.c_str(), c.v[0].str.c_str());
+                        }
+                    }
+                }
+                else
+                {
+                    add_error(c, "operator %s has wrong operands", c.str.c_str());
+                }
+            }
+            if (c.str == "?")
+            {
+                if (c.v.size() != 2)
+                {
+                    add_error(c, "operator ?(:) has wrong operands");
+                }
+                else if (c.v[1].type != CalUnitType::Operator || c.v[1].str != ":")
+                {
+                    add_error(c, "operator ? has no :");
+                }
+                else
+                {
+                    if (c.v[1].v.size() != 2)
+                    {
+                        add_error(c.v[1], "operator : followed ? has wrong operands");
+                    }
+                }
+            }
             if (c.v.size() == 1 && (c.str == "+" || c.str == "-"))
             {
             }
@@ -1077,7 +1143,10 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
         {
             add_error(c, "cannot calculate parameter %s with operands", c.str.c_str());
         }
-        if (!check_parameter(c, p))
+        if (father && father->type == CalUnitType::Operator && (father->str == "::" || father->str == "."))
+        {
+        }
+        else if (c.type == CalUnitType::Parameter && !check_parameter(c, p))
         {
             add_error(c, "parameter %s is at right of = but not been initialized", c.str.c_str());    //parameters at left of "=" have been added
         }
