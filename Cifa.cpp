@@ -288,6 +288,18 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             //o.type = "";
             return o;
         }
+        if (c.str == "do")               //do {语句1} while (条件1);
+        {
+            Object o;
+            do
+            {
+                o = eval(c.v[0], p);     //执行 [语句1] 并 取执行结果
+                if (o.type1 == "__" && o.toString() == "break") { break; }
+                if (o.type1 == "__" && o.toString() == "continue") { continue; }
+                if (p.count("return")) { return p["return"]; }
+            } while (eval(c.v[1].v[0], p));   //判断 [条件1]
+            return o;
+        }
         if (c.str == "return")
         {
             p["return"] = eval(c.v[0], p);
@@ -925,9 +937,20 @@ void Cifa::combine_keys(std::list<CalUnit>& ppp)
                     ppp.erase(itr);
                     if (it->v[2].v.size() > 0)
                     {
-                        auto c = std::move(it->v[2].v[0]);
-                        it->v[2] = std::move(c);
+                        it->v[2] = std::move(it->v[2].v[0]);
                     }
+                }
+            }
+            if (it->str == "do" && it->v.empty() && std::next(it) != ppp.end())
+            {
+                auto itr1 = std::next(it);
+                auto itr2 = std::next(itr1);
+                if (itr1->str == "{}" && itr2->str == "while") //必须后面接 {} 和 while
+                {
+                    it->v.emplace_back(std::move(*itr1));
+                    it->v.emplace_back(std::move(*itr2));
+                    ppp.erase(itr1);
+                    ppp.erase(itr2);
                 }
             }
         }
@@ -1218,6 +1241,31 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
             if (c.v.size() >= 2 && !c.v[1].is_statement())
             {
                 add_error(c.v[1], "missing ;");
+            }
+        }
+        if (c.str == "do")
+        {
+            if (c.v.size() == 0)
+            {
+                add_error(c, "do while has no statement and condition");
+            }
+            if (c.v.size() == 1)
+            {
+                if (c.v[0].str != "while")
+                {
+                    add_error(c, "do while has no while keyword");
+                }
+                else
+                {
+                    add_error(c, "do while has no statement");
+                }
+            }
+            if (c.v.size() == 2)
+            {
+                if (c.v[1].v.size() != 2)
+                {
+                    add_error(c, "do while has no condition");
+                }
             }
         }
         if (c.str == "return")

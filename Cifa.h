@@ -234,7 +234,7 @@ private:
     std::vector<std::string> ops_single = { "++", "--", "!", "()++", "()--" };    //单目全部是右结合
     std::vector<std::string> ops_right = { "=", "*=", "/=", "+=", "-=" };         //右结合
     //关键字，在表中的位置为其所需参数个数
-    std::vector<std::vector<std::string>> keys = { { "true", "false" }, { "break", "continue", "else", "return" }, { "if", "for", "while" } };
+    std::vector<std::vector<std::string>> keys = { { "true", "false" }, { "break", "continue", "else", "return" }, { "if", "for", "while", "do"}};
     std::vector<std::string> types = { "auto", "int", "float", "double" };
 
     //两个函数表都是全局的
