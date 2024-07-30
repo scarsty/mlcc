@@ -65,13 +65,14 @@ char get_path_char();
 size_t getLastPathCharPos(const std::string& filename, int utf8 = 0);
 size_t getLastEftPathCharPos(const std::string& filename, int utf8 = 0);
 
-std::vector<std::string> getFilesInPath(const std::string& pathname, int recursive = 0, int include_path = 0);
-std::string getFileTime(const std::string& filename);
+std::vector<std::string> getFilesInPath(const std::string& pathname, int recursive = 0, int include_path = 0, int absolute_path = 0);
+std::string getFileTime(const std::string& filename, const std::string& format = "%Y-%m-%d %H:%M:%S");
 void changePath(const std::string& path);
 std::string getCurrentPath();
 void makePath(const std::string& path);
 void copyFile(const std::string& src, const std::string& dst);
 void removeFile(const std::string& filename);
+std::string getRelativePath(const std::string& filename, const std::string& basepath);
 
 //functions about file name
 std::string getFileExt(const std::string& filename);

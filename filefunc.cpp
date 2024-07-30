@@ -191,7 +191,7 @@ size_t filefunc::getLastEftPathCharPos(const std::string& filename, int utf8)
     return pos;
 }
 
-std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/)
+std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/, int absolute_path /*= 0*/)
 {
     if (!pathname.empty() && !std::filesystem::is_directory(pathname.c_str())) { return {}; }
     std::vector<std::string> ret;
@@ -216,14 +216,26 @@ std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, i
                 }
                 if (include_path == 1)
                 {
-                    auto r_path = std::filesystem::relative(dir_entry.path(), path0);
-                    ret.push_back(r_path.string());
+                    if (absolute_path)
+                    {
+                        ret.push_back(std::filesystem::absolute(dir_entry.path()).string());
+                    }
+                    else
+                    {
+                        ret.push_back(std::filesystem::relative(dir_entry.path(), path0).string());
+                    }
                 }
             }
             else
             {
-                auto r_path = std::filesystem::relative(dir_entry.path(), path0);
-                ret.push_back(r_path.string());
+                if (absolute_path)
+                {
+                    ret.push_back(std::filesystem::absolute(dir_entry.path()).string());
+                }
+                else
+                {
+                    ret.push_back(std::filesystem::relative(dir_entry.path(), path0).string());
+                }
             }
         }
     };
@@ -231,14 +243,14 @@ std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, i
     return ret;
 }
 
-std::string filefunc::getFileTime(const std::string& filename)
+std::string filefunc::getFileTime(const std::string& filename, const std::string& format)
 {
     if (!fileExist(filename)) { return ""; }
     auto t = std::filesystem::last_write_time(filename);
     auto t1 = std::chrono::time_point_cast<std::chrono::system_clock::duration>(t - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
     auto t2 = std::chrono::system_clock::to_time_t(t1);
     char buf[64] = {};
-    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", localtime(&t2));
+    strftime(buf, sizeof(buf), format.c_str(), localtime(&t2));
     return buf;
 }
 
@@ -271,6 +283,11 @@ void filefunc::copyFile(const std::string& src, const std::string& dst)
 void filefunc::removeFile(const std::string& filename)
 {
     std::filesystem::remove_all(filename);
+}
+
+std::string filefunc::getRelativePath(const std::string& filename, const std::string& basepath)
+{
+    return std::filesystem::relative(filename, basepath).string();
 }
 
 std::string filefunc::getFileExt(const std::string& filename)
