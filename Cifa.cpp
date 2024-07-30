@@ -209,15 +209,15 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
                 o.v.emplace_back(eval(c.v[1], p));
                 return o;
             }
-            if (c.str == "?")
+            if (c.str == "?")                    //条件1 ? 语句1 : 语句2;
             {
-                if (eval(c.v[0], p))
+                if (eval(c.v[0], p))             //比较?运算符左侧的 [条件1]
                 {
-                    return eval(c.v[1].v[0], p);
+                    return eval(c.v[1].v[0], p); //取:运算符左侧 [语句1] 的结果
                 }
                 else
                 {
-                    return eval(c.v[1].v[1], p);
+                    return eval(c.v[1].v[1], p); //取:运算符右侧 [语句2] 的结果
                 }
             }
         }
@@ -246,25 +246,28 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
     }
     else if (c.type == CalUnitType::Key)
     {
-        if (c.str == "if")
+        if (c.str == "if")               //if(条件1){语句1}else{语句2}
         {
-            if (eval(c.v[0], p))
+            if (eval(c.v[0], p))         //判断 [条件1]
             {
-                return eval(c.v[1], p);
+                return eval(c.v[1], p);  //取: [语句1] 执行结果
             }
             else if (c.v.size() >= 3)
             {
-                return eval(c.v[2], p);
+                return eval(c.v[2], p);  //取: [语句2] 执行结果
             }
             return Object(0);
         }
-        if (c.str == "for")
+        if (c.str == "for")              //for(语句1;条件1;语句2){语句3}
         {
             Object o;
-            //此处v[0]应是一个组合语句
-            for (eval(c.v[0].v[0], p); eval(c.v[0].v[1], p); eval(c.v[0].v[2], p))
+            for (
+                eval(c.v[0].v[0], p);    //执行 [语句1]
+                eval(c.v[0].v[1], p);    //判断 [条件1]
+                eval(c.v[0].v[2], p)     //执行 [语句2]
+                )
             {
-                o = eval(c.v[1], p);
+                o = eval(c.v[1], p);     //执行 [语句3] 并 取执行结果
                 if (o.type1 == "__" && o.toString() == "break") { break; }
                 if (o.type1 == "__" && o.toString() == "continue") { continue; }
                 if (p.count("return")) { return p["return"]; }
@@ -272,12 +275,12 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             //o.type = "";
             return o;
         }
-        if (c.str == "while")
+        if (c.str == "while")            //while (条件1) {语句1}
         {
             Object o;
-            while (eval(c.v[0], p))
+            while (eval(c.v[0], p))      //判断 [条件1]
             {
-                o = eval(c.v[1], p);
+                o = eval(c.v[1], p);     //执行 [语句1] 并 取执行结果
                 if (o.type1 == "__" && o.toString() == "break") { break; }
                 if (o.type1 == "__" && o.toString() == "continue") { continue; }
                 if (p.count("return")) { return p["return"]; }

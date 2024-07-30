@@ -142,7 +142,7 @@ struct Object
 
 private:
     std::any value;
-    std::string type1;        //特别的类型
+    std::string type1;        //特别的类型，用于Error、break、continue
     std::vector<Object> v;    //仅用于处理逗号表达式
 };
 
@@ -166,7 +166,7 @@ enum class CalUnitType
 struct CalUnit
 {
     CalUnitType type = CalUnitType::None;
-    std::vector<CalUnit> v;
+    std::vector<CalUnit> v;    //语法树的节点，v.size():[0,3]
     std::string str;
     size_t line = 0, col = 0;
     bool suffix = false;       //有后缀，可视为一个语句
