@@ -10,7 +10,7 @@ enum InfoType
     InfoType_FileDescription,
 };
 
-inline std::string get_version(const std::string& filename, InfoType it)
+inline std::string get_version(const std::string& filename)
 {
     DWORD verHandle = 0;
     UINT size = 0;
@@ -23,7 +23,7 @@ inline std::string get_version(const std::string& filename, InfoType it)
         verData.resize(verSize);
         if (GetFileVersionInfoA(filename.c_str(), verHandle, verSize, (LPVOID)verData.data()))
         {
-            if (it == InfoType_Version && VerQueryValueA(verData.data(), "\\", (VOID FAR * FAR*)&lpBuffer, &size))
+            if (VerQueryValueA(verData.data(), "\\", (VOID FAR * FAR*)&lpBuffer, &size))
             {
                 if (size)
                 {
@@ -41,7 +41,25 @@ inline std::string get_version(const std::string& filename, InfoType it)
                     }
                 }
             }
-            if (it == InfoType_FileDescription && VerQueryValue(verData.data(), TEXT("\\VarFileInfo\\Translation"), (VOID FAR * FAR*)&lpBuffer, &size))
+        }
+    }
+    return "";
+}
+
+inline std::string get_string_info(const std::string& filename, const std::string& info)
+{
+    DWORD verHandle = 0;
+    UINT size = 0;
+    LPBYTE lpBuffer = NULL;
+    DWORD verSize = GetFileVersionInfoSizeA(filename.c_str(), &verHandle);
+
+    if (verSize != NULL)
+    {
+        std::string verData;
+        verData.resize(verSize);
+        if (GetFileVersionInfoA(filename.c_str(), verHandle, verSize, (LPVOID)verData.data()))
+        {
+            if (VerQueryValue(verData.data(), TEXT("\\VarFileInfo\\Translation"), (VOID FAR * FAR*)&lpBuffer, &size))
             {
                 if (size)
                 {
@@ -57,7 +75,7 @@ inline std::string get_version(const std::string& filename, InfoType it)
                     for (UINT i = 0; i < (size / sizeof(struct LANGANDCODEPAGE)); i++)
                     {
                         char SubBlock[50];
-                        snprintf(SubBlock, 50, "\\StringFileInfo\\%04x%04x\\FileDescription", lpTranslate[i].wLanguage, lpTranslate[i].wCodePage);
+                        snprintf(SubBlock, 50, ("\\StringFileInfo\\%04x%04x\\" + info).c_str(), lpTranslate[i].wLanguage, lpTranslate[i].wCodePage);
                         if (VerQueryValueA(verData.data(), SubBlock, (VOID FAR * FAR*)&lpBuffer, &size))
                         {
                             return (const char*)lpBuffer;
@@ -66,6 +84,18 @@ inline std::string get_version(const std::string& filename, InfoType it)
                 }
             }
         }
+    }
+}
+
+inline std::string get_version(const std::string& filename, InfoType it)
+{
+    if (it == InfoType_Version)
+    {
+        return get_version(filename);
+    }
+    else if (it == InfoType_FileDescription)
+    {
+        return get_string_info(filename, "FileDescription");
     }
     return "";
 }

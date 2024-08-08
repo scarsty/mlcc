@@ -173,10 +173,12 @@ public:
     {
         return dlls_not_good_;
     }
+    // used functions in all dlls
     std::map<std::string, ImportInfo> ImportTable()
     {
         return import_table_;
     }
+    // all functions in all dlls
     std::map<std::string, std::map<std::string, int>> ExportTable()
     {
         return export_table_;
