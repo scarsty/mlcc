@@ -209,15 +209,15 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
                 o.v.emplace_back(eval(c.v[1], p));
                 return o;
             }
-            if (c.str == "?")                    //条件1 ? 语句1 : 语句2;
+            if (c.str == "?")    //条件1 ? 语句1 : 语句2;
             {
-                if (eval(c.v[0], p))             //比较?运算符左侧的 [条件1]
+                if (eval(c.v[0], p))    //比较?运算符左侧的 [条件1]
                 {
-                    return eval(c.v[1].v[0], p); //取:运算符左侧 [语句1] 的结果
+                    return eval(c.v[1].v[0], p);    //取:运算符左侧 [语句1] 的结果
                 }
                 else
                 {
-                    return eval(c.v[1].v[1], p); //取:运算符右侧 [语句2] 的结果
+                    return eval(c.v[1].v[1], p);    //取:运算符右侧 [语句2] 的结果
                 }
             }
         }
@@ -246,28 +246,28 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
     }
     else if (c.type == CalUnitType::Key)
     {
-        if (c.str == "if")               //if(条件1){语句1}else{语句2}
+        if (c.str == "if")    //if(条件1){语句1}else{语句2}
         {
-            if (eval(c.v[0], p))         //判断 [条件1]
+            if (eval(c.v[0], p))    //判断 [条件1]
             {
-                return eval(c.v[1], p);  //取: [语句1] 执行结果
+                return eval(c.v[1], p);    //取: [语句1] 执行结果
             }
             else if (c.v.size() >= 3)
             {
-                return eval(c.v[2], p);  //取: [语句2] 执行结果
+                return eval(c.v[2], p);    //取: [语句2] 执行结果
             }
             return Object(0);
         }
-        if (c.str == "for")              //for(语句1;条件1;语句2){语句3}
+        if (c.str == "for")    //for(语句1;条件1;语句2){语句3}
         {
             Object o;
             for (
                 eval(c.v[0].v[0], p);    //执行 [语句1]
                 eval(c.v[0].v[1], p);    //判断 [条件1]
                 eval(c.v[0].v[2], p)     //执行 [语句2]
-                )
+            )
             {
-                o = eval(c.v[1], p);     //执行 [语句3] 并 取执行结果
+                o = eval(c.v[1], p);    //执行 [语句3] 并 取执行结果
                 if (o.type1 == "__" && o.toString() == "break") { break; }
                 if (o.type1 == "__" && o.toString() == "continue") { continue; }
                 if (p.count("return")) { return p["return"]; }
@@ -275,12 +275,12 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             //o.type = "";
             return o;
         }
-        if (c.str == "while")            //while (条件1) {语句1}
+        if (c.str == "while")    //while (条件1) {语句1}
         {
             Object o;
-            while (eval(c.v[0], p))      //判断 [条件1]
+            while (eval(c.v[0], p))    //判断 [条件1]
             {
-                o = eval(c.v[1], p);     //执行 [语句1] 并 取执行结果
+                o = eval(c.v[1], p);    //执行 [语句1] 并 取执行结果
                 if (o.type1 == "__" && o.toString() == "break") { break; }
                 if (o.type1 == "__" && o.toString() == "continue") { continue; }
                 if (p.count("return")) { return p["return"]; }
@@ -288,16 +288,16 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             //o.type = "";
             return o;
         }
-        if (c.str == "do")               //do {语句1} while (条件1);
+        if (c.str == "do")    //do {语句1} while (条件1);
         {
             Object o;
             do
             {
-                o = eval(c.v[0], p);     //执行 [语句1] 并 取执行结果
+                o = eval(c.v[0], p);    //执行 [语句1] 并 取执行结果
                 if (o.type1 == "__" && o.toString() == "break") { break; }
                 if (o.type1 == "__" && o.toString() == "continue") { continue; }
                 if (p.count("return")) { return p["return"]; }
-            } while (eval(c.v[1].v[0], p));   //判断 [条件1]
+            } while (eval(c.v[1].v[0], p));    //判断 [条件1]
             return o;
         }
         if (c.str == "return")
@@ -935,9 +935,11 @@ void Cifa::combine_keys(std::list<CalUnit>& ppp)
                 {
                     it->v.emplace_back(std::move(*itr));
                     ppp.erase(itr);
-                    if (it->v[2].v.size() > 0)
+                    if (!it->v[2].v.empty())
                     {
-                        it->v[2] = std::move(it->v[2].v[0]);
+                        auto it_else = std::move(it->v[2].v[0]);
+                        it->v[2] = std::move(it_else);    //cannot assign directly when debug
+                        //it->v[2] = std::move(it->v[2].v[0]);
                     }
                 }
             }
@@ -945,7 +947,7 @@ void Cifa::combine_keys(std::list<CalUnit>& ppp)
             {
                 auto itr1 = std::next(it);
                 auto itr2 = std::next(itr1);
-                if (itr1->str == "{}" && itr2->str == "while") //必须后面接 {} 和 while
+                if (itr1->str == "{}" && itr2->str == "while")    //必须后面接 {} 和 while
                 {
                     it->v.emplace_back(std::move(*itr1));
                     it->v.emplace_back(std::move(*itr2));
