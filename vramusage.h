@@ -13,10 +13,13 @@
 #include <tchar.h>
 
 #include <vector>
+#include <cstdint>
 
 #pragma comment(lib, "cfgmgr32.lib")
 #pragma comment(lib, "Gdi32.lib")
+#pragma comment(lib, "kernel32.lib")  //for HOST Memory(RAM)
 
+// GPU Device Memory(VRAM)
 inline LUID get_luid_from_pcibus(int pcibus)
 {
     LUID luid{ 0, 0 };
@@ -69,6 +72,7 @@ inline LUID get_luid_from_pcibus(int pcibus)
     return luid;
 }
 
+// GPU Device Memory(VRAM)
 inline int get_free_mem_by_luid(LUID luid, size_t* resident, size_t* shared)
 {
     D3DKMT_QUERYSTATISTICS queryStatistics{};
@@ -108,8 +112,24 @@ inline int get_free_mem_by_luid(LUID luid, size_t* resident, size_t* shared)
     return 0;
 }
 
+// GPU Device Memory(VRAM)
 inline int get_free_mem_by_pcibus(int pcibus, size_t* resident, size_t* shared)
 {
     auto luid = get_luid_from_pcibus(pcibus);
     return get_free_mem_by_luid(luid, resident, shared);
+}
+
+// CPU Host Memory(RAM)
+inline bool get_free_host_mem(uint64_t& totalMemory, uint64_t& freeMemory, uint64_t& totalVirtualMemory, uint64_t& freeVirtualMemory)
+{
+    MEMORYSTATUSEX memoryInfo;
+    memoryInfo.dwLength = sizeof(memoryInfo);
+    if(!GlobalMemoryStatusEx(&memoryInfo)) {
+        return false;
+    }
+    totalMemory = memoryInfo.ullTotalPhys;
+    freeMemory = memoryInfo.ullAvailPhys;
+    totalVirtualMemory = memoryInfo.ullTotalVirtual;
+    freeVirtualMemory = memoryInfo.ullAvailVirtual;
+    return true;
 }
