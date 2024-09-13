@@ -73,4 +73,6 @@ std::vector<T> findNumbers(const std::string& s)
     return data;
 }
 
+const std::string generateUUID();
+
 }    //namespace strfunc

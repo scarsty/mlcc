@@ -3,6 +3,13 @@
 #include <cstdio>
 
 #ifdef _WIN32
+#include <objbase.h> //win api: CoCreateGuid
+#pragma comment(lib, "Ole32.lib")
+#else
+#include <uuid/uuid.h> //libuuid
+#endif
+
+#ifdef _WIN32
 #define popen _popen
 #define pclose _pclose
 #endif
@@ -310,4 +317,24 @@ std::string strfunc::get_cmd_output(const std::string& cmdstring)
     }
     pclose(p_file);
     return str;
+}
+
+const std::string strfunc::generateUUID()
+{
+#ifdef _WIN32
+    char buf[64] = {0};
+    GUID guid;
+    CoCreateGuid(&guid);
+    _snprintf_s(buf, sizeof(buf), "{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",
+                guid.Data1, guid.Data2, guid.Data3,
+                guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+            guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+    return std::string(buf);
+#else //MacOS or iOS or Linux
+    uuid_t guid;
+    uuid_string_t outstr;
+    uuid_generate(guid);
+    uuid_unparse_upper(guid, outstr);
+    return std::string(outstr);
+#endif
 }
