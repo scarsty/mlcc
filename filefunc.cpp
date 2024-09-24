@@ -8,6 +8,9 @@
 #include <sstream>
 
 #ifdef _WIN32
+#include <windows.h>
+// include windows.h before stringapiset.h
+#include <stringapiset.h>    //for MultiByteToWideChar() and WideCharToMultiByte()
 #else
 #include "dirent.h"
 #ifndef __APPLE__
@@ -23,14 +26,32 @@
 #include <sys/types.h>
 #endif
 
+namespace
+{
+std::wstring str2wstr(const std::string& str)
+{
+    int wlen = MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.size(), nullptr, 0);
+    std::wstring wstr;
+    wstr.resize(wlen);
+    MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.size(), wstr.data(), wlen);
+    return wstr;
+}
+}
+
 bool filefunc::fileExist(const std::string& name)
 {
-    return std::filesystem::is_regular_file(name.c_str());
+#ifdef _MSC_VER
+    return std::filesystem::is_regular_file(str2wstr(name));
+#endif
+    return std::filesystem::is_regular_file(name);
 }
 
 bool filefunc::pathExist(const std::string& name)
 {
-    return std::filesystem::is_directory(name.c_str());
+#ifdef _MSC_VER
+    return std::filesystem::is_directory(str2wstr(name));
+#endif    
+    return std::filesystem::is_directory(name);
 }
 
 std::vector<char> filefunc::readFile(const std::string& filename, int length)
