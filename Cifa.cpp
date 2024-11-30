@@ -300,6 +300,38 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             } while (eval(c.v[1].v[0], p));    //判断 [条件1]
             return o;
         }
+        if (c.str == "switch")
+        {
+            auto cond = eval(c.v[0], p);
+            bool skip = true;
+            for (auto& c1 : c.v[1].v)
+            {
+                if (c1.str == "case")
+                {
+                    if (skip)
+                    {
+                        if (equal(cond, eval(c1.v[0], p)))
+                        {
+                            skip = false;
+                        }
+                    }
+                }
+                else if (c1.str == "default")
+                {
+                    if (skip)
+                    {
+                        skip = false;
+                    }
+                }
+                else if (!skip)
+                {
+                    auto o = eval(c1, p);
+                    if (o.type1 == "__" && o.toString() == "break") { break; }
+                    if (p.count("return")) { return p["return"]; }
+                }
+            }
+            return 0;
+        }
         if (c.str == "return")
         {
             p["return"] = eval(c.v[0], p);
@@ -633,6 +665,9 @@ CalUnit Cifa::combine_all_cal(std::list<CalUnit>& ppp, bool curly, bool square, 
     //合并()
     if (round) { combine_round_bracket(ppp); }
 
+    //合并关键字
+    deal_special_keys(ppp);
+
     //合并算符
     combine_ops(ppp);
 
@@ -820,6 +855,10 @@ void Cifa::combine_ops(std::list<CalUnit>& ppp)
                 for (; it != ppp.begin();)
                 {
                     --it;
+                    if (it->un_combine)
+                    {
+                        continue;
+                    }
                     if (it->type == CalUnitType::Operator && it->str == op && it->v.size() == 0)
                     {
                         if (it == ppp.begin() || vector_have(ops_single, it->str)
@@ -868,6 +907,11 @@ void Cifa::combine_ops(std::list<CalUnit>& ppp)
             {
                 for (auto it = ppp.begin(); it != ppp.end();)
                 {
+                    if (it->un_combine)
+                    {
+                        ++it;
+                        continue;
+                    }
                     if (it->type == CalUnitType::Operator && it->str == op && it->v.size() == 0 && it != ppp.begin())
                     {
                         auto itr = std::next(it);
@@ -909,6 +953,35 @@ void Cifa::combine_semi(std::list<CalUnit>& ppp)
     }
 }
 
+void Cifa::deal_special_keys(std::list<CalUnit>& ppp)
+{
+    //实际上仅处理case, default的冒号
+    auto it = ppp.end();
+    while (it != ppp.begin())
+    {
+        --it;
+        if (it->str == "case")
+        {
+            for (auto it1 = std::next(it); it1 != ppp.end(); ++it1)
+            {
+                if (it1->str == ":")
+                {
+                    it1->un_combine = true;
+                    break;
+                }
+            }
+        }
+        if (it->str == "default")
+        {
+            auto it1 = std::next(it);
+            if (it1 != ppp.end() && it1->str == ":")
+            {
+                it1->un_combine = true;
+            }
+        }
+    }
+}
+
 void Cifa::combine_keys(std::list<CalUnit>& ppp)
 {
     //合并关键字，从右向左
@@ -916,34 +989,27 @@ void Cifa::combine_keys(std::list<CalUnit>& ppp)
     while (it != ppp.begin())
     {
         --it;
+        if (it->str == "switch")
+        {
+            int count = 0;
+        }
         for (size_t para_count = 1; para_count < keys.size(); para_count++)
         {
             auto& keys1 = keys[para_count];
             if (it->type == CalUnitType::Key && it->v.size() < para_count && vector_have(keys1, it->str))
             {
-                auto itr = std::next(it);
-                if (itr != ppp.end())
+                while (it->v.size() < para_count)
                 {
-                    it->v.emplace_back(std::move(*itr));
-                    itr = ppp.erase(itr);
-                }
-            }
-            if (it->str == "if" && it->v.size() == 2 && std::next(it) != ppp.end())
-            {
-                auto itr = std::next(it);
-                if (itr->str == "else")
-                {
-                    it->v.emplace_back(std::move(*itr));
-                    ppp.erase(itr);
-                    if (!it->v[2].v.empty())
+                    auto itr = std::next(it);
+                    if (itr != ppp.end())
                     {
-                        auto it_else = std::move(it->v[2].v[0]);
-                        it->v[2] = std::move(it_else);    //cannot assign directly when debug
-                        //it->v[2] = std::move(it->v[2].v[0]);
+                        it->v.emplace_back(std::move(*itr));
+                        itr = ppp.erase(itr);
                     }
                 }
             }
-            if (it->str == "do" && it->v.empty() && std::next(it) != ppp.end())
+            //首次循环就处理了do while
+            if (para_count == 1 && it->str == "do" && it->v.empty() && std::next(it) != ppp.end())
             {
                 auto itr1 = std::next(it);
                 auto itr2 = std::next(itr1);
@@ -953,6 +1019,27 @@ void Cifa::combine_keys(std::list<CalUnit>& ppp)
                     it->v.emplace_back(std::move(*itr2));
                     ppp.erase(itr1);
                     ppp.erase(itr2);
+                }
+            }
+        }
+    }
+
+    it = ppp.end();
+    while (it != ppp.begin())
+    {
+        --it;
+        if (it->str == "if" && it->v.size() == 2 && std::next(it) != ppp.end())
+        {
+            auto itr = std::next(it);
+            if (itr->str == "else")
+            {
+                it->v.emplace_back(std::move(*itr));
+                ppp.erase(itr);
+                if (!it->v[2].v.empty())
+                {
+                    auto it_else = std::move(it->v[2].v[0]);
+                    it->v[2] = std::move(it_else);    //cannot assign directly when debug
+                    //it->v[2] = std::move(it->v[2].v[0]);
                 }
             }
         }
@@ -1081,7 +1168,7 @@ bool Cifa::check_parameter(const std::string& name, std::unordered_map<std::stri
 void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::string, Object>& p)
 {
     //若提前return，表示不再检查其下的结构
-    if (c.type == CalUnitType::Operator)
+    if (c.type == CalUnitType::Operator && c.un_combine == false)
     {
         if (vector_have(ops_single, c.str))
         {
