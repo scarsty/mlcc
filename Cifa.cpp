@@ -984,15 +984,54 @@ void Cifa::deal_special_keys(std::list<CalUnit>& ppp)
 
 void Cifa::combine_keys(std::list<CalUnit>& ppp)
 {
+    //需注意此时的ppp中已经没有()，因此if, for, while, switch等关键字后面的括号已经被合并
     //合并关键字，从右向左
     auto it = ppp.end();
+    //处理对后续有特殊要求的关键字
     while (it != ppp.begin())
     {
         --it;
-        if (it->str == "switch")
+        //do while
+        if (it->str == "do" && it->v.empty() && std::next(it) != ppp.end())
         {
-            int count = 0;
+            auto itr1 = std::next(it);
+            auto itr2 = std::next(itr1);
+            if (itr1->str == "{}" && itr2->str == "while")    //必须后面接 {} 和 while
+            {
+                it->v.emplace_back(std::move(*itr1));
+                it->v.emplace_back(std::move(*itr2));
+                ppp.erase(itr1);
+                ppp.erase(itr2);
+            }
         }
+        //case
+        if (it->str == "case" && it->v.empty() && std::next(it) != ppp.end())
+        {
+            auto itr1 = std::next(it);
+            auto itr2 = std::next(itr1);
+            if (itr2->str == ":")
+            {
+                it->v.emplace_back(std::move(*itr1));
+                it->v.emplace_back(std::move(*itr2));
+                ppp.erase(itr1);
+                ppp.erase(itr2);
+            }
+        }
+        //default
+        if (it->str == "default" && it->v.empty() && std::next(it) != ppp.end())
+        {
+            auto itr1 = std::next(it);
+            if (itr1->str == ":")
+            {
+                it->v.emplace_back(std::move(*itr1));
+                ppp.erase(itr1);
+            }
+        }
+    }
+    it = ppp.end();
+    while (it != ppp.begin())
+    {
+        --it;
         for (size_t para_count = 1; para_count < keys.size(); para_count++)
         {
             auto& keys1 = keys[para_count];
@@ -1006,19 +1045,6 @@ void Cifa::combine_keys(std::list<CalUnit>& ppp)
                         it->v.emplace_back(std::move(*itr));
                         itr = ppp.erase(itr);
                     }
-                }
-            }
-            //首次循环就处理了do while
-            if (para_count == 1 && it->str == "do" && it->v.empty() && std::next(it) != ppp.end())
-            {
-                auto itr1 = std::next(it);
-                auto itr2 = std::next(itr1);
-                if (itr1->str == "{}" && itr2->str == "while")    //必须后面接 {} 和 while
-                {
-                    it->v.emplace_back(std::move(*itr1));
-                    it->v.emplace_back(std::move(*itr2));
-                    ppp.erase(itr1);
-                    ppp.erase(itr2);
                 }
             }
         }
@@ -1323,7 +1349,7 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
             {
                 add_error(c, "while has no condition");
             }
-            if (c.v.size() == 1)
+            if (c.v.size() == 1 && !(father && father->str == "do"))
             {
                 add_error(c, "while has no statement");
             }
@@ -1351,11 +1377,20 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
             }
             if (c.v.size() == 2)
             {
-                if (c.v[1].v.size() != 2)
+                if (c.v[1].v.size() < 1)
                 {
                     add_error(c, "do while has no condition");
                 }
             }
+        }
+        if (c.str == "switch")
+        {
+        }
+        if (c.str == "case")
+        {
+        }
+        if (c.str == "default")
+        {
         }
         if (c.str == "return")
         {
