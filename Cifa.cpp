@@ -1400,14 +1400,14 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
             {
                 add_error(c, "case has no condition");
             }
-            if (c.v.size() < 2 || c.v.size() == 2 && c.v[1].str == ":")
+            if (c.v.size() < 2 || c.v.size() == 2 && c.v[1].str != ":")
             {
                 add_error(c, "case missing :");
             }
         }
         if (c.str == "default")
         {
-            if (c.v.size() < 1 || c.v.size() == 1 && c.v[0].str == ":")
+            if (c.v.size() < 1 || c.v.size() == 1 && c.v[0].str != ":")
             {
                 add_error(c, "default missing :");
             }
