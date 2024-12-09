@@ -404,9 +404,15 @@ bool filefunc::compareNature(const std::string& a, const std::string& b)
     if (a.empty() && b.empty()) { return false; }
     if (a.empty()) { return true; }
     if (b.empty()) { return false; }
-    if (std::isdigit(a[0]) && !std::isdigit(b[0])) { return true; }
-    if (!std::isdigit(a[0]) && std::isdigit(b[0])) { return false; }
-    if (!std::isdigit(a[0]) && !std::isdigit(b[0]))
+
+    auto is_digit = [](char c) -> bool
+    {
+        return c >= '0' && c <= '9';
+    };
+    
+    if (is_digit(a[0]) && !is_digit(b[0])) { return true; }
+    if (!is_digit(a[0]) && is_digit(b[0])) { return false; }
+    if (!is_digit(a[0]) && !is_digit(b[0]))
     {
         if (std::toupper(a[0]) == std::toupper(b[0])) { return compareNature(a.substr(1), b.substr(1)); }
         {

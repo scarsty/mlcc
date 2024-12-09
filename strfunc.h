@@ -11,7 +11,7 @@ std::string replaceAllSubString(const std::string& s, const std::string& oldstri
 
 std::string findANumber(const std::string& s);
 unsigned findTheLast(const std::string& s, const std::string& content);
-std::vector<std::string> splitString(std::string str, std::string pattern = "", bool ignore_psspace = true);
+std::vector<std::string> splitString(std::string str, std::string pattern = "", bool trim_space = true, bool quote = false);
 bool isProChar(char c);
 
 std::string toLowerCase(const std::string& s);

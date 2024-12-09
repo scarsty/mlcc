@@ -3,10 +3,10 @@
 #include <cstdio>
 
 #ifdef _WIN32
-#include <objbase.h> //win api: CoCreateGuid
+#include <objbase.h>    //win api: CoCreateGuid
 #pragma comment(lib, "Ole32.lib")
 #else
-#include <uuid/uuid.h> //libuuid
+#include <uuid/uuid.h>    //libuuid
 #endif
 
 #ifdef _WIN32
@@ -111,9 +111,8 @@ unsigned strfunc::findTheLast(const std::string& s, const std::string& content)
     return prepos;
 }
 
-std::vector<std::string> strfunc::splitString(std::string str, std::string pattern, bool ignore_psspace)
+std::vector<std::string> strfunc::splitString(std::string str, std::string pattern, bool trim_space, bool quote)
 {
-    std::string::size_type pos;
     std::vector<std::string> result;
     if (str.empty())
     {
@@ -123,36 +122,83 @@ std::vector<std::string> strfunc::splitString(std::string str, std::string patte
     {
         pattern = ",;| ";
     }
-    str += pattern[0];    //扩展字符串以方便操作
-    bool have_space = pattern.find(" ") != std::string::npos;
-    int size = str.size();
-    for (int i = 0; i < size; i++)
+
+    auto trim = [trim_space](const std::string& s) -> std::string
     {
+        if (trim_space)
+        {
+            std::string s1 = s;
+            s1.erase(0, s1.find_first_not_of(" "));
+            s1.erase(s1.find_last_not_of(" ") + 1);
+            return s1;
+        }
+        return s;
+    };
+
+    str += pattern[0];
+    bool have_space = pattern.find(" ") != std::string::npos;
+    auto size = str.size();
+
+    if (quote)
+    {
+        bool inquote = false;
+        char quotechar = '\"';
+        std::string::size_type pos = 0;
         if (have_space)
         {
-            //当空格作为分隔符时，连续空格视为一个
-            while (str[i] == ' ')
-            {
-                i++;
-            }
+            pos = str.find_first_not_of(" ");
         }
-        pos = str.find_first_of(pattern, i);
-        if (pos < size)
+        for (int i = pos; i < size; i++)
         {
-            std::string s = str.substr(i, pos - i);
-            if (ignore_psspace)
+            if (have_space && !inquote)
             {
-                auto pre = s.find_first_not_of(" ");
-                auto suf = s.find_last_not_of(" ");
-                if (pre != std::string::npos && suf != std::string::npos)
+                //当空格作为分隔符时，连续空格视为一个
+                while (str[i + 1] == ' ')
                 {
-                    s = s.substr(pre, suf - pre + 1);
+                    i++;
                 }
             }
-            result.push_back(s);
-            i = pos;
+            if (!inquote && (str[i] == '\"' || str[i] == '\''))
+            {
+                inquote = true;
+                quotechar = str[i];
+            }
+            else if (inquote && str[i] == quotechar)
+            {
+                inquote = false;
+            }
+            if (!inquote)
+            {
+                if (pattern.find_first_of(str[i]) != std::string::npos)
+                {
+                    result.push_back(trim(str.substr(pos, i - pos)));
+                    pos = i + 1;
+                }
+            }
         }
     }
+    else
+    {
+        std::string::size_type pos = 0;
+        for (int i = 0; i < size; i++)
+        {
+            if (have_space)
+            {
+                //当空格作为分隔符时，连续空格视为一个
+                while (str[i] == ' ')
+                {
+                    i++;
+                }
+            }
+            pos = str.find_first_of(pattern, i);
+            if (pos < size)
+            {
+                result.push_back(trim(str.substr(i, pos - i)));
+                i = pos;
+            }
+        }
+    }
+
     return result;
 }
 
@@ -322,15 +368,15 @@ std::string strfunc::get_cmd_output(const std::string& cmdstring)
 const std::string strfunc::generateUUID()
 {
 #ifdef _WIN32
-    char buf[64] = {0};
+    char buf[64] = { 0 };
     GUID guid;
     CoCreateGuid(&guid);
     _snprintf_s(buf, sizeof(buf), "{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",
-                guid.Data1, guid.Data2, guid.Data3,
-                guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
-            guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+        guid.Data1, guid.Data2, guid.Data3,
+        guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+        guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
     return std::string(buf);
-#else //MacOS or iOS or Linux
+#else    //MacOS or iOS or Linux
     uuid_t guid;
     uuid_string_t outstr;
     uuid_generate(guid);
