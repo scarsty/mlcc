@@ -112,6 +112,20 @@ inline int get_free_mem_by_luid(LUID luid, size_t* resident, size_t* shared)
     return 0;
 }
 
+// GPU Temperature
+inline float get_temperature_by_luid(LUID luid)
+{
+    D3DKMT_QUERYSTATISTICS queryStatistics{};
+    queryStatistics.Type = D3DKMT_QUERYSTATISTICS_PHYSICAL_ADAPTER;
+    queryStatistics.AdapterLuid = luid;
+    if (D3DKMTQueryStatistics(&queryStatistics))
+    {
+        //printf("D3DKMTQueryStatistics failed with %d\n", ret);
+        return 1;
+    }
+    return queryStatistics.QueryResult.PhysAdapterInformation.AdapterPerfData.Temperature / 10.0;
+}
+
 // GPU Device Memory(VRAM)
 inline int get_free_mem_by_pcibus(int pcibus, size_t* resident, size_t* shared)
 {
