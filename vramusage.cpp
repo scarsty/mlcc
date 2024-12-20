@@ -1,5 +1,13 @@
 #include "vramusage.h"
 
+// the turn of the next 4 lines cannot be changed
+#define INITGUID
+#include <objbase.h>
+
+#include <ntddvdeo.h>
+
+#include <windows.h>    //after ntddvdeo.h
+
 #include <cfgmgr32.h>
 #include <d3dkmthk.h>
 #include <devpkey.h>
@@ -32,7 +40,7 @@ std::vector<GPUDeviceLUID> get_gpu_devices_luid()
         deviceInterface = p;
         p += wcslen(p) + 1;
 #ifdef _DEBUG
-        wprintf(L"%s\n", deviceInterface);
+        //wprintf(L"%s\n", deviceInterface);
 #endif
 
         DEVPROPTYPE devicePropertyType;
@@ -58,30 +66,30 @@ std::vector<GPUDeviceLUID> get_gpu_devices_luid()
         luid = openAdapterFromDeviceName.AdapterLuid;
         GPUDeviceLUID device;
 
-        device.luid = luid;
+        memcpy(device.luid, &luid, sizeof(LUID));
         device.pcibus = buffer;
         devices.push_back(device);
     }
     return devices;
 }
 
-LUID get_luid_from_pcibus(int pcibus)
+int get_luid_from_pcibus(int pcibus, void* luid)
 {
-    LUID luid{ 0, 0 };
     auto devices = get_gpu_devices_luid();
     for (auto& device : devices)
     {
         if (device.pcibus == pcibus)
         {
-            luid = device.luid;
-            break;
+            memcpy(luid, device.luid, sizeof(LUID));
+            return 0;
         }
     }
-    return luid;
+    return -1;
 }
 
-int get_free_mem_by_luid(LUID luid, size_t* physical, size_t* shared)
+int get_free_mem_by_luid(LUID_PTR luid_ptr, size_t* physical, size_t* shared)
 {
+    auto luid = *(LUID*)luid_ptr;
     D3DKMT_QUERYSTATISTICS queryStatistics{};
     queryStatistics.Type = D3DKMT_QUERYSTATISTICS_ADAPTER;
     queryStatistics.AdapterLuid = luid;
@@ -119,11 +127,11 @@ int get_free_mem_by_luid(LUID luid, size_t* physical, size_t* shared)
     return 0;
 }
 
-float get_temperature_by_luid(LUID luid)
+float get_temperature_by_luid(LUID_PTR luid_ptr)
 {
     D3DKMT_QUERYSTATISTICS queryStatistics{};
     queryStatistics.Type = D3DKMT_QUERYSTATISTICS_PHYSICAL_ADAPTER;
-    queryStatistics.AdapterLuid = luid;
+    queryStatistics.AdapterLuid = *(LUID*)luid_ptr;
     if (D3DKMTQueryStatistics(&queryStatistics))
     {
         //printf("D3DKMTQueryStatistics failed with %d\n", ret);
@@ -134,17 +142,18 @@ float get_temperature_by_luid(LUID luid)
 
 int get_free_mem_by_pcibus(int pcibus, size_t* resident, size_t* shared)
 {
-    auto luid = get_luid_from_pcibus(pcibus);
-    return get_free_mem_by_luid(luid, resident, shared);
+    LUID luid;
+    get_luid_from_pcibus(pcibus, &luid);
+    return get_free_mem_by_luid(&luid, resident, shared);
 }
 
-bool get_free_host_mem(size_t* totalMemory, size_t* freeMemory, size_t* totalVirtualMemory, size_t* freeVirtualMemory)
+int get_free_host_mem(size_t* totalMemory, size_t* freeMemory, size_t* totalVirtualMemory, size_t* freeVirtualMemory)
 {
     MEMORYSTATUSEX memoryInfo;
     memoryInfo.dwLength = sizeof(memoryInfo);
     if (!GlobalMemoryStatusEx(&memoryInfo))
     {
-        return false;
+        return -1;
     }
 
     if (totalMemory) { *totalMemory = memoryInfo.ullTotalPhys; }
@@ -152,5 +161,5 @@ bool get_free_host_mem(size_t* totalMemory, size_t* freeMemory, size_t* totalVir
     if (totalVirtualMemory) { *totalVirtualMemory = memoryInfo.ullTotalVirtual; }
     if (freeVirtualMemory) { *freeVirtualMemory = memoryInfo.ullAvailVirtual; }
 
-    return true;
+    return 0;
 }
