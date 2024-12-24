@@ -355,6 +355,29 @@ This can help you to get that correctly.
 
 First, get the LUID or PCI bus with cudaGetDeviceProperties / hipGetDeviceProperties, and get the memory usage of it.
 
+## 备注
+
+此功能用到了未公开用法的Windows API`D3DKMTQueryStatistics`和结构体`D3DKMT_QUERYSTATISTICS`。
+
+`D3DKMT_QUERYSTATISTICS`是一个以Union为主的结构，首先需要赋值查询内容和LUID，查询成功之后，Union的其余部分是没有用的。
+
+例如以下查询：
+
+```c++
+D3DKMT_QUERYSTATISTICS queryStatistics{};
+queryStatistics.Type = D3DKMT_QUERYSTATISTICS_ADAPTER;
+queryStatistics.AdapterLuid = luid;
+if (D3DKMTQueryStatistics(&queryStatistics))
+{
+    //printf("D3DKMTQueryStatistics failed with %d\n", ret);
+    return 1;
+}
+```
+
+查询之后， 只有`queryStatistics.QueryResult.AdapterInformation`是有用的。
+
+在显存查询的部分，需要把每段的占用加起来得到总的占用。
+
 # FunctionTrait
 
 Check the number of patameters anf the return type of a class member function.

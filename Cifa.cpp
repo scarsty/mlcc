@@ -541,6 +541,12 @@ std::list<CalUnit> Cifa::split(std::string& str)
         {
             if (pre_stat != CalUnitType::None)
             {
+                //操作符替代词
+                if (pre_stat == CalUnitType::Parameter && op_representations.count(r))
+                {
+                    r = op_representations[r];
+                    pre_stat = CalUnitType::Operator;
+                }
                 CalUnit c(pre_stat, r);
                 c.line = line;
                 c.col = col - r.size();
@@ -562,6 +568,7 @@ std::list<CalUnit> Cifa::split(std::string& str)
             line++;
         }
     }
+
     if (stat != CalUnitType::None)
     {
         CalUnit c(stat, r);
