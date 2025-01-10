@@ -139,6 +139,10 @@ a=1
 a=1
 ```
 
+### About comment
+
+If you load one file for many times, the comments will be repeated at the end of their section. So please do not do this.
+
 ## strfunc
 
 strfunc.h, strfunc.cpp

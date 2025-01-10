@@ -630,6 +630,23 @@ private:
                         i = i1;
                     }
                 }
+                else
+                {
+                    //no "="
+                    auto endline = content.find_first_of("\n\r", i);
+                    if (endline != std::string::npos)
+                    {
+                        std::string o = content.substr(i, endline - i);
+                        valueHandler(*stack.back(), section, "", "", o);
+                        i = endline;
+                    }
+                    else
+                    {
+                        std::string o = content.substr(i);
+                        valueHandler(*stack.back(), section, "", "", o);
+                        i = content.size();
+                    }
+                }
             }
             else
             {
