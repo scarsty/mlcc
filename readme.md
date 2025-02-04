@@ -349,6 +349,14 @@ for(auto& item : dep.ExportTable())
 }
 ```
 
+# FunctionTrait
+
+Check the number of patameters anf the return type of a class member function.
+
+# FakeJson
+
+A simllified JSON library. It does not support escape characters.
+
 # vramusage
 
 Only for Windows.
@@ -382,6 +390,3 @@ if (D3DKMTQueryStatistics(&queryStatistics))
 
 在显存查询的部分，需要把每段的占用加起来得到总的占用。
 
-# FunctionTrait
-
-Check the number of patameters anf the return type of a class member function.
