@@ -11,7 +11,7 @@ class FakeJson;
 template <typename T>
 concept FakeJsonable = (!std::is_same_v<std::remove_cvref_t<T>, FakeJson>) && (!std::is_same_v<std::remove_cvref_t<T>, std::any>);
 
-struct FakeJson
+class FakeJson
 {
 private:
     std::any value;
