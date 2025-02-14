@@ -25,10 +25,12 @@ public:
         std::string key;
         T value;
     };
+
     template <typename T>
     struct ListWithIndex : std::list<Record<T>>
     {
         std::unordered_map<std::string, T*> index;
+
         T& operator[](const std::string& key)
         {
             auto key1 = COM_METHOD()(key);
@@ -45,14 +47,17 @@ public:
                 return *p;
             }
         }
+
         const T& at(const std::string& key) const
         {
             return *index.at(COM_METHOD()(key));
         }
+
         int count(const std::string& key) const
         {
             return index.count(COM_METHOD()(key));
         }
+
         void erase(const std::string& key)
         {
             auto& it = (*this)[key];
@@ -74,43 +79,57 @@ public:
 
     public:
         KeyType1() {}
-        KeyType1(const std::string& value, const std::string& other = "") : value(value), other(other) {}
-        KeyType1(const char* value) : value(value) {}
+
+        KeyType1(const std::string& value, const std::string& other = "") :
+            value(value), other(other) {}
+
+        KeyType1(const char* value) :
+            value(value) {}
+
         template <typename T>
-        KeyType1(const T& value) : value(std::to_string(value)) {}
+        KeyType1(const T& value) :
+            value(std::to_string(value)) {}
 
         int toInt() const
         {
             return atoi(value.c_str());
         }
+
         double toDouble() const
         {
             return atof(value.c_str());
         }
+
         const std::string& toString() const
         {
             return value;
         }
+
         KeyType1& operator[](const std::string& key)
         {
             return sections[key];
         }
+
         const KeyType1& operator[](const std::string& key) const
         {
             return sections.at(key);
         }
+
         const int count(const std::string& key) const
         {
             return sections.count(key);
         }
+
         void erase(const std::string& key)
         {
             sections.erase(key);
         }
+
         bool isKey() const
         {
             return sections.size() == 0;
         }
+
         std::vector<std::string> getAllSections() const
         {
             std::vector<std::string> ret;
@@ -123,6 +142,7 @@ public:
             }
             return ret;
         }
+
         std::vector<std::string> getAllKeys() const
         {
             std::vector<std::string> ret;
@@ -135,10 +155,12 @@ public:
             }
             return ret;
         }
+
         void addWithoutIndex(const KeyType1& value)
         {
             sections.push_back({ "", value });
         }
+
         std::string allToString(int layer = 1, bool show_other = true, const std::string& line_break = "\n") const    //ignore the value of first layer
         {
             std::string str;
@@ -268,6 +290,7 @@ public:
         }
         error_ = ini_parse_content(content);
     }
+
     // Return the result of ini_parse(), i.e., 0 on success, line number of
     // first error on parse error, or -1 on file open error.
     int parseError() const
@@ -336,12 +359,14 @@ public:
             return getReal(section, key, default_value);
         }
     }
+
     template <typename T>
     static T stringTo(const std::string& s)
     {
         double v = atof(s.c_str());
         return T(v);
     }
+
     //only support int, float, double
     template <typename T>
     T get(const std::string& section, const std::string& key, T default_value = T(0)) const
@@ -349,6 +374,7 @@ public:
         auto v = stringTo<T>(getString(section, key, std::to_string(default_value)));
         return v;
     }
+
     //note if the result vector is shorter than default_v, the rest will be filled with default_v rest
     std::vector<std::string> getStringVector(const std::string& section, const std::string& key, const std::string& split_chars = ",", const std::vector<std::string>& default_v = {}) const
     {
@@ -356,6 +382,7 @@ public:
         for (auto i = v.size(); i < default_v.size(); i++) { v.push_back(default_v[i]); }
         return v;
     }
+
     //only support int, float, double
     //note if the result vector is shorter than default_v, the rest will be filled with default_v rest
     template <typename T>
@@ -367,6 +394,7 @@ public:
         for (auto i = v.size(); i < default_v.size(); i++) { v.push_back(default_v[i]); }
         return v;
     }
+
     //check one section exist or not
     int hasSection(const std::string& section) const
     {
@@ -515,22 +543,26 @@ private:
             }
             else if (new_line && c == '[')
             {
-                auto square_count = content.find_first_not_of("[", i + 1) - i;
-                auto end = content.find(std::string(square_count, ']'), i + square_count);
-                if (square_count > stack.size())
+                auto square_count = content.find_first_not_of("[", i + 1);
+                if (square_count != std::string::npos && square_count >= i)
                 {
-                    stack.push_back(&stack.back()->sections[section]);
+                    square_count -= i;
+                    auto end = content.find(std::string(square_count, ']'), i + square_count);
+                    if (square_count > stack.size())
+                    {
+                        stack.push_back(&stack.back()->sections[section]);
+                    }
+                    else if (square_count < stack.size())
+                    {
+                        if (square_count < 1) { square_count = 1; }
+                        stack.resize(square_count);
+                    }
+                    if (end != std::string::npos)
+                    {
+                        section = content.substr(i + square_count, end - i - square_count);    //found a new section
+                    }
+                    i = end;
                 }
-                else if (square_count < stack.size())
-                {
-                    if (square_count < 1) { square_count = 1; }
-                    stack.resize(square_count);
-                }
-                if (end != std::string::npos)
-                {
-                    section = content.substr(i + square_count, end - i - square_count);    //found a new section
-                }
-                i = end;
                 new_line = false;
             }
             else if (new_line && c != ' ')
