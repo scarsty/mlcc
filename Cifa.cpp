@@ -24,6 +24,21 @@ Cifa::Cifa()
                     std::cout << d1.toDouble();
                 }
             }
+            return Object(double(d.size()));
+        });
+    register_function("println", [](ObjectVector& d)
+        {
+            for (auto& d1 : d)
+            {
+                if (d1.isType<std::string>())
+                {
+                    std::cout << d1.toString();
+                }
+                else
+                {
+                    std::cout << d1.toDouble();
+                }
+            }
             std::cout << "\n";
             return Object(double(d.size()));
         });
@@ -418,6 +433,11 @@ CalUnitType Cifa::guess_char(char c)
     if (std::string("\"\'").find(c) != std::string::npos)
     {
         return CalUnitType::String;
+    }
+    //support utf-8
+    if (c <0)
+    {
+        return CalUnitType::Parameter;
     }
     return CalUnitType::None;
 }
@@ -1304,6 +1324,15 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
         if (c.v.size() == 0)
         {
             add_error(c, "function %s has no operands", c.str.c_str());
+        }
+        if (!functions.contains(c.str) && !functions2.contains(c.str))
+        {
+            // seems will not happen, functions2 will hold it
+            add_error(c, "function %s is not defined", c.str.c_str());
+        }
+        if (!functions.contains(c.str) && functions2[c.str].body.type == CalUnitType::None)
+        {
+            add_error(c, "function %s has no body", c.str.c_str());
         }
     }
     else if (c.type == CalUnitType::Key)
