@@ -435,7 +435,7 @@ CalUnitType Cifa::guess_char(char c)
         return CalUnitType::String;
     }
     //support utf-8
-    if (c <0)
+    if (c < 0)
     {
         return CalUnitType::Parameter;
     }
@@ -447,41 +447,6 @@ std::list<CalUnit> Cifa::split(std::string& str)
 {
     std::string r;
     std::list<CalUnit> rv;
-
-    //删除注释
-    size_t pos = 0;
-    while (pos != std::string::npos)
-    {
-        if ((pos = str.find("/*", pos)) != std::string::npos)
-        {
-            auto pos1 = str.find("*/", pos + 2);
-            if (pos1 == std::string::npos)
-            {
-                pos1 = str.size();
-            }
-            else
-            {
-                pos1 += 2;
-            }
-            for (size_t i = pos; i < pos1; i++)
-            {
-                if (str[i] != '\n') { str[i] = ' '; }
-            }
-        }
-    }
-    pos = 0;
-    while (pos != std::string::npos)
-    {
-        if ((pos = str.find("//", pos)) != std::string::npos)
-        {
-            auto pos1 = str.find("\n", pos + 2);
-            if (pos1 == std::string::npos)
-            {
-                pos1 = str.size();
-            }
-            std::fill(str.begin() + pos, str.begin() + pos1, ' ');
-        }
-    }
 
     CalUnitType stat = CalUnitType::None;
     char in_string = 0;
@@ -537,6 +502,46 @@ std::list<CalUnit> Cifa::split(std::string& str)
             else
             {
                 stat = CalUnitType::Operator;
+            }
+            //"/"开头时特别处理注释
+            if (c == '/')
+            {
+                if (i < str.size() - 1)
+                {
+                    auto c1 = str[i + 1];
+                    if (c1 == '*')
+                    {
+                        stat = CalUnitType::None;
+                        while (i < str.size() - 1)
+                        {
+                            if (str[i] == '*' && str[i + 1] == '/')
+                            {
+                                i++;
+                                break;
+                            }
+                            if (str[i] == '\n')
+                            {
+                                line++;
+                                col = 0;
+                            }
+                            i++;
+                        }
+                    }
+                    else if (c1 == '/')
+                    {
+                        stat = CalUnitType::None;
+                        while (i < str.size() - 1)
+                        {
+                            if (str[i] == '\n')
+                            {
+                                line++;
+                                col = 0;
+                                break;
+                            }
+                            i++;
+                        }
+                    }
+                }
             }
         }
         else if (g == CalUnitType::Split)
@@ -640,7 +645,7 @@ std::list<CalUnit> Cifa::split(std::string& str)
                     auto itr = std::next(it);
                     if (itr != rv.end()
                         && it->str == std::string(1, op[0]) && itr->str == std::string(1, op[1])
-                        && it->line == itr->line && it->col == itr->col - 1)
+                        && it->line == itr->line && it->col == itr->col - 1)    //合并的两个字符在同一行，列相邻
                     {
                         it->str = op;
                         it = rv.erase(std::next(it));
@@ -1234,16 +1239,23 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
         {
             if (c.str == "=")
             {
-                if (c.v[0].type == CalUnitType::Parameter)
+                if (c.v.size() != 2)
                 {
-                    check_cal_unit(c.v[1], &c, p);    //here make sure no undefined parameters at right of "="
-                    get_parameter(c.v[0], p);         //record a parameter at left of "="
-                    //this will check twice things at right of "="
+                    add_error(c, "operator = has wrong operands");
                 }
-                if (c.v[0].type == CalUnitType::Parameter && get_parameter(c.v[0], p).type1 == "__"
-                    || c.v[0].type != CalUnitType::Parameter)
+                else
                 {
-                    add_error(c, "%s cannot be assigned", c.v[0].str.c_str());
+                    if (c.v[0].type == CalUnitType::Parameter)
+                    {
+                        check_cal_unit(c.v[1], &c, p);    //here make sure no undefined parameters at right of "="
+                        get_parameter(c.v[0], p);         //record a parameter at left of "="
+                        //this will check twice things at right of "="
+                    }
+                    if (c.v[0].type == CalUnitType::Parameter && get_parameter(c.v[0], p).type1 == "__"
+                        || c.v[0].type != CalUnitType::Parameter)
+                    {
+                        add_error(c, "%s cannot be assigned", c.v[0].str.c_str());
+                    }
                 }
             }
             if (c.str == "::" || c.str == ".")
