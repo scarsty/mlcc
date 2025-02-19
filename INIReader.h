@@ -90,18 +90,27 @@ public:
         KeyType1(const T& value) :
             value(std::to_string(value)) {}
 
-        int toInt() const
+        int toInt(int default_value = 0) const
         {
+            if (value.empty())
+            {
+                return default_value;
+            }
             return atoi(value.c_str());
         }
 
-        double toDouble() const
+        double toDouble(double default_value = 0) const
         {
+            if (value.empty())
+            {
+                return default_value;
+            }
             return atof(value.c_str());
         }
 
         const std::string& toString() const
         {
+            // no default value, accept empty string
             return value;
         }
 
@@ -115,7 +124,7 @@ public:
             return sections.at(key);
         }
 
-        const int count(const std::string& key) const
+        int count(const std::string& key) const
         {
             return sections.count(key);
         }

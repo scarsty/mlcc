@@ -128,6 +128,8 @@ ini["sec0"]["a"] = 1;
 ini["sec0"]["sec0_1"]["a"] = 1;
 ini["sec1"]["a"] = 1;
 ```
+Note that if you use toString(), toInt() or toDouble() of this type, a new key with empty value will be created if it does not exist.
+
 These C++ code will give an ini file like this:
 
 ```ini
