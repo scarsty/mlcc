@@ -1323,12 +1323,19 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
         {
             add_error(c, "cannot calculate parameter %s with operands", c.str.c_str());
         }
-        if (father && father->type == CalUnitType::Operator && (father->str == "::" || father->str == "."))
+        if (father && father->type == CalUnitType::Operator)
         {
-        }
-        else if (c.type == CalUnitType::Parameter && !check_parameter(c, p))
-        {
-            add_error(c, "parameter %s is at right of = but not been initialized", c.str.c_str());    //parameters at left of "=" have been added
+            if (father->str == "::" || father->str == ".")
+            {
+                // do nothings
+            }
+            else if (father->str == "=")
+            {
+                if (!check_parameter(c, p))
+                {
+                    add_error(c, "parameter %s is at right of = but not been initialized", c.str.c_str());    //parameters at left of "=" have been added
+                }
+            }
         }
     }
     else if (c.type == CalUnitType::Function)
