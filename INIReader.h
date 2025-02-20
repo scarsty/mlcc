@@ -74,8 +74,8 @@ public:
     {
     public:
         std::string value;
-        ListWithIndex<KeyType1> sections;
         std::string other;
+        ListWithIndex<KeyType1> group;
 
     public:
         KeyType1() {}
@@ -116,33 +116,33 @@ public:
 
         KeyType1& operator[](const std::string& key)
         {
-            return sections[key];
+            return group[key];
         }
 
         const KeyType1& operator[](const std::string& key) const
         {
-            return sections.at(key);
+            return group.at(key);
         }
 
         int count(const std::string& key) const
         {
-            return sections.count(key);
+            return group.count(key);
         }
 
         void erase(const std::string& key)
         {
-            sections.erase(key);
+            group.erase(key);
         }
 
         bool isKey() const
         {
-            return sections.size() == 0;
+            return group.size() == 0;
         }
 
         std::vector<std::string> getAllSections() const
         {
             std::vector<std::string> ret;
-            for (auto& value : sections)
+            for (auto& value : group)
             {
                 if (!value.value.isKey())
                 {
@@ -155,7 +155,7 @@ public:
         std::vector<std::string> getAllKeys() const
         {
             std::vector<std::string> ret;
-            for (auto& value : sections)
+            for (auto& value : group)
             {
                 if (value.value.isKey())
                 {
@@ -167,15 +167,15 @@ public:
 
         void addWithoutIndex(const KeyType1& value)
         {
-            sections.push_back({ "", value });
+            group.push_back({ "", value });
         }
 
         std::string allToString(int layer = 1, bool show_other = true, const std::string& line_break = "\n") const    //ignore the value of first layer
         {
             std::string str;
-            for (auto& sec : sections)
+            for (auto& sec : group)
             {
-                if (sec.value.sections.size() == 0)
+                if (sec.value.group.size() == 0)
                 {
                     if (sec.key.empty())
                     {
@@ -197,9 +197,9 @@ public:
                     str += line_break;
                 }
             }
-            for (auto& sec : sections)
+            for (auto& sec : group)
             {
-                if (sec.value.sections.size() > 0)
+                if (sec.value.group.size() > 0)
                 {
                     str += std::string(layer, '[');
                     str += sec.key;
@@ -213,7 +213,7 @@ public:
     };
 
 private:
-    KeyType1 keys;
+    KeyType1 root;
 
 #ifdef _WIN32
     std::string line_break_ = "\r\n";
@@ -254,7 +254,7 @@ public:
 
     KeyType1& operator[](const std::string& key)
     {
-        return keys[key];
+        return root[key];
     }
 
     // parse a given filename
@@ -311,16 +311,16 @@ public:
     std::string getString(const std::string& section, const std::string& key, const std::string& default_value = "") const
     {
         auto section1 = (section);
-        if (keys.count(section1) == 0)
+        if (root.count(section1) == 0)
         {
             return default_value;
         }
         auto key1 = (key);
-        if (keys[section1].count(key1) == 0)
+        if (root[section1].count(key1) == 0)
         {
             return default_value;
         }
-        return keys[section1][key1].value;
+        return root[section1][key1].value;
     }
 
     // Get an integer (long) value from INI file, returning default_value if
@@ -407,17 +407,17 @@ public:
     //check one section exist or not
     int hasSection(const std::string& section) const
     {
-        return keys.count(section);
+        return root.count(section);
     }
 
     //check one section and one key exist or not
     int hasKey(const std::string& section, const std::string& key) const
     {
-        if (keys.count(section) == 0)
+        if (root.count(section) == 0)
         {
             return 0;
         }
-        if (keys[section].count(key) == 0)
+        if (root[section].count(key) == 0)
         {
             return 0;
         }
@@ -427,7 +427,7 @@ public:
     std::vector<std::string> getAllSections() const
     {
         std::vector<std::string> ret;
-        for (auto& value : keys.sections)
+        for (auto& value : root.group)
         {
             ret.push_back(value.key);
         }
@@ -437,11 +437,11 @@ public:
     std::vector<std::string> getAllKeys(const std::string& section) const
     {
         std::vector<std::string> ret;
-        if (keys.count(section) == 0)
+        if (root.count(section) == 0)
         {
             return ret;
         }
-        auto& sec = keys[section].sections;
+        auto& sec = root[section].group;
         for (auto& kv : sec)
         {
             if (!kv.key.empty())
@@ -455,11 +455,11 @@ public:
     std::vector<KeyType> getAllKeyValues(const std::string& section) const
     {
         std::vector<KeyType> ret;
-        if (keys.count(section) == 0)
+        if (root.count(section) == 0)
         {
             return ret;
         }
-        auto& sec = keys[section].sections;
+        auto& sec = root[section].group;
         for (auto& kv : sec)
         {
             if (!kv.key.empty())
@@ -472,23 +472,23 @@ public:
 
     void setKey(const std::string& section, const std::string& key, const std::string& value)
     {
-        valueHandler(keys, section, key, value);
+        valueHandler(root, section, key, value);
     }
 
     void eraseKey(const std::string& section, const std::string& key)
     {
-        keys[section].erase(key);
+        root[section].erase(key);
     }
 
     void eraseSection(const std::string& section)
     {
-        keys.erase(section);
+        root.erase(section);
     }
 
     void clear()
     {
-        keys.sections.clear();
-        keys.sections.index.clear();
+        root.group.clear();
+        root.group.index.clear();
     }
 
 private:
@@ -533,7 +533,7 @@ private:
 
         int status = 0;    //0: new line, 1: comment, 2: section, 3: key, 4: value
         std::string str;
-        std::vector<KeyType1*> stack = { &keys };
+        std::vector<KeyType1*> stack = { &root };
         while (i < content.size())
         {
             auto& c = content[i];
@@ -559,7 +559,7 @@ private:
                     auto end = content.find(std::string(square_count, ']'), i + square_count);
                     if (square_count > stack.size())
                     {
-                        stack.push_back(&stack.back()->sections[section]);
+                        stack.push_back(&stack.back()->group[section]);
                     }
                     else if (square_count < stack.size())
                     {
@@ -767,7 +767,7 @@ public:
             content += "\xEF\xBB\xBF";
         }
         bool first = true;
-        content += keys.allToString(1, comment, line_break_);
+        content += root.allToString(1, comment, line_break_);
         if (content.size() >= line_break_.size())
         {
             content.resize(content.size() - line_break_.size());
