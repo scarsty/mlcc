@@ -6,13 +6,15 @@
 #include <string>
 #include <vector>
 
-namespace strfunc
+namespace strcvt
 {
 // string coding/type convertor functions
 #ifdef _MSC_VER
 std::string CvtStringToUTF8(const std::string& localstr);
 std::string CvtUTF8ToLocal(const std::string& utf8str);
 std::wstring CvtUTF8ToWChar(const std::string& utf8str, int utf8strlen = -1);
+std::wstring CvtLocalStringToWString(const std::string& string);
+std::string CvtWStringToLocalString(const std::wstring& wstring);
 #endif
 std::string CvtStringToUTF8(const char16_t& src);
 std::string CvtStringToUTF8(const std::u16string& src);

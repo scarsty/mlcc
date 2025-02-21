@@ -392,3 +392,7 @@ if (D3DKMTQueryStatistics(&queryStatistics))
 
 在显存查询的部分，需要把每段的占用加起来得到总的占用。
 
+# targetlnk
+
+Get the target of a .lnk file.
+
