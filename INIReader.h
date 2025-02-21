@@ -108,9 +108,12 @@ public:
             return atof(value.c_str());
         }
 
-        const std::string& toString() const
+        const std::string& toString(const std::string& default_value = "") const
         {
-            // no default value, accept empty string
+            if (value.empty())
+            {
+                return default_value;
+            }
             return value;
         }
 

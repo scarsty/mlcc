@@ -21,11 +21,13 @@ public:
     {
         FT_Init_FreeType(&library);
     }
+
     ~DrawStringFT()
     {
         FT_Done_Face(face);
         FT_Done_FreeType(library);
     }
+
     void openFont(const std::string& fontname, int fontsize)
     {
         if (FT_New_Face(library, fontname.c_str(), 0, &face))
@@ -37,12 +39,13 @@ public:
         slot = face->glyph;
         fontsize_ = fontsize;
     }
-    int drawString(std::string text, cv::Mat& mat, int x, int y, cv::Vec3b color, int fusion = 0)
+
+    int drawString(std::string text, cv::Mat& mat, int x, int y, cv::Vec3b color, int fusion = 0, const std::string& code = "utf-8")
     {
         pen.x = 0;
         pen.y = 0;
         int width = 0;
-        auto text1 = PotConv::conv(text, "utf-8", "utf-16le");
+        auto text1 = PotConv::conv(text, code, "utf-16le");
         for (int n = 0; n < text1.size(); n += 2)
         {
             FT_Set_Transform(face, nullptr, &pen);
