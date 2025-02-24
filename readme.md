@@ -101,7 +101,7 @@ line2"
 
 This library does not support the escape characters or operating the comments.
 
-If a key has been multi-defined, the last value should be taken. **Please note all the multi-defined lines EXCLUDE the first one will be ERASED when save!** But the last comment to it will be kept.
+If a key has been multi-defined, the last value is reserved. **Please note all the multi-defined keys EXCLUDE the first one with the last value will be ERASED when saving!** But the last comment to it will be kept.
 
 You can define how to compare the section and key. Such as:
 
