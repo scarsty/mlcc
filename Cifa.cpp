@@ -1533,14 +1533,14 @@ Object Cifa::run_script(std::string str)
     {
         auto p = parameters;
         check_cal_unit(c, nullptr, p);
-        for (auto& f : functions2)
+        for (auto& [name, func2] : functions2)
         {
             auto p = parameters;
-            for (auto& a : f.second.arguments)
+            for (auto& a : func2.arguments)
             {
                 p[a] = Object();
             }
-            check_cal_unit(f.second.body, nullptr, p);
+            check_cal_unit(func2.body, nullptr, p);
         }
     }
     if (errors.empty())

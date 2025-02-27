@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <cstring>
 #include <string>
 #include <vector>
@@ -71,7 +71,9 @@ void changePath(const std::string& path);
 std::string getCurrentPath();
 void makePath(const std::string& path);
 void copyFile(const std::string& src, const std::string& dst);
+void moveFile(const std::string& src, const std::string& dst);
 void removeFile(const std::string& filename);
+void removePath(const std::string& path);
 std::string getRelativePath(const std::string& filename, const std::string& basepath);
 
 //functions about file name

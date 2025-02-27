@@ -301,9 +301,19 @@ void filefunc::copyFile(const std::string& src, const std::string& dst)
     std::filesystem::copy_file(src, dst, std::filesystem::copy_options::overwrite_existing);
 }
 
+void filefunc::moveFile(const std::string& src, const std::string& dst)
+{
+    std::filesystem::rename(src, dst);
+}
+
 void filefunc::removeFile(const std::string& filename)
 {
     std::filesystem::remove_all(filename);
+}
+
+void filefunc::removePath(const std::string& path)
+{
+    std::filesystem::remove_all(path);
 }
 
 std::string filefunc::getRelativePath(const std::string& filename, const std::string& basepath)
