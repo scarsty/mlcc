@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <algorithm>
 #include <functional>
@@ -204,10 +204,13 @@ public:
             {
                 if (sec.value.group.size() > 0)
                 {
-                    str += std::string(layer, '[');
-                    str += sec.key;
-                    str += std::string(layer, ']');
-                    str += line_break;
+                    if (!(layer == 1 && sec.key.empty() && str.empty()))
+                    {
+                        str += std::string(layer, '[');
+                        str += sec.key;
+                        str += std::string(layer, ']');
+                        str += line_break;
+                    }
                     str += sec.value.allToString(layer + 1, show_other, line_break);
                 }
             }
