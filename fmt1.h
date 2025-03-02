@@ -16,6 +16,7 @@
 #include <cctype>
 #include <iostream>
 #include <typeinfo>
+
 namespace fmt1
 {
 
@@ -240,6 +241,9 @@ void print(const std::string& fmt, Args&&... args)
 }    // namespace fmt1
 #else
 #include <format>
+#ifdef __cpp_lib_print
+#include <print>
+#endif
 
 #define FMT1_STRING const std::format_string<Args...>
 
@@ -281,14 +285,18 @@ std::string format(const std::string_view& fmt, Args&&... args)
 }
 
 template <is_printable... Args>
-void print(FILE* fout, const std::string_view& fmt, Args&&... args)
+void print(FILE* fout, std::format_string<Args...> fmt, Args&&... args)
 {
+#ifdef __cpp_lib_print
+    std::print(fout, fmt, std::forward<Args>(args)...);
+#else
     auto res = format(fmt, std::forward<Args>(args)...);
     fprintf(fout, "%s", res.c_str());
+#endif
 }
 
 template <is_printable... Args>
-void print(const std::string_view& fmt, Args&&... args)
+void print(const std::format_string<Args...> fmt, Args&&... args)
 {
     print(stdout, fmt, std::forward<Args>(args)...);
 }
@@ -302,6 +310,7 @@ struct std::formatter<T*, CharT>
     {
         return context.begin();
     }
+
     auto format(const T* t, std::format_context& context) const
     {
         return std::format_to(context.out(), "{}", (uint64_t)t);
