@@ -4,12 +4,8 @@
 #include <string>
 #include <vector>
 
-#ifdef __cpp_lib_format
 #ifndef FMT1_USE_STD_FORMAT
 #define FMT1_USE_STD_FORMAT 1
-#endif
-#else
-#define FMT1_USE_STD_FORMAT 0
 #endif
 
 #if !FMT1_USE_STD_FORMAT
@@ -241,9 +237,7 @@ void print(const std::string& fmt, Args&&... args)
 }    // namespace fmt1
 #else
 #include <format>
-#ifdef __cpp_lib_print
 #include <print>
-#endif
 
 #define FMT1_STRING const std::format_string<Args...>
 
@@ -287,12 +281,7 @@ std::string format(const std::string_view& fmt, Args&&... args)
 template <is_printable... Args>
 void print(FILE* fout, std::format_string<Args...> fmt, Args&&... args)
 {
-#ifdef __cpp_lib_print
     std::print(fout, fmt, std::forward<Args>(args)...);
-#else
-    auto res = format(fmt, std::forward<Args>(args)...);
-    fprintf(fout, "%s", res.c_str());
-#endif
 }
 
 template <is_printable... Args>
