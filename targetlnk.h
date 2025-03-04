@@ -1,10 +1,10 @@
-#pragma once
-
+﻿#pragma once
+#include <string>
+#ifdef _WIN32
 #include "shlobj_core.h"
 #include "strcvt.h"
 #include "windows.h"
 #include "wrl.h"
-#include <string>
 
 class CoInitializeHelper
 {
@@ -81,3 +81,9 @@ inline std::string target_of_lnk(const std::string &lnk)
     }
     return "";
 }
+#else
+inline std::string target_of_lnk(const std::string &lnk)
+{
+    return "";
+}
+#endif
