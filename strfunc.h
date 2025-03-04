@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include <vector>
 
@@ -72,7 +72,5 @@ std::vector<T> findNumbers(const std::string& s)
     findNumbers(s, &data);
     return data;
 }
-
-const std::string generateUUID();
 
 }    //namespace strfunc

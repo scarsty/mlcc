@@ -28,6 +28,7 @@
 
 namespace
 {
+#ifdef _MSC_VER
 std::wstring str2wstr(const std::string& str)
 {
     int wlen = MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.size(), nullptr, 0);
@@ -36,6 +37,7 @@ std::wstring str2wstr(const std::string& str)
     MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.size(), wstr.data(), wlen);
     return wstr;
 }
+#endif
 }
 
 bool filefunc::fileExist(const std::string& name)
