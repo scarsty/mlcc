@@ -292,20 +292,24 @@ void print(const std::format_string<Args...> fmt, Args&&... args)
 
 }    // namespace fmt1
 
+
 template <typename T, typename CharT>
 struct std::formatter<T*, CharT>
 {
-    constexpr auto parse(std::format_parse_context& context)
+    template <typename FormatParseContext>
+    auto parse(FormatParseContext& pc)
     {
-        return context.begin();
+        return pc.begin();
     }
 
-    auto format(const T* t, std::format_context& context) const
+    template <typename FormatContext>
+    auto format(const T* t, FormatContext& fc) const
     {
-        return std::format_to(context.out(), "{}", (uint64_t)t);
+        return std::format_to(fc.out(), "{}", (uint64_t)t);
     }
 };
 
+/*
 template <typename T, typename CharT>
 struct std::formatter<std::vector<T>, CharT> : std::formatter<T, CharT>
 {
@@ -354,5 +358,5 @@ struct std::formatter<std::map<T1, T2>, CharT> : std::formatter<const char*, Cha
         }
         return format_to(out, "]");
     }
-};
+};*/
 #endif
