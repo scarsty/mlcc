@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "iconv.h"
 #include <cstring>
@@ -31,6 +31,15 @@ public:
     {
         auto str = PotConv::cp936toutf8(s0);
         memcpy(s1, str.data(), str.length());
+    }
+
+    static std::wstring toWide(const std::string& src, const char* from)
+    {
+        auto str = PotConv::conv(src, from, "utf-16le");
+        std::wstring ws;
+        ws.resize(str.size() / 2);
+        memcpy(&ws[0], str.data(),str.size()/2*2);
+        return ws;
     }
     static std::string to_read(const std::string& src);
 
