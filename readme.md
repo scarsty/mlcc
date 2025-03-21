@@ -288,6 +288,8 @@ If you cannot stand the neglect of Clang and GCC, maybe you can try it.
 
 It also provide the formatter of vector and map to use is C++20.
 
+It has been removed due to the supporting of the mainstream compilers.
+
 # PotConv
 
 A C++ warp for iconv.
