@@ -290,11 +290,9 @@ It also provide the formatter of vector and map to use is C++20.
 
 It has been removed due to the supporting of the mainstream compilers.
 
-# dyna_format
+# runtime_format
 
-Dynamic format and print, the format string can be not const.
-
-Taken from the example on <https://en.cppreference.com/w/cpp/utility/format/format>.
+A simple runtime format implement, temporary use before C++26 is released.
 
 # PotConv
 
