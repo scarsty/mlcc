@@ -901,7 +901,7 @@ void Cifa::combine_ops(std::list<CalUnit>& ppp)
                             bool is_single = false;
                             if (itr != ppp.end())
                             {
-                                if ((it->str == "+" || it->str == "-")
+                                if ((it->str == "+" || it->str == "-" || it->str == "!")
                                         && (itr->type == CalUnitType::Constant || itr->type == CalUnitType::Function || itr->type == CalUnitType::Parameter)
                                     || (it->str == "++" || it->str == "--")
                                         && itr->type == CalUnitType::Parameter)
