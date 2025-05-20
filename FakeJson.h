@@ -1,22 +1,40 @@
 ﻿#pragma once
-#include <any>
 #include <functional>
 #include <map>
-#include <stdexcept>
 #include <string>
-#include <typeinfo>
+#include <variant>
 #include <vector>
-
-class FakeJson;
-template <typename T>
-concept FakeJsonable = (!std::is_same_v<std::remove_cvref_t<T>, FakeJson>) && (!std::is_same_v<std::remove_cvref_t<T>, std::any>);
 
 class FakeJson
 {
 private:
-    std::any value;
-    std::map<std::string, FakeJson> value_map;
-    std::vector<FakeJson> value_vector;
+    std::variant<nullptr_t, int64_t, double, bool, std::string, std::map<std::string, FakeJson>, std::vector<FakeJson>> value;
+    std::map<std::string, FakeJson>& value_map()
+    {
+        if (!isMap())
+        {
+            value = std::map<std::string, FakeJson>();
+        }
+        return std::get<std::map<std::string, FakeJson>>(value);
+    }
+    std::vector<FakeJson>& value_vector()
+    {
+        if (!isVector())
+        {
+            value = std::vector<FakeJson>();
+        }
+        return std::get<std::vector<FakeJson>>(value);
+    }
+    enum
+    {
+        type_null,
+        type_int,
+        type_double,
+        type_bool,
+        type_string,
+        type_map,
+        type_vector
+    };
 
 public:
     FakeJson() = default;
@@ -31,7 +49,7 @@ public:
 
     FakeJson(bool v) { value = v; }
 
-    template <FakeJsonable T>
+    template <typename T>
     FakeJson(const std::vector<T>& v)
     {
         for (auto& v1 : v)
@@ -40,7 +58,7 @@ public:
         }
     }
 
-    template <FakeJsonable T>
+    template <typename T>
     FakeJson(const std::map<std::string, T>& m)
     {
         for (auto& p : m)
@@ -49,151 +67,185 @@ public:
         }
     }
 
-    template <FakeJsonable T>
+    template <typename T>
     FakeJson(const std::pair<std::string, T>& p) { (*this)[p.first] = p.second; }
 
-    template <FakeJsonable T>
+    template <typename T>
     FakeJson(const std::pair<const char*, T>& p) { (*this)[p.first] = p.second; }
 
-    std::type_info const& type() const { return value.type(); }
+    //std::type_info const& type() const { return value.type(); }
 
     template <typename T>
-    bool isType() const { return value.type() == typeid(T); }
+    bool isType() const { return std::holds_alternative<T>(value); }
 
-    bool isInt() const { return isType<int>(); }
+    bool isInt() const { return value.index() == type_int; }
 
-    bool isDouble() const { return isType<double>(); }
+    bool isDouble() const { return value.index() == type_double; }
 
-    bool isString() const { return isType<std::string>(); }
+    bool isString() const { return value.index() == type_string; }
 
-    bool isBool() const { return isType<bool>(); }
+    bool isBool() const { return value.index() == type_bool; }
 
-    bool isNull() const { return !value.has_value(); }
+    bool isNull() const { return value.index() == type_null; }
 
-    bool hasValue() const { return value.has_value(); }
+    bool isValue() const { return value.index() != type_null && value.index() != type_map && value.index() != type_vector; }
 
-    bool isMap() const { return !value_map.empty(); }
+    bool isMap() const { return value.index() == type_map; }
 
-    bool isVector() const { return !value_vector.empty(); }
+    bool isVector() const { return value.index() == type_vector; }
 
-    bool empty() const { return value_map.empty() && value_vector.empty(); }
+    int toInt() { return std::get<int64_t>(value); }
 
-    template <FakeJsonable T>
-    operator T() { return to<T>(); }
+    double toDouble() { return std::get<double>(value); }
 
-    template <FakeJsonable T>
-    T to()
-    {
-        if (isType<T>())
-        {
-            return std::any_cast<T>(value);
-        }
-        if (!value.has_value())
-        {
-            value = T();
-        }
-        return T();
-    }
+    std::string toString() { return std::get<std::string>(value); }
 
-    template <>
-    const char* to()
-    {
-        if (isType<std::string>())
-        {
-            return std::any_cast<std::string&>(value).c_str();
-        }
-        return "";
-    }
+    bool toBool() { return std::get<bool>(value); }
 
-    int toInt() { return to<int>(); }
+    FakeJson& operator[](int v) { return value_vector()[v]; }
 
-    double toDouble() { return to<double>(); }
+    FakeJson& operator[](const std::string& v) { return value_map()[v]; }
 
-    std::string toString() { return to<std::string>(); }
+    FakeJson& operator[](const char* v) { return value_map()[std::string(v)]; }
 
-    bool toBool() { return to<bool>(); }
+    void pushBack(const FakeJson& v) { value_vector().push_back(v); }
 
-    FakeJson& operator[](int v) { return value_vector[v]; }
-
-    FakeJson& operator[](const std::string& v) { return value_map[v]; }
-
-    FakeJson& operator[](const char* v) { return value_map[std::string(v)]; }
-
-    void pushBack(const FakeJson& v) { value_vector.push_back(v); }
-
-    void erase(const std::string& v) { value_map.erase(v); }    //需由上一级删除，而不能自己删除，下同
+    void erase(const std::string& v) { value_map().erase(v); }    //需由上一级删除，而不能自己删除，下同
 
     void erase(int v)
     {
-        if (v >= 0 && v < value_vector.size()) { value_vector.erase(value_vector.begin() + v); }
+        if (v >= 0 && v < value_vector().size()) { value_vector().erase(value_vector().begin() + v); }
     }
 
     void clear()
     {
-        value.reset();
-        value_map.clear();
-        value_vector.clear();
+        value = nullptr;
     }
 
-    bool exist(const std::string& v) const { return value_map.count(v); }
+    bool exist(const std::string& v) const { return std::get<std::map<std::string, FakeJson>>(value).count(v); }
 
-    bool exist(int v) const { return v >= 0 && v < value_vector.size(); }
+    bool exist(int v) const { return v >= 0 && v < std::get<std::vector<FakeJson>>(value).size(); }
 
-    template <typename T>
-    std::vector<T> toVector() const
-    {
-        std::vector<T> v;
-        for (auto& i : value_vector)
-        {
-            v.emplace_back(i.to<T>());
-        }
-        return v;
-    }
+    //template <typename T>
+    //std::vector<T> toVector() const
+    //{
+    //    std::vector<T> v;
+    //    for (auto& i : value_vector)
+    //    {
+    //        v.emplace_back(i.to<T>());
+    //    }
+    //    return v;
+    //}
 
-    template <typename T>
-    std::map<std::string, T> toMap() const
-    {
-        std::map<std::string, T> v;
-        for (auto& i : value_map)
-        {
-            v[i.first] = i.second.to<T>();
-        }
-        return v;
-    }
-
-    const std::map<std::string, FakeJson>& asMap() const { return value_map; }
-
-    const std::vector<FakeJson>& asVector() const { return value_vector; }
+    //template <typename T>
+    //std::map<std::string, T> toMap() const
+    //{
+    //    std::map<std::string, T> v;
+    //    for (auto& i : value_map)
+    //    {
+    //        v[i.first] = i.second.to<T>();
+    //    }
+    //    return v;
+    //}
 
     bool isPrintable() const
     {
-        return isType<int>() || isType<double>() || isType<std::string>() || isType<bool>();
+        return isInt() || isDouble() || isString() || isBool() || isNull();
     }
 
-    bool isNum() const { return isType<int>() || isType<double>(); }
+    bool isNum() const { return isInt() || isDouble(); }
 
-    std::string to_string() const
+    std::string to_string(bool narrow = true, int space = 0) const
     {
-        if (isType<int>())
+        if (isInt())
         {
-            return std::to_string(std::any_cast<int>(value));
+            return std::to_string(std::get<int64_t>(value));
         }
-        if (isType<double>())
+        if (isDouble())
         {
-            return std::to_string(std::any_cast<double>(value));
+            return std::to_string(std::get<double>(value));
         }
-        if (isType<std::string>())
+        if (isString())
         {
-            return std::any_cast<std::string>(value);
+            return "\"" + std::get<std::string>(value) + "\"";
         }
-        if (isType<bool>())
+        if (isBool())
         {
-            return std::any_cast<bool>(value) ? "true" : "false";
+            return std::get<bool>(value) ? "true" : "false";
         }
         if (isNull())
         {
             return "null";
         }
+        if (isMap())
+        {
+            std::string res;
+            for (auto& [k, v] : std::get<std::map<std::string, FakeJson>>(value))
+            {
+                if (!narrow)
+                    {
+                    res += std::string(space+4, ' ');
+                    }
+                res += "\"" + k + "\": " + v.to_string(narrow, space+4) + ", ";
+                if (!narrow)
+                {
+                    res += "\n";
+                }
+            }
+            if (!res.empty())
+            {
+                res.pop_back();
+                res.pop_back();
+                if (!narrow)
+                {
+                    res.pop_back();
+                }
+            }
+            if (narrow)
+            {
+                res = "{" + res + "}";
+            }
+            else
+            {
+                res = "\n"+ std::string(space, ' ') + "{\n" + res + "\n" + std::string(space , ' ') + "}";
+            }
+            return res;
+        }
+        if (isVector())
+        {
+            std::string res;
+            for (auto& i : std::get<std::vector<FakeJson>>(value))
+            {
+                if (!narrow)
+                {
+                    res += std::string(space + 4, ' ');
+                }
+                res += i.to_string(narrow, space+4) + ", ";
+                if (!narrow)
+                {
+                    res += "\n";
+                }
+            }
+            if (!res.empty())
+            {
+                res.pop_back();
+                res.pop_back();
+                if (!narrow)
+                {
+                    res.pop_back();
+                }
+            }
+            if (narrow)
+            {
+                res = "[" + res + "]";
+            }
+            else
+            {
+                res = "\n" + std::string(space, ' ') + "[\n" + res + "\n" + std::string(space, ' ') + "]";
+            }
+            return res;
+        }
+
         return "";
     }
 
@@ -203,49 +255,50 @@ public:
         std::vector<FakeJson*> ptr{ &o };
         int ignore_space = 1;
         char quote = '\0';
+        bool found_backslash = false;
         std::string cur;
 
-        auto try_to_any = [](std::string&& str1) -> std::any
+        auto try_to_variant = [](std::string&& str1) -> decltype(value)
         {
             auto str = std::move(str1);
             str1.clear();
             if (str.empty())
             {
-                return std::any{};
+                return nullptr;
             }
             if (str[0] == '\"' && str.back() == '\"')
             {
-                return std::any{ str.substr(1, str.size() - 2) };
+                return str.substr(1, str.size() - 2);
             }
             if (str[0] == '\'' && str.back() == '\'')
             {
-                return std::any{ str.substr(1, str.size() - 2) };
+                return str.substr(1, str.size() - 2);
             }
             if (str == "true")
             {
-                return std::any{ true };
+                return true;
             }
             if (str == "false")
             {
-                return std::any{ false };
+                return false;
             }
             if (str == "null")
             {
-                return std::any{};
+                return nullptr;
             }
             char* end = nullptr;
             auto i = strtoll(str.c_str(), &end, 10);
             if (end == str.c_str() + str.size())
             {
-                return std::any{ int(i) };
+                return int(i);
             }
             char* end2 = nullptr;
             auto d = strtod(str.c_str(), &end2);
             if (end2 == str.c_str() + str.size())
             {
-                return std::any{ d };
+                return d;
             }
-            return std::any{ std::move(str) };
+            return std::move(str);
         };
 
         auto dequote = [](std::string& str) -> std::string
@@ -269,34 +322,50 @@ public:
         {
             if (c == '\"' || c == '\'')
             {
-                if (quote == '\0')
+                if (!found_backslash)
                 {
-                    quote = c;
-                    //continue;
-                }
-                else if (quote == c)
-                {
-                    quote = '\0';
-                    //continue;
+                    if (quote == '\0')
+                    {
+                        quote = c;
+                        //continue;
+                    }
+                    else if (quote == c)
+                    {
+                        quote = '\0';
+                        //continue;
+                    }
                 }
             }
             if (quote == '\0')
             {
-                if (c == '[' || c == '{')
+                if (c == '[')
                 {
-                    ptr.back()->value = try_to_any(std::move(cur));
-                    ptr.back()->value_vector.emplace_back();    //create a new one
-                    ptr.push_back(&ptr.back()->value_vector.back());
+                    ptr.push_back(&ptr.back()->value_vector().emplace_back());
                     ignore_space = 1;
                 }
-                else if (c == ']' || c == '}')
+                else if (c == ']')
                 {
-                    ptr.back()->value = try_to_any(std::move(cur));
-                    if (!ptr.back()->value.has_value() && ptr.back()->empty()
-                        && !ptr[ptr.size() - 2]->value_vector.empty() && &ptr[ptr.size() - 2]->value_vector.back() == ptr.back())
+                    if (ptr.back()->isNull())
                     {
-                        ptr[ptr.size() - 2]->value_vector.pop_back();
+                        ptr.back()->value = try_to_variant(std::move(cur));
                     }
+                    if (ptr.size() >= 2)
+                    {
+                        ptr.pop_back();
+                    }
+                }
+                else if (c == '{')
+                {
+                    ptr.push_back(&ptr.back()->value_map()[""]);
+                    ignore_space = 1;
+                }
+                else if (c == '}')
+                {
+                    if (ptr.back()->isNull())
+                    {
+                        ptr.back()->value = try_to_variant(std::move(cur));
+                    }
+                    ptr[ptr.size() - 2]->value_map().erase("");
                     if (ptr.size() >= 2)
                     {
                         ptr.pop_back();
@@ -304,18 +373,26 @@ public:
                 }
                 else if (c == ':')
                 {
-                    ptr.back() = &ptr[ptr.size() - 2]->value_map[dequote(cur)];
+                    ptr.back() = &ptr[ptr.size() - 2]->value_map()[dequote(cur)];
                     cur.clear();
-                    ptr[ptr.size() - 2]->value_vector.pop_back();
                     ignore_space = 1;
                 }
                 else if (c == ',')
                 {
-                    ptr.back()->value = try_to_any(std::move(cur));
+                    if (ptr.back()->isValue() || ptr.back()->isNull())
+                    {
+                        ptr.back()->value = try_to_variant(std::move(cur));
+                    }
                     if (ptr.size() >= 2)
                     {
-                        ptr[ptr.size() - 2]->value_vector.emplace_back();    //change to a new one
-                        ptr.back() = &ptr[ptr.size() - 2]->value_vector.back();
+                        if (ptr[ptr.size() - 2]->isVector())
+                        {
+                            ptr.back() = &ptr[ptr.size() - 2]->value_vector().emplace_back();
+                        }
+                        if (ptr[ptr.size() - 2]->isMap())
+                        {
+                            ptr.back() = &ptr[ptr.size() - 2]->value_map()[""];
+                        }
                     }
                     ignore_space = 1;
                 }
@@ -326,10 +403,21 @@ public:
                 {
                     cur += c;
                     ignore_space = 1;
+                    //如果是非紧凑格式，需要忽略这里的空格
+                    //因此转为非json字串时，string必须用引号包围
                 }
             }
             else
             {
+                if (c == '\\' && !found_backslash)
+                {
+                    found_backslash = true;
+                    continue;
+                }
+                else if (found_backslash)
+                {
+                    found_backslash = false;
+                }
                 cur += c;
                 ignore_space = 0;
             }
@@ -337,128 +425,8 @@ public:
         //return o;
     }
 
-    std::string allToString(bool narrow = true, int space = 0) const
+    std::string allToString(bool narrow = true) const
     {
-        if (narrow)
-        {
-            space = 0;
-        }
-        std::string res;
-        if (hasValue())
-        {
-            //res += std::string(space, ' ');
-            if (isPrintable())
-            {
-                if (isNum())
-                {
-                    res += to_string();
-                }
-                else if (isType<bool>())
-                {
-                    res += to_string();
-                }
-                else
-                {
-                    res += "\"" + to_string() + "\"";
-                }
-            }
-            else
-            {
-                res += "\"Unknown type: ";
-                res += value.type().name();
-                res += "\"";
-            }
-            /*if (!narrow)
-            {
-                res += '\n';
-            }*/
-        }
-        else
-        {
-            if (empty())
-            {
-                res += "null";
-            }
-            if (!value_map.empty())
-            {
-                if (!narrow)
-                {
-                    res += '\n';
-                }
-                res += std::string(space, ' ');
-                res += '{';
-                if (!narrow)
-                {
-                    res += '\n';
-                }
-                for (auto& i : value_map)
-                {
-                    auto valstr = i.second.allToString(narrow, space + 4);
-                    if (!narrow)
-                    {
-                        res += std::string(space + 4, ' ');
-                    }
-                    res += "\"" + i.first + "\": " + valstr + ",";
-                    if (narrow)
-                    {
-                        res += ' ';
-                    }
-                    else
-                    {
-                        res += '\n';
-                    }
-                }
-                res.pop_back();
-                if (narrow)
-                {
-                    res.back() = '}';
-                }
-                else
-                {
-                    res.pop_back();
-                    res += '\n' + std::string(space, ' ') + '}';
-                }
-            }
-            if (!value_vector.empty())
-            {
-                if (!narrow)
-                {
-                    res += '\n';
-                }
-                res += std::string(space, ' ');
-                res += '[';
-                if (!narrow)
-                {
-                    res += '\n';
-                }
-                for (auto& i : value_vector)
-                {
-                    if (!narrow)
-                    {
-                        res += std::string(space + 4, ' ');
-                    }
-                    res += i.allToString(narrow, space + 4) + ",";
-                    if (narrow)
-                    {
-                        res += ' ';
-                    }
-                    else
-                    {
-                        res += '\n';
-                    }
-                }
-                res.pop_back();
-                if (narrow)
-                {
-                    res.back() = ']';
-                }
-                else
-                {
-                    res.pop_back();
-                    res += '\n' + std::string(space, ' ') + ']';
-                }
-            }
-        }
-        return res;
+        return to_string(narrow, 0);
     }
 };
