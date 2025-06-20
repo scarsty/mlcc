@@ -1,0 +1,33 @@
+name: Cifa Unit Test on Windows
+
+on: [push, workflow_dispatch]
+
+jobs:
+  test-windows:
+    runs-on: windows-2022
+
+    defaults:
+      run:
+        shell: cmd
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Create build directory
+      run: mkdir build
+
+    - name: Compile Unit Test
+      run: |
+        cd build
+        cl /EHsc /I../ /Fe:cifa_unit_test.exe ../unit_test/cifa/cifa_unit_test.cpp ../Cifa.cpp /std:c++20
+
+    - name: Run Cifa Unit Test
+      run: |
+        cd build
+        cifa_unit_test.exe
