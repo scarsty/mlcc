@@ -15,12 +15,10 @@ private:
     void write(const std::string& key, const std::string& value);
     struct Tire
     {
-        std::string key_one;
         std::string value;
         std::unordered_map<std::string, Tire> children;
     };
     Tire root_;
-    std::unordered_map<std::string, std::string> single_;    //单字
 
     static int utf8length(const unsigned char c);
 };

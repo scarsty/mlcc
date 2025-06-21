@@ -5,37 +5,35 @@
 #include <functional>
 #include <print>
 
-struct Words
-{
-    int length;           //替换前的字数
-    std::string value;    //替换后的字
-};
-
 std::string SimpleCC::conv(const std::string& src)
 {
+    struct Words
+    {
+        int length = 0;                  //替换前的字数
+        std::string* value = nullptr;    //替换后的字
+    };
+
     if (root_.children.empty())
     {
-        return src;    // No translations available, return original string
+        return src;
     }
 
-    auto translate = [&](const std::string& str, std::string& str1, int begin, int& end)
+    auto translate = [&](const std::string& str, int begin) -> Words
     {
         auto* t = &root_;
-        end = begin;
-        int i = 0, j = 0;
-        std::vector<Words> strs;
+        int end = begin;
+        Words word;
         while (end < str.size())
         {
             int len = utf8length(str[end]);
             auto key = str.substr(end, len);
-            i++;
             if (t->children.contains(key))
             {
                 end += len;
-                //递归查找词组
+                //递归查找最长的词组，不可中断
                 if (!t->children[key].value.empty())
                 {
-                    strs.push_back({ end - begin, t->children[key].value });
+                    word = { end - begin, &t->children[key].value };
                 }
                 t = &t->children[key];
             }
@@ -44,17 +42,12 @@ std::string SimpleCC::conv(const std::string& src)
                 break;
             }
         }
-        if (strs.empty())
+        if (word.length == 0)
         {
             int len = utf8length(str[begin]);
-            str1 = str.substr(begin, len);
-            end = begin + len;
+            return { len, nullptr };
         }
-        else
-        {
-            str1 = strs.back().value;
-            end = begin + strs.back().length;
-        }
+        return word;
     };
 
     std::string dst;
@@ -63,16 +56,16 @@ std::string SimpleCC::conv(const std::string& src)
     {
         int i1 = i;
         std::string str1;
-        translate(src, str1, i, i1);
-        if (str1.empty())
+        auto word = translate(src, i);
+        if (word.value == nullptr)
         {
-            dst += src.substr(i, i1 - i);
+            dst += src.substr(i, word.length);
         }
         else
         {
-            dst += str1;
+            dst += *word.value;
         }
-        i = i1;
+        i += word.length;
     }
     return dst;
 }
@@ -90,32 +83,25 @@ int SimpleCC::init(std::vector<std::string> files)
         //must be utf-8 encoded chinese text
         while (i < str.size())
         {
-            uint8_t code = str[i];
-            if ((code & 0xF0) == 0xE0)    // 3-byte sequence
+            //转换前后分割符为\t，转换后如有多个结果分割符为空格（实际未使用）
+            auto pos_space = str.find('\t', i);
+            if (pos_space == std::string::npos)
             {
-                auto pos_space = str.find('\t', i);
-                if (pos_space == std::string::npos)
-                {
-                    break;
-                }
-                std::string key = str.substr(i, pos_space - i);
-                auto pos_line = str.find_first_of("\r\n", pos_space + 1);
-                if (pos_line == std::string::npos)
-                {
-                    break;
-                }
-                std::string value = str.substr(pos_space + 1, pos_line - pos_space - 1);
-                if (value.contains(' '))
-                {
-                    value = value.substr(0, value.find(' '));
-                }
-                write(key, value);
-                i = pos_line + 1;
+                break;
             }
-            else
+            std::string key = str.substr(i, pos_space - i);
+            auto pos_line = str.find_first_of("\r\n", pos_space + 1);
+            if (pos_line == std::string::npos)
             {
-                i++;
+                break;
             }
+            std::string value = str.substr(pos_space + 1, pos_line - pos_space - 1);
+            if (value.contains(' '))
+            {
+                value = value.substr(0, value.find(' '));
+            }
+            write(key, value);
+            i = pos_line + 1;
         }
     }
 
@@ -124,11 +110,6 @@ int SimpleCC::init(std::vector<std::string> files)
 
 void SimpleCC::write(const std::string& key, const std::string& value)
 {
-    //if (value.size() <= 3)
-    //{
-    //    single_[key] = value;
-    //    return;
-    //}
     std::function<void(const std::string&, const std::string&, Tire&)> write_key = [&](const std::string& key, const std::string& value, Tire& t)
     {
         if (key.size() <= 3)

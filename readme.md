@@ -402,3 +402,7 @@ if (D3DKMTQueryStatistics(&queryStatistics))
 
 Get the target of a .lnk file.
 
+# SimpleCC
+
+If you think the dependencies of OpenCC is very complicated, maybe you can use this.
+
