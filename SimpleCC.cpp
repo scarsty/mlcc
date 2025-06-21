@@ -117,13 +117,14 @@ void SimpleCC::write(const std::string& key, const std::string& value)
 {
     std::function<void(const std::string&, const std::string&, Tire&)> write_key = [&](const std::string& key, const std::string& value, Tire& t)
     {
-        if (key.size() <= 3)
+        int len = utf8length(key[0]);
+        if (key.size() <= len)
         {
             t.children[key].value = value;
         }
         else
         {
-            write_key(key.substr(3), value, t.children[key.substr(0, 3)]);
+            write_key(key.substr(len), value, t.children[key.substr(0, len)]);
         }
     };
     write_key(key, value, root_);
