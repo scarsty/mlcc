@@ -1,9 +1,6 @@
 ﻿
 #include "SimpleCC.h"
-#include "filefunc.h"
-#include "strfunc.h"
 #include <functional>
-#include <print>
 
 std::string SimpleCC::conv(const std::string& src)
 {
@@ -74,11 +71,19 @@ int SimpleCC::init(std::vector<std::string> files)
 {
     for (const auto& file : files)
     {
-        if (!filefunc::fileExist(file))
+        FILE* fp = fopen(file.c_str(), "rb");
+        if (!fp)
         {
-            continue;    // Skip files that do not exist
+            continue;
         }
-        auto str = filefunc::readFileToString(file);
+        fseek(fp, 0, SEEK_END);
+        int len = ftell(fp);
+        std::string str;
+        str.resize(len);
+        fseek(fp, 0, SEEK_SET);
+        fread(str.data(), 1, len, fp);
+        fclose(fp);
+
         int i = 0;
         //must be utf-8 encoded chinese text
         while (i < str.size())
