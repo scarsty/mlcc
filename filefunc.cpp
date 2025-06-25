@@ -38,7 +38,7 @@ std::wstring str2wstr(const std::string& str)
     return wstr;
 }
 #endif
-}
+}    //namespace
 
 bool filefunc::fileExist(const std::string& name)
 {
@@ -52,7 +52,7 @@ bool filefunc::pathExist(const std::string& name)
 {
 #ifdef _MSC_VER
     return std::filesystem::is_directory(str2wstr(name));
-#endif    
+#endif
     return std::filesystem::is_directory(name);
 }
 
@@ -310,12 +310,14 @@ void filefunc::moveFile(const std::string& src, const std::string& dst)
 
 void filefunc::removeFile(const std::string& filename)
 {
-    std::filesystem::remove_all(filename);
+    std::error_code ec;
+    std::filesystem::remove_all(filename, ec);
 }
 
 void filefunc::removePath(const std::string& path)
 {
-    std::filesystem::remove_all(path);
+    std::error_code ec;
+    std::filesystem::remove_all(path, ec);
 }
 
 std::string filefunc::getRelativePath(const std::string& filename, const std::string& basepath)
@@ -421,7 +423,7 @@ bool filefunc::compareNature(const std::string& a, const std::string& b)
     {
         return c >= '0' && c <= '9';
     };
-    
+
     if (is_digit(a[0]) && !is_digit(b[0])) { return true; }
     if (!is_digit(a[0]) && is_digit(b[0])) { return false; }
     if (!is_digit(a[0]) && !is_digit(b[0]))
