@@ -294,10 +294,6 @@ It has been removed due to the supporting of the mainstream compilers.
 
 A simple runtime format implement, temporary use before C++26 is released.
 
-# PotConv
-
-A C++ warp for iconv.
-
 # StrCvt
 
 Some practical functions involving string coding, wide characters, and multi-byte characters.
@@ -405,4 +401,12 @@ Get the target of a .lnk file.
 # SimpleCC
 
 If you think the dependencies of OpenCC is very complicated, maybe you can use this.
+
+# PotConv
+
+A C++ warpper for iconv. You can convert code of a string with 1 line of code.
+
+# Sqliite3Warpper
+
+A C++ warpper for Sqlite3.
 
