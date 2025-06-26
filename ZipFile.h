@@ -28,6 +28,6 @@ public:
     std::string readFile(const std::string& filename) const;
     void readFileToBuffer(const std::string& filename, std::vector<char>& content) const;
     void addData(const std::string& filename, const char* p, int size);
-    void addFile(const std::string& filename, const std::string& filename_in);
+    void addFile(const std::string& filename, const std::string& filename_ondisk);
     std::vector<std::string> getFileNames() const;
 };

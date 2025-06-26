@@ -402,9 +402,25 @@ Get the target of a .lnk file.
 
 If you think the dependencies of OpenCC is very complicated, maybe you can use this.
 
+Usage:
+
+```c++
+    SimpleCC cc;
+    cc.init({R"(STPhrases.txt)", R"(STCharacters.txt)"});    //you can load not only one file, please take the dictionaries from OpenCC
+    std::string str = (char*)u8"皇后，以后，头发，发财，云彩，不知所云，御剑，防御";    //just for example, this is not a good using method
+    auto result = cc.conv(str);
+    // result is 皇后，以後，頭髮，發財，雲彩，不知所云，御劍，防禦
+```
+
 # PotConv
 
 A C++ warpper for iconv. You can convert code of a string with 1 line of code.
+
+Usage:
+
+```c++
+    auto result = PotConv::conv(str, "cp936", "utf-8");    //please check iconv for the name of coding page
+```
 
 # Sqliite3Warpper
 
@@ -413,3 +429,22 @@ A C++ warpper for Sqlite3.
 # ZipFile
 
 A C++ warpper for libzip.
+
+Usage:
+
+```c++
+    //write
+    ZipFile z;
+    z.create("1.zip");
+    void* buffer = new char..........;
+    //do some thing
+    z.addData("name inside zip", buffer, size);
+    z.addFile("name inside zip", "name on disk");
+    //1.zip will be saved after destruction
+
+    //read
+    ZipFile z;
+    z.open("1.zip");
+    auto content = zip.readFile("name inside zip");
+
+```
