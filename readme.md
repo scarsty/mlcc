@@ -318,6 +318,17 @@ std::wstring strfunc::CvtStringToWString(const char* start, uint64_t len);
 
 A C++ warp for freetype and opencv Mat. It can write charactors (such as Chinese) on an image. 
 
+Usage:
+
+```c++
+DrawStringFT ft;
+ft.openFont(R"(C:\Windows\Fonts\simkai.ttf)", 30);    //Font name and size
+cv::Mat m = cv::imread(R"(1.png)");
+// parameters:
+// text, image, x, y, color (BGR usually), fusion (0 or 1), back ground (0 means no back, and 255 means black)， coding of the string
+ft.drawString((char*)u8"黄埃散漫风萧索，云栈萦纡登剑阁", m, 50, 100, { 0x87, 0x89, 0xf0 }, 1, 192, "utf-8");
+```
+
 # CheckDependency
 
 Only for Windows.
