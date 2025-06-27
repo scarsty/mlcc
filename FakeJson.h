@@ -8,7 +8,8 @@
 class FakeJson
 {
 private:
-    std::variant<nullptr_t, int64_t, double, bool, std::string, std::map<std::string, FakeJson>, std::vector<FakeJson>> value;
+    using variant = std::variant<nullptr_t, int64_t, double, bool, std::string, std::map<std::string, FakeJson>, std::vector<FakeJson>>;
+    variant value;
     std::map<std::string, FakeJson>& value_map()
     {
         if (!isMap())
@@ -39,7 +40,7 @@ private:
 public:
     FakeJson() = default;
 
-    FakeJson(int v) { value = v; }
+    FakeJson(int v) { value = int64_t(v); }
 
     FakeJson(double v) { value = v; }
 
@@ -101,6 +102,32 @@ public:
     std::string toString() { return std::get<std::string>(value); }
 
     bool toBool() { return std::get<bool>(value); }
+
+    // 兼容层
+    bool is_null() const { return isNull(); }
+    bool is_number() const { return isValue(); }
+    bool is_string() const { return isString(); }
+    bool is_boolean() const { return isBool(); }
+    bool is_object() const { return isMap(); }
+    bool is_array() const { return isVector(); }
+    bool is_number_int() const { return isInt(); }
+    bool is_number_float() const { return isDouble(); }
+
+    template <typename T>
+    T get() const
+    {
+        return std::get<T>(value);
+    }
+    template <>
+    int get() const
+    {
+        return std::get<int64_t>(value);
+    }
+    template <>
+    float get() const
+    {
+        return std::get<double>(value);
+    }
 
     FakeJson& operator[](int v) { return value_vector()[v]; }
 
@@ -183,10 +210,18 @@ public:
             for (auto& [k, v] : std::get<std::map<std::string, FakeJson>>(value))
             {
                 if (!narrow)
-                    {
-                    res += std::string(space+4, ' ');
-                    }
-                res += "\"" + k + "\": " + v.to_string(narrow, space+4) + ", ";
+                {
+                    res += std::string(space + 4, ' ');
+                }
+                res += "\"";
+                res += k;
+                res += "\":";
+                if (!narrow)
+                {
+                    res += " ";
+                }
+                res += v.to_string(narrow, space + 4);
+                res += ",";
                 if (!narrow)
                 {
                     res += "\n";
@@ -195,7 +230,6 @@ public:
             if (!res.empty())
             {
                 res.pop_back();
-                res.pop_back();
                 if (!narrow)
                 {
                     res.pop_back();
@@ -203,11 +237,12 @@ public:
             }
             if (narrow)
             {
-                res = "{" + res + "}";
+                res.insert(0, "{");
+                res += "}";
             }
             else
             {
-                res = "\n"+ std::string(space, ' ') + "{\n" + res + "\n" + std::string(space , ' ') + "}";
+                res = "\n" + std::string(space, ' ') + "{\n" + res + "\n" + std::string(space, ' ') + "}";
             }
             return res;
         }
@@ -220,7 +255,8 @@ public:
                 {
                     res += std::string(space + 4, ' ');
                 }
-                res += i.to_string(narrow, space+4) + ", ";
+                res += i.to_string(narrow, space + 4);
+                res += ",";
                 if (!narrow)
                 {
                     res += "\n";
@@ -229,7 +265,6 @@ public:
             if (!res.empty())
             {
                 res.pop_back();
-                res.pop_back();
                 if (!narrow)
                 {
                     res.pop_back();
@@ -237,7 +272,8 @@ public:
             }
             if (narrow)
             {
-                res = "[" + res + "]";
+                res.insert(0, "[");
+                res += "]";
             }
             else
             {
@@ -249,9 +285,9 @@ public:
         return "";
     }
 
-    void parse(const std::string& str)
+    static FakeJson parse(const std::string& str)
     {
-        FakeJson& o = *this;
+        FakeJson o;
         std::vector<FakeJson*> ptr{ &o };
         int ignore_space = 1;
         char quote = '\0';
@@ -261,7 +297,6 @@ public:
         auto try_to_variant = [](std::string&& str1) -> decltype(value)
         {
             auto str = std::move(str1);
-            str1.clear();
             if (str.empty())
             {
                 return nullptr;
@@ -290,7 +325,7 @@ public:
             auto i = strtoll(str.c_str(), &end, 10);
             if (end == str.c_str() + str.size())
             {
-                return int(i);
+                return i;
             }
             char* end2 = nullptr;
             auto d = strtod(str.c_str(), &end2);
@@ -347,7 +382,15 @@ public:
                 {
                     if (ptr.back()->isNull())
                     {
-                        ptr.back()->value = try_to_variant(std::move(cur));
+                        bool empty = cur.empty();
+                        if (empty)
+                        {
+                            ptr[ptr.size() - 2]->value_vector().pop_back();
+                        }
+                        else
+                        {
+                            ptr.back()->value = try_to_variant(std::move(cur));
+                        }
                     }
                     if (ptr.size() >= 2)
                     {
@@ -422,11 +465,16 @@ public:
                 ignore_space = 0;
             }
         }
-        //return o;
+        return o;
     }
 
     std::string allToString(bool narrow = true) const
     {
         return to_string(narrow, 0);
+    }
+
+    std::string dump(int space = 0) const
+    {
+        return to_string(space == 0, space);
     }
 };
