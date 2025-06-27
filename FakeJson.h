@@ -242,7 +242,10 @@ public:
             }
             else
             {
-                res = "\n" + std::string(space, ' ') + "{\n" + res + "\n" + std::string(space, ' ') + "}";
+                res.insert(0, "\n" + std::string(space, ' ') + "{\n");
+                res += "\n";
+                res += std::string(space, ' ');
+                res += "}";
             }
             return res;
         }
@@ -277,7 +280,10 @@ public:
             }
             else
             {
-                res = "\n" + std::string(space, ' ') + "[\n" + res + "\n" + std::string(space, ' ') + "]";
+                res.insert(0, "\n" + std::string(space, ' ') + "[\n");
+                res += "\n";
+                res += std::string(space, ' ');
+                res += "]";
             }
             return res;
         }
@@ -380,14 +386,11 @@ public:
                 }
                 else if (c == ']')
                 {
+                    bool is_nothing = cur.empty() && ptr.back()->isNull();
                     if (ptr.back()->isNull())
                     {
-                        bool empty = cur.empty();
-                        if (empty)
-                        {
-                            ptr[ptr.size() - 2]->value_vector().pop_back();
-                        }
-                        else
+                        if (!is_nothing)
+
                         {
                             ptr.back()->value = try_to_variant(std::move(cur));
                         }
@@ -395,6 +398,10 @@ public:
                     if (ptr.size() >= 2)
                     {
                         ptr.pop_back();
+                        if (is_nothing)
+                        {
+                            ptr.back()->value_vector().pop_back();
+                        }
                     }
                 }
                 else if (c == '{')
@@ -475,6 +482,6 @@ public:
 
     std::string dump(int space = 0) const
     {
-        return to_string(space == 0, space);
+        return allToString(space == 0);
     }
 };
