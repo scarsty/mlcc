@@ -30,4 +30,7 @@ public:
     void addData(const std::string& filename, const char* p, int size);
     void addFile(const std::string& filename, const std::string& filename_ondisk);
     std::vector<std::string> getFileNames() const;
+
+private:
+    static std::string u8name(const std::string& filename);
 };

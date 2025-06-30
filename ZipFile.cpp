@@ -21,8 +21,7 @@ void ZipFile::openRead(const std::string& zip_filename)
     {
         zip_close(zip_);
     }
-    auto u8name = PotConv::conv(zip_filename, "", "utf-8");
-    zip_ = zip_open(u8name.c_str(), ZIP_RDONLY, NULL);
+    zip_ = zip_open(u8name(zip_filename).c_str(), ZIP_RDONLY, NULL);
 }
 
 void ZipFile::openWrite(const std::string& zip_filename)
@@ -31,8 +30,7 @@ void ZipFile::openWrite(const std::string& zip_filename)
     {
         zip_close(zip_);
     }
-    auto u8name = PotConv::conv(zip_filename, "", "utf-8");
-    zip_ = zip_open(u8name.c_str(), ZIP_CREATE, NULL);
+    zip_ = zip_open(u8name(zip_filename).c_str(), ZIP_CREATE, NULL);
 }
 
 void ZipFile::create(const std::string& zip_filename)
@@ -41,8 +39,7 @@ void ZipFile::create(const std::string& zip_filename)
     {
         zip_close(zip_);
     }
-    auto u8name = PotConv::conv(zip_filename, "", "utf-8");
-    zip_ = zip_open(u8name.c_str(), ZIP_CREATE | ZIP_TRUNCATE, NULL);
+    zip_ = zip_open(u8name(zip_filename).c_str(), ZIP_CREATE | ZIP_TRUNCATE, NULL);
 }
 
 void ZipFile::setPassword(const std::string& password) const
@@ -142,4 +139,13 @@ std::vector<std::string> ZipFile::getFileNames() const
         }
     }
     return files;
+}
+
+std::string ZipFile::u8name(const std::string& filename)
+{
+#ifdef _WIN32
+    return PotConv::conv(filename, "", "utf-8");
+#else
+    return filename;
+#endif
 }
