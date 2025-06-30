@@ -1,7 +1,10 @@
 ﻿#include "ZipFile.h"
-#include "PotConv.h"
 #include "filefunc.h"
 #include "zip.h"
+
+#ifdef _WIN32
+#include "PotConv.h"
+#endif
 
 ZipFile::ZipFile()
 {
