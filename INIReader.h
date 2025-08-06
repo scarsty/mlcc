@@ -778,10 +778,12 @@ public:
             remove(filename1.c_str());
             return 0;
         }
-        auto filename2 = filename + ".bak";
-        remove(filename2.c_str());
-        rename(filename.c_str(), filename2.c_str());
+        //auto filename2 = filename + ".bak";
+        //remove(filename2.c_str());
+        //rename(filename.c_str(), filename2.c_str());
+        remove(filename.c_str());
         rename(filename1.c_str(), filename.c_str());
+        return 0;
     }
 
     //make a string with trying to keep the original style
