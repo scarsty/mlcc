@@ -9,6 +9,7 @@ namespace filefunc
 //read and write file
 bool fileExist(const std::string& name);
 bool pathExist(const std::string& name);
+size_t getFileSize(const std::string& name);
 
 std::vector<char> readFile(const std::string& filename, int length = -1);
 int writeFile(const char* data, int length, const std::string& filename);

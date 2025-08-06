@@ -56,6 +56,16 @@ bool filefunc::pathExist(const std::string& name)
     return std::filesystem::is_directory(name);
 }
 
+size_t filefunc::getFileSize(const std::string& name)
+{
+    if (!fileExist(name)) { return 0; }
+    std::ifstream file(name, std::ios::binary | std::ios::ate);
+    if (!file) { return 0; }
+    size_t size = file.tellg();
+    file.close();
+    return size;
+}
+
 std::vector<char> filefunc::readFile(const std::string& filename, int length)
 {
     std::ifstream ifs(filename, std::fstream::binary);

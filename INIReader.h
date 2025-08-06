@@ -752,16 +752,36 @@ public:
     //write modified file
     int saveFile(const std::string& filename)
     {
-        FILE* fp = fopen(filename.c_str(), "wb");
-        if (fp)
+        auto content = toString();
+        if (content.empty())
         {
-            auto content = toString();
-            int length = content.length();
-            fwrite(content.c_str(), length, 1, fp);
+            return 1;
+        }
+        auto filename1 = filename + ".tmp";
+        FILE* fp = fopen(filename1.c_str(), "wb");
+        if (!fp)
+        {
+            return 1;
+        }
+        if (fwrite(content.c_str(), 1, content.size(), fp) < content.size())
+        {
             fclose(fp);
+            return 1;
+        }
+        fclose(fp);
+
+        struct stat buf;
+        stat(filename1.c_str(), &buf);
+        if (buf.st_size == 0)
+        {
+            //remove the empty file
+            remove(filename1.c_str());
             return 0;
         }
-        return 1;
+        auto filename2 = filename + ".bak";
+        remove(filename2.c_str());
+        rename(filename.c_str(), filename2.c_str());
+        rename(filename1.c_str(), filename.c_str());
     }
 
     //make a string with trying to keep the original style
