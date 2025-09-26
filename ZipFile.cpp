@@ -3,7 +3,7 @@
 #include "zip.h"
 
 #ifdef _WIN32
-#include "PotConv.h"
+#include <windows.h>
 #endif
 
 ZipFile::ZipFile()
@@ -144,10 +144,25 @@ std::vector<std::string> ZipFile::getFileNames() const
     return files;
 }
 
+namespace
+{
+std::string CvtStringToUTF8(const std::string& localstr)
+{
+    int wlen = MultiByteToWideChar(CP_ACP, 0, localstr.c_str(), -1, nullptr, 0);
+    std::vector<wchar_t> wstr(wlen);
+    MultiByteToWideChar(CP_ACP, 0, localstr.c_str(), -1, wstr.data(), wlen);
+    int utf8len = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), -1, nullptr, 0, nullptr, nullptr);
+    std::vector<char> utf8str(utf8len);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.data(), -1, utf8str.data(), utf8len, nullptr, nullptr);
+    std::string result(utf8str.data());
+    return result;
+}
+}    //namespace
+
 std::string ZipFile::u8name(const std::string& filename)
 {
 #ifdef _WIN32
-    return PotConv::conv(filename, "", "utf-8");
+    return CvtStringToUTF8(filename);
 #else
     return filename;
 #endif
