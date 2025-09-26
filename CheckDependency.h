@@ -34,6 +34,10 @@ private:
         std::string full_path;
         std::string machine;
         std::vector<std::string> lost_functions;    // functions which should exist
+        bool isNotFoundDll() const
+        {
+            return full_path.empty();
+		}
     };
     std::map<std::string, ImportInfo> import_table_;
     std::map<std::string, NotGoodInfo> dlls_not_good_;
