@@ -185,6 +185,7 @@ public:
                         if (show_other)
                         {
                             str += sec.value.other;
+                            str += line_break;
                         }
                     }
                     else
@@ -196,8 +197,8 @@ public:
                         {
                             str += sec.value.other;
                         }
+                        str += line_break;
                     }
-                    str += line_break;
                 }
             }
             for (auto& sec : group)
@@ -262,6 +263,9 @@ public:
     {
         return root[key];
     }
+
+    INIReader_t(const INIReader_t& ini) = delete;
+    INIReader_t& operator=(const INIReader_t& ini) = delete;
 
     // parse a given filename
     int loadFile(const std::string& filename)
