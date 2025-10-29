@@ -31,4 +31,4 @@ jobs:
     - name: Run Cifa Unit Test
       run: |
         cd build
-        cifa_unit_test.exe
+        .\cifa_unit_test.exe
