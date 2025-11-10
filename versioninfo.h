@@ -85,6 +85,7 @@ inline std::string get_string_info(const std::string& filename, const std::strin
             }
         }
     }
+    return "";
 }
 
 inline std::string get_version(const std::string& filename, InfoType it)
