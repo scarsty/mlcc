@@ -280,16 +280,6 @@ something.exe --path "C:\Windows\system32\" --other-option values
 ```
 In this case, "argc" and "argv" in the program are NOT right with CMD, but are right with Power Shell, is it a bug of Windows?
 
-# fmt1
-
-A simple substitute of std::format. 
-
-If you cannot stand the neglect of Clang and GCC, maybe you can try it.
-
-It also provide the formatter of vector and map to use is C++20.
-
-It has been removed due to the supporting of the mainstream compilers.
-
 # runtime_format
 
 A simple runtime format implement, temporary use before C++26 is released.
