@@ -17,7 +17,7 @@ public:
     Timer() { start(); }
 
     // Returns current time as a string
-    static std::string getNowAsString(const std::string& format = "%F %a %H:%M:%S")
+    static std::string getNowAsString(const std::string& format = "%F %a %H:%M:%S", bool with_ms = false)
     {
         //#ifdef __cpp_lib_format
         //        auto t = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
@@ -25,11 +25,19 @@ public:
         //        auto fmt = "{:" + format + "}";
         //        return std::vformat(fmt, std::make_format_args(t1));
         //#else
-        auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        auto now = std::chrono::system_clock::now();
+        auto t = std::chrono::system_clock::to_time_t(now);
         auto tm = *localtime(&t);
         char buffer[64] = {};
         strftime(buffer, sizeof(buffer), format.c_str(), &tm);
-        return std::string(buffer);
+        auto str = std::string(buffer);
+        if (with_ms)
+        {
+            auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+            sprintf(buffer, "%03d", ms.count());
+            str += "." + std::string(buffer);
+        }
+        return str;
         //#endif
     }
 
