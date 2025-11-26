@@ -264,8 +264,20 @@ public:
         return root[key];
     }
 
-    INIReader_t(const INIReader_t& ini) = delete;
-    INIReader_t& operator=(const INIReader_t& ini) = delete;
+    INIReader_t(const INIReader_t& ini)
+    {
+        loadString(ini.toString());
+    }
+    INIReader_t& operator=(const INIReader_t& ini)
+    {
+        if (this == &ini)
+        {
+            return *this;
+        }
+        clear();
+        loadString(ini.toString());
+        return *this;
+    }
 
     // parse a given filename
     int loadFile(const std::string& filename)
