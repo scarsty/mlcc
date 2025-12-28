@@ -369,9 +369,11 @@ public:
     } \
     return Object();
 
+    //定义运算符函数，只支持数值操作
 #define OPERATOR_DEF(opname, op, trans_type) \
     Object opname(const Object& o1, const Object& o2) { OPERATOR(o1, o2, op, user_##opname, trans_type); }
 
+    //定义运算符函数，支持字符串操作
 #define OPERATOR_DEF_CONTENT(opname, op, trans_type) \
     Object opname(const Object& o1, const Object& o2) \
     { \
@@ -382,6 +384,7 @@ public:
         OPERATOR(o1, o2, op, user_##opname, trans_type); \
     }
 
+    //用户可扩展的运算符函数列表
     std::vector<std::function<Object(const Object&, const Object&)>> user_add, user_sub, user_mul, user_div,
         user_less, user_more, user_less_equal, user_more_equal,
         user_equal, user_not_equal, user_bit_and, user_bit_or, user_logic_and, user_logic_or;
