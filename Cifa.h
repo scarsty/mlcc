@@ -377,27 +377,29 @@ public:
     { \
         if (o1.isType<std::string>() && o2.isType<std::string>()) \
         { \
-            return Object(std::any_cast<std::string>(o1.value) + std::any_cast<std::string>(o2.value)); \
+            return Object(std::any_cast<std::string>(o1.value) op std::any_cast<std::string>(o2.value)); \
         } \
         OPERATOR(o1, o2, op, user_##opname, trans_type); \
     }
 
     std::vector<std::function<Object(const Object&, const Object&)>> user_add, user_sub, user_mul, user_div,
         user_less, user_more, user_less_equal, user_more_equal,
-        user_equal, user_not_equal, user_bit_and, user_bit_or;
+        user_equal, user_not_equal, user_bit_and, user_bit_or, user_logic_and, user_logic_or;
 
     OPERATOR_DEF_CONTENT(add, +, double)
     OPERATOR_DEF(sub, -, double)
     OPERATOR_DEF(mul, *, double)
     OPERATOR_DEF(div, /, double)
-    OPERATOR_DEF(less, <, double)
-    OPERATOR_DEF(more, >, double)
+    OPERATOR_DEF_CONTENT(less, <, double)
+    OPERATOR_DEF_CONTENT(more, >, double)
     OPERATOR_DEF_CONTENT(less_equal, <=, double)
     OPERATOR_DEF_CONTENT(more_equal, >=, double)
     OPERATOR_DEF_CONTENT(equal, ==, double)
     OPERATOR_DEF_CONTENT(not_equal, !=, double)
     OPERATOR_DEF(bit_and, &, int)
     OPERATOR_DEF(bit_or, |, int)
+    OPERATOR_DEF(logic_and, &&, int)
+    OPERATOR_DEF(logic_or, ||, int)
 };
 
 //#define OPERATOR_DEF_DOUBLE(op) \

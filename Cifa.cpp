@@ -210,8 +210,8 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             if (c.str == "!=") { return not_equal(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "&") { return bit_and(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "|") { return bit_or(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "&&") { return bool(eval(c.v[0], p)) && bool(eval(c.v[1], p)); }
-            if (c.str == "||") { return bool(eval(c.v[0], p)) || bool(eval(c.v[1], p)); }
+            if (c.str == "&&") { return logic_and(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "||") { return logic_or(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "=") { return get_parameter(c.v[0], p) = eval(c.v[1], p); }
             if (c.str == "+=") { return get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "-=") { return get_parameter(c.v[0], p) = sub(get_parameter(c.v[0], p), eval(c.v[1], p)); }
