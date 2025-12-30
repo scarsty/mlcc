@@ -229,6 +229,9 @@ bool vector_have(const std::vector<std::vector<T>>& ops, const T& op)
 
 class Cifa
 {
+public:
+    using func_type = std::function<Object(ObjectVector&)>;
+
 private:
     //运算符，此处的顺序即优先级，单目和右结合由下面的列表判断
     std::vector<std::vector<std::string>> ops = { { "::", ".", "++", "--" }, { "!" }, { "*", "/", "%" }, { "+", "-" }, { ">", "<", ">=", "<=" }, { "==", "!=" }, { "&" }, { "|" }, { "&&" }, { ":", "?" }, { "||" }, { "=", "*=", "/=", "+=", "-=" }, { "," } };
@@ -239,7 +242,7 @@ private:
     std::vector<std::string> types = { "auto", "int", "float", "double" };
     std::map<std::string, std::string> op_representations = { { "and", "&&" }, { "and_eq", "&=" }, { "bitand", "&" }, { "bitor", "|" }, { "compl", "~" }, { "not", "!" }, { "not_eq", "!=" }, { "or", "||" }, { "or_eq", "|=" }, { "xor", "^" }, { "xor_eq", "^=" }, { "<%", "{" }, { "%>", "}" }, { "<:", "[" }, { ":>", "]" }, { "%:", "#" }, { "%:%:", "##" } };
     //两个函数表都是全局的
-    using func_type = std::function<Object(ObjectVector&)>;
+
     std::unordered_map<std::string, func_type> functions;     //在宿主程序中注册的函数
     std::unordered_map<std::string, Function2> functions2;    //在cifa程序中定义的函数
 
