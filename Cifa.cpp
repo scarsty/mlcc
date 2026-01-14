@@ -688,7 +688,7 @@ std::list<CalUnit> Cifa::split(std::string& str)
 
 //表达式语法树
 //参数含义：是否合并{}，是否合并[]，是否合并()
-CalUnit Cifa::combine_all_cal(std::list<CalUnit>& ppp, bool curly, bool square, bool round)
+CalUnit Cifa::combine_all_cal(std::list<CalUnit>& ppp, bool curly, bool square, bool round, bool allow_suffix)
 {
     //合并{}
     if (curly) { combine_curly_bracket(ppp); }
@@ -704,7 +704,8 @@ CalUnit Cifa::combine_all_cal(std::list<CalUnit>& ppp, bool curly, bool square, 
     combine_ops(ppp);
 
     //检查分号正确性并去除
-    combine_semi(ppp);
+    //方括号或圆括号内不准许分号
+    combine_semi(ppp, allow_suffix);
 
     //合并关键字
     combine_keys(ppp);
@@ -811,7 +812,7 @@ void Cifa::combine_square_bracket(std::list<CalUnit>& ppp)
         {
             break;
         }
-        auto c1 = combine_all_cal(ppp2, true, false, true);
+        auto c1 = combine_all_cal(ppp2, true, false, true, false);
         c1.str = "[]";
         c1.line = it->line;
         c1.col = it->col;
@@ -840,7 +841,7 @@ void Cifa::combine_round_bracket(std::list<CalUnit>& ppp)
             break;
         }
         it = ppp.erase(it);
-        auto c1 = combine_all_cal(ppp2, true, true, false);
+        auto c1 = combine_all_cal(ppp2, true, true, false, false);
         c1.str = "()";
         c1.line = it->line;
         c1.col = it->col;
@@ -961,7 +962,7 @@ void Cifa::combine_ops(std::list<CalUnit>& ppp)
     }
 }
 
-void Cifa::combine_semi(std::list<CalUnit>& ppp)
+void Cifa::combine_semi(std::list<CalUnit>& ppp, bool allow_suffix)
 {
     for (auto it = ppp.begin(); it != ppp.end();)
     {
@@ -970,6 +971,10 @@ void Cifa::combine_semi(std::list<CalUnit>& ppp)
             auto itr = std::next(it);
             if (itr != ppp.end() && itr->str == ";")
             {
+                if (!allow_suffix)
+                {
+                    add_error(*itr, "; cannot be inside square or round brackets");
+                }
                 it->suffix = true;
                 it = ppp.erase(itr);
             }
@@ -1555,10 +1560,7 @@ Object Cifa::run_script(std::string str)
         result.type1 = "Error";
         if (output_error)
         {
-            for (auto& e : errors)
-            {
-                fprintf(stderr, "Error (%zu, %zu): %s\n", e.line, e.col, e.message.c_str());
-            }
+            print_errors();
         }
     }
     return result;
@@ -1572,5 +1574,23 @@ std::vector<Cifa::ErrorMessage> Cifa::get_errors() const
         es.push_back(e);
     }
     return es;
+}
+
+std::string Cifa::get_errors_str() const
+{
+    std::string str;
+    for (auto& e : errors)
+    {
+        str += "Error (" + std::to_string(e.line) + ", " + std::to_string(e.col) + "): " + e.message + "\n";
+    }
+    return str;
+}
+
+void Cifa::print_errors() const
+{
+    for (auto& e : errors)
+    {
+        fprintf(stderr, "Error (%zu, %zu): %s\n", e.line, e.col, e.message.c_str());
+    }
 }
 }    // namespace cifa

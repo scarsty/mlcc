@@ -281,13 +281,13 @@ public:
     CalUnitType guess_char(char c);
     std::list<CalUnit> split(std::string& str);
 
-    CalUnit combine_all_cal(std::list<CalUnit>& ppp, bool curly = true, bool square = true, bool round = true);
+    CalUnit combine_all_cal(std::list<CalUnit>& ppp, bool curly = true, bool square = true, bool round = true, bool allow_suffix = true);
     std::list<CalUnit>::iterator inside_bracket(std::list<CalUnit>& ppp, std::list<CalUnit>& ppp2, const std::string& bl, const std::string& br);
     void combine_curly_bracket(std::list<CalUnit>& ppp);
     void combine_square_bracket(std::list<CalUnit>& ppp);
     void combine_round_bracket(std::list<CalUnit>& ppp);
     void combine_ops(std::list<CalUnit>& ppp);
-    void combine_semi(std::list<CalUnit>& ppp);
+    void combine_semi(std::list<CalUnit>& ppp, bool allow_suffix = true);
     void deal_special_keys(std::list<CalUnit>& ppp);
     void combine_keys(std::list<CalUnit>& ppp);
     void combine_types(std::list<CalUnit>& ppp);
@@ -333,6 +333,10 @@ public:
     bool has_error() const { return !errors.empty(); }
 
     std::vector<ErrorMessage> get_errors() const;
+
+    std::string get_errors_str() const;
+
+    void print_errors() const;
 
     template <typename... Args>
     void add_error(CalUnit& c, Args... args)
