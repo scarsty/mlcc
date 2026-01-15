@@ -288,7 +288,7 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
                 if (p.count("return")) { return p["return"]; }
             }
             //o.type = "";
-            return o;
+            return Object(0);
         }
         if (c.str == "while")    //while (条件1) {语句1}
         {
@@ -688,7 +688,7 @@ std::list<CalUnit> Cifa::split(std::string& str)
 
 //表达式语法树
 //参数含义：是否合并{}，是否合并[]，是否合并()
-CalUnit Cifa::combine_all_cal(std::list<CalUnit>& ppp, bool curly, bool square, bool round, bool allow_suffix)
+CalUnit Cifa::combine_all_cal(std::list<CalUnit>& ppp, bool curly, bool square, bool round)
 {
     //合并{}
     if (curly) { combine_curly_bracket(ppp); }
@@ -705,7 +705,7 @@ CalUnit Cifa::combine_all_cal(std::list<CalUnit>& ppp, bool curly, bool square, 
 
     //检查分号正确性并去除
     //方括号或圆括号内不准许分号
-    combine_semi(ppp, allow_suffix);
+    combine_semi(ppp);
 
     //合并关键字
     combine_keys(ppp);
@@ -726,7 +726,7 @@ CalUnit Cifa::combine_all_cal(std::list<CalUnit>& ppp, bool curly, bool square, 
         c.col = ppp.front().col;
         for (auto it = ppp.begin(); it != ppp.end(); ++it)
         {
-            if (it->type != CalUnitType::Split)
+            //if (it->type != CalUnitType::Split)
             {
                 c.v.emplace_back(std::move(*it));
             }
@@ -812,7 +812,7 @@ void Cifa::combine_square_bracket(std::list<CalUnit>& ppp)
         {
             break;
         }
-        auto c1 = combine_all_cal(ppp2, true, false, true, false);
+        auto c1 = combine_all_cal(ppp2, true, false, true);
         c1.str = "[]";
         c1.line = it->line;
         c1.col = it->col;
@@ -841,7 +841,7 @@ void Cifa::combine_round_bracket(std::list<CalUnit>& ppp)
             break;
         }
         it = ppp.erase(it);
-        auto c1 = combine_all_cal(ppp2, true, true, false, false);
+        auto c1 = combine_all_cal(ppp2, true, true, false);
         c1.str = "()";
         c1.line = it->line;
         c1.col = it->col;
@@ -962,7 +962,7 @@ void Cifa::combine_ops(std::list<CalUnit>& ppp)
     }
 }
 
-void Cifa::combine_semi(std::list<CalUnit>& ppp, bool allow_suffix)
+void Cifa::combine_semi(std::list<CalUnit>& ppp)
 {
     for (auto it = ppp.begin(); it != ppp.end();)
     {
@@ -971,11 +971,6 @@ void Cifa::combine_semi(std::list<CalUnit>& ppp, bool allow_suffix)
             auto itr = std::next(it);
             if (itr != ppp.end() && itr->str == ";")
             {
-                if (!allow_suffix && std::next(itr) == ppp.end())
-                {
-                    //如果严格处理，for的情况要单独拿出来
-                    add_error(*itr, "; cannot be inside square or round brackets");
-                }
                 it->suffix = true;
                 it = ppp.erase(itr);
             }
@@ -1017,15 +1012,36 @@ void Cifa::deal_special_keys(std::list<CalUnit>& ppp)
                 it1->un_combine = true;
             }
         }
+        if (it->str == "for")
+        {
+            if (it->v.size() == 1 && it->v[0].str == "()")
+            {
+                auto& v = it->v[0].v;
+                if (v.size() == 2)
+                {
+                    CalUnit c3;
+                    c3.type = CalUnitType::None;
+                    v.emplace_back(std::move(c3));
+                }
+                if (v.size() == 3)
+                {
+                    if (v[1].type == CalUnitType::Split)
+                    {
+                        v[1].str = "1";
+                        v[1].type = CalUnitType::Constant;
+                        v[1].suffix = true;
+                    }
+                }
+            }
+        }
     }
 }
 
 void Cifa::combine_keys(std::list<CalUnit>& ppp)
 {
     //需注意此时的ppp中已经没有()，因此if, for, while, switch等关键字后面的括号已经被合并
-    //合并关键字，从右向左
+    //处理不能单独存在的关键字
     auto it = ppp.end();
-    //处理对后续有特殊要求的关键字
     while (it != ppp.begin())
     {
         --it;
@@ -1395,7 +1411,7 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
         if (c.str == "for")
         {
             if (c.v[0].type != CalUnitType::Union || c.v[0].str != "()" || c.v[0].v.size() != 3
-                || !c.v[0].v[0].is_statement() || !c.v[0].v[1].is_statement() || c.v[0].v[2].is_statement())
+                || !c.v[0].v[0].is_statement() || !c.v[0].v[1].is_statement() || (c.v[0].v[2].is_statement() && c.v[0].v[2].type != CalUnitType::None))
             {
                 add_error(c, "for loop condition is not right");
             }
@@ -1502,16 +1518,42 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
         }
         if (c.str == "[]")
         {
-            if (c.v.size() == 0 || c.v[0].str == ",")
+            if (c.v.size() == 0)
+            {
+                add_error(c, "no parameters inside []");
+            }
+            else if (c.v[0].str == ",")
             {
                 add_error(c, "wrong parameters inside []");
+            }
+            else
+            {
+                for (auto& c1 : c.v)
+                {
+                    if (c1.is_statement())
+                    {
+                        add_error(c1, "semicolon inside []");
+                    }
+                }
             }
         }
         if (c.str == "()")
         {
-            if ((father == nullptr || (father != nullptr && father->str != "for")) && c.v.size() > 1)
+            //如果为空则是圆括号，除了for之外，里面不应出现语句或多个参数
+            bool is_for = father && father->str == "for";
+            if ((father == nullptr || !is_for) && c.v.size() > 1)
             {
                 add_error(c, "wrong parameters inside ()");
+            }
+            if (father && !is_for)
+            {
+                for (auto& c1 : c.v)
+                {
+                    if (c1.is_statement())
+                    {
+                        add_error(c1, "semicolon inside ()");
+                    }
+                }
             }
         }
     }
