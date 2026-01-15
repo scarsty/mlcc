@@ -167,7 +167,7 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             }
             if (c.str == "()--")
             {
-                auto v = get_parameter(c, p);
+                auto v = get_parameter(c.v[0], p);
                 get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(-1));
                 return v;
             }
