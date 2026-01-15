@@ -5,8 +5,6 @@ on: [push, workflow_dispatch]
 jobs:
   test-windows:
     runs-on: windows-latest
-    env:
-      PYTHONIOENCODING: utf-8
     defaults:
       run:
         shell: pwsh
@@ -20,15 +18,13 @@ jobs:
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
 
-    - name: Create build directory
-      run: mkdir build
-
     - name: Compile Unit Test
       run: |
-        cd build
-        cl /EHsc /I../ /Fe:cifa_unit_test.exe ../unit_test/cifa/cifa_unit_test.cpp ../Cifa.cpp /std:c++20
+        mkdir -p build
+        cl /EHsc /I./ /Fe:build/cifa_unit_test.exe unit_test/cifa/cifa_unit_test.cpp Cifa.cpp /std:c++20 /utf-8
 
     - name: Run Cifa Unit Test
       run: |
-        cd build
-        .\cifa_unit_test.exe
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+        ./build/cifa_unit_test.exe
