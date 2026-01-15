@@ -971,8 +971,9 @@ void Cifa::combine_semi(std::list<CalUnit>& ppp, bool allow_suffix)
             auto itr = std::next(it);
             if (itr != ppp.end() && itr->str == ";")
             {
-                if (!allow_suffix)
+                if (!allow_suffix && std::next(itr) == ppp.end())
                 {
+                    //如果严格处理，for的情况要单独拿出来
                     add_error(*itr, "; cannot be inside square or round brackets");
                 }
                 it->suffix = true;
