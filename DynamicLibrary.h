@@ -90,6 +90,10 @@ public:
     static void* getFunction(const std::string& library_name, const std::string& function_name)
     {
         auto dl = getInstance()->loadDynamicLibrary(library_name);
+        if (dl == nullptr)
+        {
+            dl = getInstance()->loadDynamicLibrary("./"+library_name);
+        }
         void* func = nullptr;
         if (dl)
         {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "filefunc.h"
 #include "INIReader.h"
+#include "filefunc.h"
 
 struct INIReaderBin
 {
@@ -92,5 +92,10 @@ public:
     void set_value(const std::string& key, const std::string& value)
     {
         ini_.setKey("", key, value);
+    }
+
+    bool has_value(const std::string& key)
+    {
+        return ini_.hasKey("", key);
     }
 };
