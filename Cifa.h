@@ -77,7 +77,7 @@ struct Object
         {
             return std::any_cast<double>(value);
         }
-        fprintf(stderr, "Error: Object %s to double failed.\n", value.type().name());
+        fprintf(stderr, "Error(%s): %s to double failed.\n", name.c_str(), value.type().name());
         return NAN;
     }
 
@@ -87,7 +87,7 @@ struct Object
         {
             return std::any_cast<std::string>(value);
         }
-        fprintf(stderr, "Error: Object %s to string failed.\n", value.type().name());
+        fprintf(stderr, "Error(%s): Object %s to string failed.\n", name.c_str(), value.type().name());
         return "";
     }
 
@@ -99,7 +99,7 @@ struct Object
         {
             return std::any_cast<T>(value);
         }
-        fprintf(stderr, "Error: Object %s to %s failed.\n", value.type().name(), typeid(T).name());
+        fprintf(stderr, "Error(%s): Object %s to %s failed.\n", name.c_str(), value.type().name(), typeid(T).name());
         return T();
     }
 
@@ -112,7 +112,7 @@ struct Object
         {
             return std::any_cast<const T&>(value);
         }
-        fprintf(stderr, "Error: Object %s to %s failed.\n", value.type().name(), typeid(T).name());
+        fprintf(stderr, "Error(%s): Object %s to %s failed.\n", name.c_str(), value.type().name(), typeid(T).name());
     }
 
     template <typename T>
@@ -122,7 +122,7 @@ struct Object
         {
             return std::any_cast<T&>(value);
         }
-        fprintf(stderr, "Error: Object %s to %s failed.\n", value.type().name(), typeid(T).name());
+        fprintf(stderr, "Error(%s): Object %s to %s failed.\n", name.c_str(), value.type().name(), typeid(T).name());
     }
 
     template <typename T>
@@ -144,6 +144,7 @@ private:
     std::any value;
     std::string type1;        //特别的类型，用于Error、break、continue
     std::vector<Object> v;    //仅用于处理逗号表达式
+    std::string name;
 };
 
 using ObjectVector = std::vector<Object>;
@@ -320,8 +321,8 @@ public:
 
     void* get_user_data(const std::string& name);
     Object run_function(const std::string& name, std::vector<CalUnit>& vc, std::unordered_map<std::string, Object>& p);
-    Object& get_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p);
-    std::string convert_parameter_name(CalUnit& c, std::unordered_map<std::string, Object>& p);
+    Object& get_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p, bool only_check = false);
+    std::string convert_parameter_name(CalUnit& c, std::unordered_map<std::string, Object>& p, bool only_check = false);
     bool check_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p);
     Object& get_parameter(const std::string& name, std::unordered_map<std::string, Object>& p);
     bool check_parameter(const std::string& name, std::unordered_map<std::string, Object>& p);
@@ -329,6 +330,8 @@ public:
     void check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::string, Object>& p);
 
     Object run_script(std::string str);    //运行脚本，注意实际上使用独立的变量表
+
+    Object run_script(std::string str, std::unordered_map<std::string, Object>& p);    //运行脚本，使用外部传入的变量表，变量表会被修改
 
     bool has_error() const { return !errors.empty(); }
 

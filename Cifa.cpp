@@ -1202,29 +1202,37 @@ Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc, std
     }
 }
 
-Object& Cifa::get_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p)
+Object& Cifa::get_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p, bool only_check)
 {
-    return p[convert_parameter_name(c, p)];
+    //return p[convert_parameter_name(c, p)];
+    auto name = convert_parameter_name(c, p, only_check);
+    auto& o = p[name];
+    o.name = name;
+    return o;
 }
 
-std::string Cifa::convert_parameter_name(CalUnit& c, std::unordered_map<std::string, Object>& p)
+std::string Cifa::convert_parameter_name(CalUnit& c, std::unordered_map<std::string, Object>& p, bool only_check)
 {
     std::string parameter_name = c.str;
     if (c.v.size() > 0 && c.v[0].str == "[]")
     {
         if (c.v[0].v.size() > 0)
         {
-            auto e = eval(c.v[0].v[0], p);
-            std::string str;
-            if (e.isType<std::string>())
+            //检查语法树时不处理坐标
+            if (!only_check)
             {
-                str = e.toString();
+                auto e = eval(c.v[0].v[0], p);
+                std::string str;
+                if (e.isType<std::string>())
+                {
+                    str = e.toString();
+                }
+                else
+                {
+                    str = std::to_string(e.toInt());
+                }
+                parameter_name += "[" + str + "]";
             }
-            else
-            {
-                str = std::to_string(e.toInt());
-            }
-            parameter_name += "[" + str + "]";
         }
     }
     return parameter_name;
@@ -1570,6 +1578,12 @@ void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::s
 
 Object Cifa::run_script(std::string str)
 {
+    std::unordered_map<std::string, Object> p;
+    return run_script(str, p);
+}
+
+Object Cifa::run_script(std::string str, std::unordered_map<std::string, Object>& p)
+{
     errors.clear();
     Object result;
 
@@ -1579,21 +1593,24 @@ Object Cifa::run_script(std::string str)
     //此处设定为在语法树检查不正确时，仍然尝试运行并检查执行时的错误
     //if (errors.empty())
     {
-        auto p = parameters;
-        check_cal_unit(c, nullptr, p);
+        auto p1 = parameters;
+        check_cal_unit(c, nullptr, p1);
         for (auto& [name, func2] : functions2)
         {
-            auto p = parameters;
+            auto p1 = parameters;
             for (auto& a : func2.arguments)
             {
                 p[a] = Object();
             }
-            check_cal_unit(func2.body, nullptr, p);
+            check_cal_unit(func2.body, nullptr, p1);
         }
     }
     if (errors.empty())
     {
-        auto p = parameters;
+        for (auto& [name, o] : parameters)
+        {
+            p[name] = o;
+        }
         auto o = eval(c, p);
         return o;
     }
