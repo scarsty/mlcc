@@ -50,6 +50,8 @@ public:
     void set_seed(unsigned int seed)
     {
         generator_ = std::mt19937(seed);
+        uniform_dist_.reset();
+        normal_dist_.reset();
     }
 
     int rand_int(int n)
