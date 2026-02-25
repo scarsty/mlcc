@@ -146,6 +146,7 @@ std::vector<std::string> ZipFile::getFileNames() const
 
 namespace
 {
+#ifdef _WIN32
 std::string CvtStringToUTF8(const std::string& localstr)
 {
     int wlen = MultiByteToWideChar(CP_ACP, 0, localstr.c_str(), -1, nullptr, 0);
@@ -157,6 +158,7 @@ std::string CvtStringToUTF8(const std::string& localstr)
     std::string result(utf8str.data());
     return result;
 }
+#endif
 }    //namespace
 
 std::string ZipFile::u8name(const std::string& filename)
