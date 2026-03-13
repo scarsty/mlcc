@@ -62,7 +62,7 @@ public:
         void erase(const std::string& key)
         {
             auto& it = (*this)[key];
-            std::list<Record<T>>::remove_if([&](Record<KeyType1>& sec)
+            std::list<Record<T>>::remove_if([&](Record<T>& sec)
                 {
                     return &sec.value == &it;
                 });

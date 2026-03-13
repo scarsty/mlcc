@@ -43,10 +43,18 @@ void readFileToVector(const std::string& filename, std::vector<T>& v)
 }
 
 template <class T>
-void writeVectorToData(char* data, int length, std::vector<T>& v, int length_one)
+void writeVectorToData(char* data, int length, const std::vector<T>& v, int length_one)
 {
+    if (!data || length <= 0 || length_one <= 0 || v.empty())
+    {
+        return;
+    }
     int count = length / length_one;
-    v.resize(count);
+    int max_count = int((v.size() * sizeof(T)) / size_t(length_one));
+    if (count > max_count)
+    {
+        count = max_count;
+    }
     for (int i = 0; i < count; i++)
     {
         memcpy(data + length_one * i, &v[i], length_one);

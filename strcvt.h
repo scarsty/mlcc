@@ -25,4 +25,4 @@ std::u16string CvtStringToUTF16(const char* start, int len);
 std::wstring CvtStringToWString(const std::string& src);
 std::wstring CvtStringToWString(const char* start, std::uint64_t len);
 
-}    //namespace strfunc
+}    //namespace strcvt

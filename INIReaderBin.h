@@ -20,9 +20,9 @@ public:
         if (str.size() > head_size_ + sizeof(uint64_t) && str.substr(0, 11) == head_)
         {
             uint64_t size_ini = 0;
-            if (str.size() >= sizeof(uint64_t))
+            if (str.size() >= head_size_ + sizeof(uint64_t))
             {
-                size_ini = *(uint64_t*)(str.data() + head_size_);
+                memcpy(&size_ini, str.data() + head_size_, sizeof(uint64_t));
             }
             uint64_t begin = head_size_ + sizeof(uint64_t) + size_ini;
             INIReaderNormal assist;

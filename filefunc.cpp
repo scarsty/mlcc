@@ -76,7 +76,7 @@ std::vector<char> filefunc::readFile(const std::string& filename, int length)
         length = ifs.tellg();
         ifs.seekg(0, std::ios::beg);
     }
-    std::vector<char> buffer(length);
+    std::vector<char> buffer;
     buffer.assign((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
     return buffer;
 }

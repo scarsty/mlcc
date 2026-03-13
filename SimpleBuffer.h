@@ -11,7 +11,7 @@ struct SimpleBuffer
     SimpleBuffer(void* p)
     {
         shared = 1;
-        data_ = p;
+        data_ = static_cast<T*>(p);
     }
     ~SimpleBuffer() { clear(); }
     void resize(size_t n)
@@ -46,13 +46,16 @@ struct SimpleBuffer
         capacity_ = 0;
     }
     T* data() { return data_; }
+    const T* data() const { return data_; }
     size_t size() { return size_; }
+    size_t size() const { return size_; }
     T& operator[](const size_t i) { return data_[i]; }
+    const T& operator[](const size_t i) const { return data_[i]; }
     void set_pointer(void* p)
     {
         clear();
         shared = 1;
-        data_ = p;
+        data_ = static_cast<T*>(p);
     }
 
 private:

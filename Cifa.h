@@ -5,6 +5,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -113,6 +114,7 @@ struct Object
             return std::any_cast<const T&>(value);
         }
         fprintf(stderr, "Error(%s): Object %s to %s failed.\n", name.c_str(), value.type().name(), typeid(T).name());
+        throw std::bad_any_cast();
     }
 
     template <typename T>
@@ -123,6 +125,7 @@ struct Object
             return std::any_cast<T&>(value);
         }
         fprintf(stderr, "Error(%s): Object %s to %s failed.\n", name.c_str(), value.type().name(), typeid(T).name());
+        throw std::bad_any_cast();
     }
 
     template <typename T>
