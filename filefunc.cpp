@@ -1,6 +1,7 @@
 ﻿#include "filefunc.h"
 #include <cctype>
 #include <chrono>
+#include <ctime>
 #include <filesystem>
 //#include <format>
 #include <fstream>
@@ -70,13 +71,17 @@ std::vector<char> filefunc::readFile(const std::string& filename, int length)
 {
     std::ifstream ifs(filename, std::fstream::binary);
     if (!ifs) { return {}; }
-    if (length <= 0)
-    {
-        ifs.seekg(0, std::ios::end);
-        length = ifs.tellg();
-        ifs.seekg(0, std::ios::beg);
-    }
     std::vector<char> buffer;
+    if (length > 0)
+    {
+        buffer.resize(length);
+        ifs.read(buffer.data(), length);
+        buffer.resize(size_t(ifs.gcount()));
+        return buffer;
+    }
+    ifs.seekg(0, std::ios::end);
+    length = int(ifs.tellg());
+    ifs.seekg(0, std::ios::beg);
     buffer.assign((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
     return buffer;
 }
@@ -282,8 +287,14 @@ std::string filefunc::getFileTime(const std::string& filename, const std::string
     auto t = std::filesystem::last_write_time(filename);
     auto t1 = std::chrono::time_point_cast<std::chrono::system_clock::duration>(t - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
     auto t2 = std::chrono::system_clock::to_time_t(t1);
+    std::tm tm = {};
+#ifdef _WIN32
+    localtime_s(&tm, &t2);
+#else
+    localtime_r(&t2, &tm);
+#endif
     char buf[64] = {};
-    strftime(buf, sizeof(buf), format.c_str(), localtime(&t2));
+    strftime(buf, sizeof(buf), format.c_str(), &tm);
     return buf;
 }
 

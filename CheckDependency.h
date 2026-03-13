@@ -1,11 +1,6 @@
 #pragma once
 
-#ifndef _CHECKDEPENDENCY_H_
-#define _CHECKDEPENDENCY_H_
-#endif
-
 #include "windows.h"
-
 #include "ImageHlp.h"
 #include <map>
 #include <string>

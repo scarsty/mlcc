@@ -3,9 +3,6 @@
 #include <iostream>
 #include <sstream>
 
-#define BREAK_POINT(content) \
-    if (content) { int i = 0; }
-
 namespace cifa
 {
 

@@ -65,7 +65,7 @@ std::string strcvt::CvtWStringToLocalString(const std::wstring& wstring)
 
 #endif    // _WIN32
 
-// codecvt在C++26中被弃用，且暂时没有替代方案
+// codecvt自C++17起已被弃用，且标准库暂时没有直接替代方案
 // 建议使用PotConv
 std::string strcvt::CvtStringToUTF8(const char16_t& src)
 {
