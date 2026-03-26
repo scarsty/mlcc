@@ -129,6 +129,19 @@ void ZipFile::addFile(const std::string& filename, const std::string& filename_o
     }
 }
 
+void ZipFile::removeFile(const std::string& filename)
+{
+    if (zip_)
+    {
+        std::lock_guard<std::mutex> lock(*mutex_);
+        auto index = zip_name_locate(zip_, filename.c_str(), ZIP_FL_UNCHANGED);
+        if (index >= 0)
+        {
+            zip_delete(zip_, index);
+        }
+    }
+}
+
 std::vector<std::string> ZipFile::getFileNames() const
 {
     std::vector<std::string> files;
