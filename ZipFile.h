@@ -21,6 +21,7 @@ private:
 public:
 
     //外部文件名是系统编码，取文件名时是原本的编码
+    //注意其实所用的库是libzip，只支持CP437和UTF-8两种编码，因此取文件名的时候要用原本的编码，如果强行用UTF-8编码会丢失信息
     bool opened() const { return zip_ != nullptr; }
 
     void openRead(const std::string& zip_filename);
