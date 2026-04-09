@@ -19,6 +19,8 @@ private:
     std::vector<std::string> buffer_;    // 添加数据时先复制到这里，否则close的时候，原内容如果已经被销毁就会出错
 
 public:
+
+    //外部文件名是系统编码，取文件名时是原本的编码
     bool opened() const { return zip_ != nullptr; }
 
     void openRead(const std::string& zip_filename);

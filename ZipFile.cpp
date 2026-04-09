@@ -105,7 +105,7 @@ void ZipFile::addData(const std::string& filename, const char* p, int size)
         zip_source_t* source = zip_source_buffer(zip_, buffer_.back().data(), size, 0);
         if (source)
         {
-            if (zip_file_add(zip_, u8name(filename).c_str(), source, ZIP_FL_OVERWRITE) < 0)
+            if (zip_file_add(zip_, filename.c_str(), source, ZIP_FL_OVERWRITE) < 0)
             {
                 zip_source_free(source);
             }
@@ -123,7 +123,7 @@ void ZipFile::addFile(const std::string& filename, const std::string& filename_o
         zip_source_t* source = zip_source_buffer(zip_, buffer_.back().data(), buffer_.back().size(), 0);
         if (source)
         {
-            if (zip_file_add(zip_, u8name(filename).c_str(), source, ZIP_FL_OVERWRITE) < 0)
+            if (zip_file_add(zip_, filename.c_str(), source, ZIP_FL_OVERWRITE) < 0)
             {
                 zip_source_free(source);
             }
