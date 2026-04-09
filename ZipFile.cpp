@@ -53,8 +53,6 @@ void ZipFile::setPassword(const std::string& password) const
     }
 }
 
-//以下需注意，读取压缩包内文件，似乎可以用原始编码或者UTF-8编码，zip_fopen时都能成功
-//但是压缩时，就要用UTF-8编码
 std::string ZipFile::readFile(const std::string& filename) const
 {
     std::string content;
