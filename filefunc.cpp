@@ -1,21 +1,21 @@
-﻿#include "filefunc.h"
+#include "filefunc.h"
+
 #include <cctype>
-#include <chrono>
+#include <cstdio>
 #include <ctime>
-#include <filesystem>
-//#include <format>
-#include <fstream>
-#include <functional>
 #include <sstream>
 
 #ifdef _WIN32
-#include <windows.h>
-// include windows.h before stringapiset.h
-#include <stringapiset.h>    //for MultiByteToWideChar() and WideCharToMultiByte()
+#include <Windows.h>
+#include <direct.h>
+#include <io.h>
+#include <strsafe.h>
+#define localtime _localtime64
+#define stat _stat64
 #else
 #include "dirent.h"
 #ifndef __APPLE__
-//#include <sys/io.h>
+#include <sys/io.h>
 #endif
 #include <sys/uio.h>
 #include <unistd.h>
@@ -29,91 +29,323 @@
 
 namespace
 {
-#ifdef _MSC_VER
-std::wstring str2wstr(const std::string& str)
+std::string remove_trailing_path_chars(const std::string& input)
 {
-    int wlen = MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.size(), nullptr, 0);
-    std::wstring wstr;
-    wstr.resize(wlen);
-    MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.size(), wstr.data(), wlen);
-    return wstr;
-}
+    if (input.empty())
+    {
+        return input;
+    }
+    std::string path = input;
+    while (path.size() > 1 && filefunc::is_path_char(path.back()))
+    {
+#ifdef _WIN32
+        if (path.size() == 3 && std::isalpha(static_cast<unsigned char>(path[0])) && path[1] == ':')
+        {
+            break;
+        }
 #endif
-}    //namespace
+        path.pop_back();
+    }
+    return path;
+}
+
+std::string normalize_path(std::string path)
+{
+#ifdef _WIN32
+    for (auto& ch : path)
+    {
+        if (ch == '/')
+        {
+            ch = '\\';
+        }
+    }
+#endif
+    return path;
+}
+
+bool is_absolute_path(const std::string& path)
+{
+    if (path.empty())
+    {
+        return false;
+    }
+#ifdef _WIN32
+    if (path.size() >= 3 && std::isalpha(static_cast<unsigned char>(path[0])) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
+    {
+        return true;
+    }
+    return path.size() >= 2 && (path[0] == '\\' || path[0] == '/') && (path[1] == '\\' || path[1] == '/');
+#else
+    return path[0] == '/';
+#endif
+}
+
+std::string join_path(const std::string& lhs, const std::string& rhs)
+{
+    if (lhs.empty())
+    {
+        return rhs;
+    }
+    if (rhs.empty())
+    {
+        return lhs;
+    }
+    if (is_absolute_path(rhs))
+    {
+        return rhs;
+    }
+    std::string ret = lhs;
+    if (!filefunc::is_path_char(ret.back()))
+    {
+        ret += filefunc::get_path_char();
+    }
+    ret += rhs;
+    return ret;
+}
+
+std::vector<std::string> split_path_parts(const std::string& filename)
+{
+    std::vector<std::string> parts;
+    std::string current;
+    for (char ch : normalize_path(filename))
+    {
+        if (filefunc::is_path_char(ch))
+        {
+            if (!current.empty())
+            {
+                parts.push_back(current);
+                current.clear();
+            }
+        }
+        else
+        {
+            current += ch;
+        }
+    }
+    if (!current.empty())
+    {
+        parts.push_back(current);
+    }
+
+    std::vector<std::string> normalized;
+    for (const auto& part : parts)
+    {
+        if (part.empty() || part == ".")
+        {
+            continue;
+        }
+        if (part == "..")
+        {
+            if (!normalized.empty() && normalized.back() != "..")
+            {
+                normalized.pop_back();
+                continue;
+            }
+        }
+        normalized.push_back(part);
+    }
+    return normalized;
+}
+
+std::string get_path_root(const std::string& filename)
+{
+    std::string path = normalize_path(filename);
+#ifdef _WIN32
+    if (path.size() >= 3 && std::isalpha(static_cast<unsigned char>(path[0])) && path[1] == ':' && filefunc::is_path_char(path[2]))
+    {
+        return path.substr(0, 3);
+    }
+    if (path.size() >= 2 && filefunc::is_path_char(path[0]) && filefunc::is_path_char(path[1]))
+    {
+        return std::string(2, '\\');
+    }
+    return "";
+#else
+    if (!path.empty() && path[0] == '/')
+    {
+        return "/";
+    }
+    return "";
+#endif
+}
+
+bool equal_path_part(const std::string& a, const std::string& b)
+{
+#ifdef _WIN32
+    if (a.size() != b.size())
+    {
+        return false;
+    }
+    for (size_t i = 0; i < a.size(); i++)
+    {
+        if (std::toupper(static_cast<unsigned char>(a[i])) != std::toupper(static_cast<unsigned char>(b[i])))
+        {
+            return false;
+        }
+    }
+    return true;
+#else
+    return a == b;
+#endif
+}
+
+void remove_path_recursive(const std::string& path)
+{
+    if (!filefunc::pathExist(path))
+    {
+        filefunc::removeFile(path);
+        return;
+    }
+    auto entries = filefunc::getFilesInPath(path, 0, 1, 1);
+    for (auto& entry : entries)
+    {
+        if (filefunc::pathExist(entry))
+        {
+            remove_path_recursive(entry);
+        }
+        else
+        {
+            filefunc::removeFile(entry);
+        }
+    }
+#ifdef _WIN32
+    _rmdir(path.c_str());
+#else
+    rmdir(path.c_str());
+#endif
+}
+}    // namespace
 
 bool filefunc::fileExist(const std::string& name)
 {
-#ifdef _MSC_VER
-    return std::filesystem::is_regular_file(str2wstr(name));
+    if (name.empty())
+    {
+        return false;
+    }
+#ifdef _WIN32
+    WIN32_FILE_ATTRIBUTE_DATA attrs = { 0 };
+    auto exist = ::GetFileAttributesExA(name.c_str(), ::GetFileExInfoStandard, &attrs);
+    if (exist)
+    {
+        return !(attrs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+    }
+    return false;
+#else
+    if (access(name.c_str(), 0) == -1)
+    {
+        return false;
+    }
+    struct stat sb;
+    stat(name.c_str(), &sb);
+    return !(sb.st_mode & S_IFDIR);
 #endif
-    return std::filesystem::is_regular_file(name);
 }
 
 bool filefunc::pathExist(const std::string& name)
 {
-#ifdef _MSC_VER
-    return std::filesystem::is_directory(str2wstr(name));
+    if (name.empty())
+    {
+        return false;
+    }
+#ifdef _WIN32
+    WIN32_FILE_ATTRIBUTE_DATA attrs = { 0 };
+    if (!::GetFileAttributesExA(name.c_str(), ::GetFileExInfoStandard, &attrs))
+    {
+        return false;
+    }
+    return (attrs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+#else
+    if (access(name.c_str(), 0) == -1)
+    {
+        return false;
+    }
+    struct stat sb;
+    stat(name.c_str(), &sb);
+    return (sb.st_mode & S_IFDIR) != 0;
 #endif
-    return std::filesystem::is_directory(name);
 }
 
 size_t filefunc::getFileSize(const std::string& name)
 {
-    if (!fileExist(name)) { return 0; }
-    std::ifstream file(name, std::ios::binary | std::ios::ate);
-    if (!file) { return 0; }
-    size_t size = file.tellg();
-    file.close();
-    return size;
+    struct stat s;
+    if (stat(name.c_str(), &s) != 0)
+    {
+        return 0;
+    }
+    return size_t(s.st_size);
 }
 
 std::vector<char> filefunc::readFile(const std::string& filename, int length)
 {
-    std::ifstream ifs(filename, std::fstream::binary);
-    if (!ifs) { return {}; }
-    std::vector<char> buffer;
-    if (length > 0)
+    std::vector<char> s;
+    FILE* fp = fopen(filename.c_str(), "rb");
+    if (!fp)
     {
-        buffer.resize(length);
-        ifs.read(buffer.data(), length);
-        buffer.resize(size_t(ifs.gcount()));
-        return buffer;
+        return s;
     }
-    ifs.seekg(0, std::ios::end);
-    length = int(ifs.tellg());
-    ifs.seekg(0, std::ios::beg);
-    buffer.assign((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-    return buffer;
+    if (length <= 0)
+    {
+        fseek(fp, 0, SEEK_END);
+        length = ftell(fp);
+        fseek(fp, 0, 0);
+    }
+    s.resize(length);
+    if (fread(s.data(), 1, length, fp) < size_t(length))
+    {
+    }
+    fclose(fp);
+    return s;
 }
 
 int filefunc::writeFile(const char* data, int length, const std::string& filename)
 {
-    if (filename.empty()) { return 0; }
-    std::ofstream ofs(filename, std::fstream::binary);
-    ofs.write(data, length);
-    return length;
+    FILE* fp = fopen(filename.c_str(), "wb");
+    if (fp)
+    {
+        fwrite(data, 1, length, fp);
+        fflush(fp);
+        fclose(fp);
+        return length;
+    }
+    return -1;
 }
 
 int filefunc::writeFile(const std::vector<char>& data, const std::string& filename)
 {
-    return writeFile(data.data(), data.size(), filename);
+    return writeFile(data.data(), int(data.size()), filename);
 }
 
 std::string filefunc::readFileToString(const std::string& filename)
 {
-    std::ifstream ifs(filename, std::fstream::binary);
-    if (!ifs) { return {}; }
-    std::string str;
-    str.assign((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-    return str;
+    FILE* fp = fopen(filename.c_str(), "rb");
+    if (fp)
+    {
+        fseek(fp, 0, SEEK_END);
+        int length = ftell(fp);
+        fseek(fp, 0, 0);
+        std::string str;
+        str.resize(length, '\0');
+        if (fread((void*)str.c_str(), 1, length, fp) < size_t(length))
+        {
+        }
+        fclose(fp);
+        return str;
+    }
+    return "";
 }
 
 int filefunc::writeStringToFile(const std::string& str, const std::string& filename)
 {
-    if (filename.empty()) { return 0; }
-    std::ofstream ofs(filename, std::fstream::binary);
-    ofs << str;
-    return str.size();
+    FILE* fp = fopen(filename.c_str(), "wb");
+    if (fp)
+    {
+        int length = int(str.length());
+        fwrite(str.c_str(), 1, length, fp);
+        fflush(fp);
+        fclose(fp);
+        return length;
+    }
+    return -1;
 }
 
 bool filefunc::is_path_char(char c)
@@ -142,8 +374,7 @@ size_t filefunc::getLastPathCharPos(const std::string& filename, int utf8)
     size_t pos = std::string::npos;
     if (utf8 == 0)
     {
-        //ansi
-        for (int i = 0; i < filename.size(); i++)
+        for (int i = 0; i < int(filename.size()); i++)
         {
             if (utf8 == 0 && uint8_t(filename[i]) >= 128)
             {
@@ -175,13 +406,11 @@ size_t filefunc::getLastEftPathCharPos(const std::string& filename, int utf8)
     utf8 = 1;
 #endif
     size_t pos = std::string::npos;
-    //avoid mistakes for continued path char
     if (utf8 == 0)
     {
-        //ansi
         bool found = false;
         size_t pos1 = std::string::npos;
-        for (int i = 0; i < filename.size(); i++)
+        for (int i = 0; i < int(filename.size()); i++)
         {
             if (is_path_char(filename[i]))
             {
@@ -229,152 +458,312 @@ size_t filefunc::getLastEftPathCharPos(const std::string& filename, int utf8)
     return pos;
 }
 
-std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, int recursive /*= 0*/, int include_path /*= 0*/, int absolute_path /*= 0*/)
+std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, int recursive, int include_path, int absolute_path)
 {
-    if (!pathname.empty() && !std::filesystem::is_directory(pathname.c_str())) { return {}; }
-    std::vector<std::string> ret;
-    std::filesystem::directory_entry path0;
-    if (pathname.empty())
+    if (pathname.empty() || !pathExist(pathname))
     {
-        path0.assign(".");
+        return {};
+    }
+
+    if (recursive == 0)
+    {
+#ifdef _WIN32
+        WIN32_FIND_DATAA find_data;
+        std::string dir;
+        HANDLE h_find = INVALID_HANDLE_VALUE;
+        DWORD error = 0;
+        std::vector<std::string> files;
+
+        dir = normalize_path(pathname) + "\\*";
+        h_find = FindFirstFileA(dir.c_str(), &find_data);
+
+        if (h_find == INVALID_HANDLE_VALUE)
+        {
+            return files;
+        }
+        do
+        {
+            std::string filename = find_data.cFileName;
+            if (filename != "." && filename != "..")
+            {
+                std::string full = join_path(pathname, filename);
+                if (include_path != 0 || !pathExist(full))
+                {
+                    files.push_back(absolute_path ? getAbsolutePath(full) : filename);
+                }
+            }
+        } while (FindNextFileA(h_find, &find_data) != 0);
+
+        error = GetLastError();
+        if (error != ERROR_NO_MORE_FILES)
+        {
+            return files;
+        }
+        FindClose(h_find);
+#else
+        DIR* dir;
+        struct dirent* ptr;
+        dir = opendir(pathname.c_str());
+        std::vector<std::string> files;
+        if (dir == nullptr)
+        {
+            return files;
+        }
+        while ((ptr = readdir(dir)) != nullptr)
+        {
+            std::string filename = std::string(ptr->d_name);
+            if (filename != "." && filename != "..")
+            {
+                std::string full = join_path(pathname, filename);
+                if (include_path != 0 || !pathExist(full))
+                {
+                    files.push_back(absolute_path ? getAbsolutePath(full) : filename);
+                }
+            }
+        }
+        closedir(dir);
+#endif
+        return files;
     }
     else
     {
-        path0.assign(pathname);
-    }
-    std::function<void(std::filesystem::path)> getFiles = [&](std::filesystem::path path)
-    {
-        for (auto const& dir_entry : std::filesystem::directory_iterator{ path })
+        std::vector<std::string> files, paths;
+        paths = getFilesInPath(pathname, 0, 1, 0);
+        while (!paths.empty())
         {
-            if (std::filesystem::is_directory(dir_entry.path()))
+            auto p = paths.back();
+            paths.pop_back();
+            auto full = join_path(pathname, p);
+            if (pathExist(full))
             {
-                if (recursive == 1)
+                auto new_paths = getFilesInPath(full, 0, 1, 0);
+                for (auto& np : new_paths)
                 {
-                    getFiles(dir_entry.path());
+                    paths.push_back(join_path(p, np));
                 }
-                if (include_path == 1)
+                if (include_path)
                 {
-                    if (absolute_path)
-                    {
-                        ret.push_back(std::filesystem::absolute(dir_entry.path()).string());
-                    }
-                    else
-                    {
-                        ret.push_back(std::filesystem::relative(dir_entry.path(), path0).string());
-                    }
+                    files.push_back(absolute_path ? getAbsolutePath(full) : p);
                 }
             }
             else
             {
-                if (absolute_path)
-                {
-                    ret.push_back(std::filesystem::absolute(dir_entry.path()).string());
-                }
-                else
-                {
-                    ret.push_back(std::filesystem::relative(dir_entry.path(), path0).string());
-                }
+                files.push_back(absolute_path ? getAbsolutePath(full) : p);
             }
         }
-    };
-    getFiles(path0);
-    return ret;
+        std::reverse(files.begin(), files.end());
+        return files;
+    }
 }
 
 std::string filefunc::getFileTime(const std::string& filename, const std::string& format)
 {
-    if (!fileExist(filename)) { return ""; }
-    auto t = std::filesystem::last_write_time(filename);
-    auto t1 = std::chrono::time_point_cast<std::chrono::system_clock::duration>(t - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
-    auto t2 = std::chrono::system_clock::to_time_t(t1);
-    std::tm tm = {};
-#ifdef _WIN32
-    localtime_s(&tm, &t2);
-#else
-    localtime_r(&t2, &tm);
-#endif
-    char buf[64] = {};
-    strftime(buf, sizeof(buf), format.c_str(), &tm);
-    return buf;
+    struct stat s;
+    int ret = stat(filename.c_str(), &s);
+    if (ret == 0)
+    {
+        time_t tm_t = s.st_mtime;
+        auto filedate = localtime(&tm_t);
+        char buf[128] = { 0 };
+        strftime(buf, 64, format.c_str(), filedate);
+        return buf;
+    }
+    return "";
 }
 
 void filefunc::changePath(const std::string& path)
 {
-    if (!path.empty())
+    if (path.empty())
     {
-        std::filesystem::current_path(path);
+        return;
+    }
+    if (chdir(path.c_str()) != 0)
+    {
+        fprintf(stderr, "Failed to change work path %s\n", path.c_str());
     }
 }
 
 std::string filefunc::getCurrentPath()
 {
-    return std::filesystem::current_path().string();
+    char path_buf[4096] = { 0 };
+#ifdef _WIN32
+    if (_getcwd(path_buf, sizeof(path_buf)) == nullptr)
+#else
+    if (getcwd(path_buf, sizeof(path_buf)) == nullptr)
+#endif
+    {
+        return "";
+    }
+    return path_buf;
 }
 
 void filefunc::makePath(const std::string& path)
 {
-    if (!path.empty())
+    std::vector<std::string> paths;
+    auto p = normalize_path(path) + get_path_char();
+    while (true)
     {
-        std::filesystem::create_directories(path);
+        if (pathExist(p) || p == "")
+        {
+            break;
+        }
+        paths.push_back(p);
+        p = getParentPath(p);
+    }
+    for (auto it = paths.rbegin(); it != paths.rend(); it++)
+    {
+        _mkdir(it->c_str());
     }
 }
 
 void filefunc::copyFile(const std::string& src, const std::string& dst)
 {
-    std::filesystem::copy_file(src, dst, std::filesystem::copy_options::overwrite_existing);
+    FILE* in = fopen(src.c_str(), "rb");
+    if (!in)
+    {
+        return;
+    }
+    FILE* out = fopen(dst.c_str(), "wb");
+    if (!out)
+    {
+        fclose(in);
+        return;
+    }
+
+    char buffer[64 * 1024];
+    while (true)
+    {
+        size_t count = fread(buffer, 1, sizeof(buffer), in);
+        if (count > 0)
+        {
+            fwrite(buffer, 1, count, out);
+        }
+        if (count < sizeof(buffer))
+        {
+            break;
+        }
+    }
+    fflush(out);
+    fclose(out);
+    fclose(in);
 }
 
 void filefunc::moveFile(const std::string& src, const std::string& dst)
 {
-    std::filesystem::rename(src, dst);
+    if (rename(src.c_str(), dst.c_str()) != 0)
+    {
+        copyFile(src, dst);
+        removeFile(src);
+    }
 }
 
 void filefunc::removeFile(const std::string& filename)
 {
-    std::error_code ec;
-    std::filesystem::remove_all(filename, ec);
+    remove(filename.c_str());
 }
 
 void filefunc::removePath(const std::string& path)
 {
-    std::error_code ec;
-    std::filesystem::remove_all(path, ec);
+    remove_path_recursive(path);
 }
 
 std::string filefunc::getRelativePath(const std::string& filename, const std::string& basepath)
 {
-    return std::filesystem::relative(filename, basepath).string();
+    auto abs_file = remove_trailing_path_chars(normalize_path(getAbsolutePath(filename)));
+    auto abs_base = remove_trailing_path_chars(normalize_path(getAbsolutePath(basepath)));
+
+    if (fileExist(abs_base))
+    {
+        abs_base = remove_trailing_path_chars(getParentPath(abs_base, 1));
+    }
+
+    if (abs_base.empty())
+    {
+        return abs_file;
+    }
+
+#ifdef _WIN32
+    auto file_root = get_path_root(abs_file);
+    auto base_root = get_path_root(abs_base);
+    if (!equal_path_part(file_root, base_root))
+    {
+        return abs_file;
+    }
+#else
+    if (get_path_root(abs_file) != get_path_root(abs_base))
+    {
+        return abs_file;
+    }
+#endif
+
+    auto file_parts = split_path_parts(abs_file);
+    auto base_parts = split_path_parts(abs_base);
+    size_t common = 0;
+    while (common < file_parts.size() && common < base_parts.size() && equal_path_part(file_parts[common], base_parts[common]))
+    {
+        common++;
+    }
+
+    std::string ret;
+    for (size_t i = common; i < base_parts.size(); i++)
+    {
+        ret += "..";
+        ret += get_path_char();
+    }
+    for (size_t i = common; i < file_parts.size(); i++)
+    {
+        ret += file_parts[i];
+        if (i + 1 < file_parts.size())
+        {
+            ret += get_path_char();
+        }
+    }
+    if (ret.empty())
+    {
+        return ".";
+    }
+    if (ret.size() >= 1 && is_path_char(ret.back()))
+    {
+        ret.pop_back();
+    }
+    return ret;
 }
 
 std::string filefunc::getFileExt(const std::string& filename)
 {
-    auto ext = std::filesystem::path(filename).extension().string();
-    if (!ext.empty() && ext[0] == '.')
+    auto pos_p = getLastPathCharPos(filename);
+    auto pos_d = filename.find_last_of('.');
+    if (pos_d != std::string::npos && (pos_p < pos_d || pos_p == std::string::npos))
     {
-        ext = ext.substr(1);
+        return filename.substr(pos_d + 1);
     }
-    return ext;
+    return "";
 }
 
-//find the last point as default, and find the first when mode is 1
 std::string filefunc::getFileMainName(const std::string& filename)
 {
-    auto name = std::filesystem::path(filename).parent_path().string();
-    if (!name.empty() && !is_path_char(name.back()))
+    auto pos_p = getLastPathCharPos(filename);
+    auto pos_d = filename.find_last_of('.');
+    if (pos_d != std::string::npos && (pos_p < pos_d || pos_p == std::string::npos))
     {
-        name += get_path_char();
+        return filename.substr(0, pos_d);
     }
-    return name + std::filesystem::path(filename).stem().string();
+    return filename;
 }
 
 std::string filefunc::getFilenameWithoutPath(const std::string& filename)
 {
-    return std::filesystem::path(filename).filename().string();
+    auto pos_p = getLastPathCharPos(filename);
+    if (pos_p != std::string::npos)
+    {
+        return filename.substr(pos_p + 1);
+    }
+    return filename;
 }
 
 std::string filefunc::getFileMainNameWithoutPath(const std::string& filename)
 {
-    return std::filesystem::path(filename).stem().string();
+    return getFilenameWithoutPath(getFileMainName(filename));
 }
 
 std::string filefunc::changeFileExt(const std::string& filename, const std::string& ext)
@@ -389,14 +778,12 @@ std::string filefunc::changeFileExt(const std::string& filename, const std::stri
 
 std::string filefunc::getParentPath(const std::string& filename, int utf8)
 {
-    if (filename.size() > 0 && is_path_char(filename.back()))
+    auto pos_p = getLastEftPathCharPos(filename, utf8);
+    if (pos_p != std::string::npos)
     {
-        return std::filesystem::path(filename).parent_path().parent_path().string();
+        return filename.substr(0, pos_p);
     }
-    else
-    {
-        return std::filesystem::path(filename).parent_path().string();
-    }
+    return "";
 }
 
 std::string filefunc::getFilePath(const std::string& filename, int utf8)
@@ -431,7 +818,39 @@ std::string filefunc::toLegalFilename(const std::string& filename, int allow_pat
 
 std::string filefunc::getAbsolutePath(const std::string& filename)
 {
-    return std::filesystem::absolute(filename).string();
+    if (filename.empty())
+    {
+        return getCurrentPath();
+    }
+#ifdef _WIN32
+    DWORD len = GetFullPathNameA(filename.c_str(), 0, nullptr, nullptr);
+    if (len == 0)
+    {
+        return normalize_path(filename);
+    }
+    std::string full_path(len, '\0');
+    DWORD written = GetFullPathNameA(filename.c_str(), len, &full_path[0], nullptr);
+    if (written == 0)
+    {
+        return normalize_path(filename);
+    }
+    if (!full_path.empty() && full_path.back() == '\0')
+    {
+        full_path.pop_back();
+    }
+    return full_path;
+#else
+    char full_path[4096] = { 0 };
+    if (realpath(filename.c_str(), full_path) != nullptr)
+    {
+        return full_path;
+    }
+    if (is_absolute_path(filename))
+    {
+        return filename;
+    }
+    return join_path(getCurrentPath(), filename);
+#endif
 }
 
 bool filefunc::compareNature(const std::string& a, const std::string& b)
@@ -439,23 +858,16 @@ bool filefunc::compareNature(const std::string& a, const std::string& b)
     if (a.empty() && b.empty()) { return false; }
     if (a.empty()) { return true; }
     if (b.empty()) { return false; }
-
-    auto is_digit = [](char c) -> bool
+    if (std::isdigit(static_cast<unsigned char>(a[0])) && !std::isdigit(static_cast<unsigned char>(b[0]))) { return true; }
+    if (!std::isdigit(static_cast<unsigned char>(a[0])) && std::isdigit(static_cast<unsigned char>(b[0]))) { return false; }
+    if (!std::isdigit(static_cast<unsigned char>(a[0])) && !std::isdigit(static_cast<unsigned char>(b[0])))
     {
-        return c >= '0' && c <= '9';
-    };
-
-    if (is_digit(a[0]) && !is_digit(b[0])) { return true; }
-    if (!is_digit(a[0]) && is_digit(b[0])) { return false; }
-    if (!is_digit(a[0]) && !is_digit(b[0]))
-    {
-        if (std::toupper(a[0]) == std::toupper(b[0])) { return compareNature(a.substr(1), b.substr(1)); }
+        if (std::toupper(static_cast<unsigned char>(a[0])) == std::toupper(static_cast<unsigned char>(b[0]))) { return compareNature(a.substr(1), b.substr(1)); }
         {
-            return (std::toupper(a[0]) < std::toupper(b[0]));
+            return (std::toupper(static_cast<unsigned char>(a[0])) < std::toupper(static_cast<unsigned char>(b[0])));
         }
     }
 
-    // Both strings begin with digit --> parse both numbers
     std::istringstream issa(a);
     std::istringstream issb(b);
     int ia, ib;
@@ -463,9 +875,8 @@ bool filefunc::compareNature(const std::string& a, const std::string& b)
     issb >> ib;
     if (ia != ib) { return ia < ib; }
 
-    // Numbers are the same --> remove numbers and recurse
     std::string anew, bnew;
     std::getline(issa, anew);
     std::getline(issb, bnew);
-    return (compareNature(anew, bnew));
+    return compareNature(anew, bnew);
 }
