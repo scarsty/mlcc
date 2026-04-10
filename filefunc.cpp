@@ -14,7 +14,7 @@
 #define stat _stat64
 #else
 #include "dirent.h"
-#ifndef __APPLE__
+#if !defined(__APPLE__) && !defined(__ANDROID__)
 #include <sys/io.h>
 #endif
 #include <sys/uio.h>
