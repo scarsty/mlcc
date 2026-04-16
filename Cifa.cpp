@@ -141,32 +141,72 @@ Cifa::Cifa()
     REGISTER_FUNCTION(log10);
 }
 
+Object* Cifa::find_object_from_inner(ScopeStack& scopes, const std::string& name)
+{
+    for (auto it = scopes.rbegin(); it != scopes.rend(); ++it)
+    {
+        auto it_obj = it->find(name);
+        if (it_obj != it->end())
+        {
+            return &it_obj->second;
+        }
+    }
+    return nullptr;
+}
+
+bool Cifa::has_return_value(const ScopeStack& scopes) const
+{
+    if (scopes.empty())
+    {
+        return false;
+    }
+    return scopes.front().count("return") > 0;
+}
+
+Object& Cifa::return_value(ScopeStack& scopes)
+{
+    if (scopes.empty())
+    {
+        scopes.emplace_back();
+    }
+    return scopes.front()["return"];
+}
+
 Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
 {
-    if (p.count("return"))
+    ScopeStack scopes;
+    scopes.emplace_back(p);
+    auto o = eval_scoped(c, scopes);
+    p = std::move(scopes.front());
+    return o;
+}
+
+Object Cifa::eval_scoped(CalUnit& c, ScopeStack& scopes)
+{
+    if (has_return_value(scopes))
     {
-        return p["return"];
+        return return_value(scopes);
     }
     else if (c.type == CalUnitType::Operator)
     {
         if (c.v.size() == 1)
         {
-            if (c.str == "+") { return eval(c.v[0], p); }
-            if (c.str == "-") { return sub(Object(0.0), eval(c.v[0], p)); }
-            if (c.str == "~") { return double(~int(eval(c.v[0], p))); }
-            if (c.str == "!") { return !eval(c.v[0], p); }
-            if (c.str == "++") { return get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(1)); }
-            if (c.str == "--") { return get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(-1)); }
+            if (c.str == "+") { return eval_scoped(c.v[0], scopes); }
+            if (c.str == "-") { return sub(Object(0.0), eval_scoped(c.v[0], scopes)); }
+            if (c.str == "~") { return double(~int(eval_scoped(c.v[0], scopes))); }
+            if (c.str == "!") { return !eval_scoped(c.v[0], scopes); }
+            if (c.str == "++") { return get_parameter_for_assign(c.v[0], scopes) = add(get_parameter(c.v[0], scopes), Object(1)); }
+            if (c.str == "--") { return get_parameter_for_assign(c.v[0], scopes) = add(get_parameter(c.v[0], scopes), Object(-1)); }
             if (c.str == "()++")
             {
-                auto v = get_parameter(c.v[0], p);
-                get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(1));
+                auto v = get_parameter(c.v[0], scopes);
+                get_parameter_for_assign(c.v[0], scopes) = add(get_parameter(c.v[0], scopes), Object(1));
                 return v;
             }
             if (c.str == "()--")
             {
-                auto v = get_parameter(c.v[0], p);
-                get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(-1));
+                auto v = get_parameter(c.v[0], scopes);
+                get_parameter_for_assign(c.v[0], scopes) = add(get_parameter(c.v[0], scopes), Object(-1));
                 return v;
             }
         }
@@ -180,66 +220,66 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
                     {
                         std::vector<CalUnit> v = { c.v[0] };
                         expand_comma(c.v[1].v[0], v);
-                        return run_function(c.v[1].str, v, p);
+                        return run_function(c.v[1].str, v, scopes);
                     }
                     else
                     {
                         std::vector<CalUnit> v = { c.v[0] };
-                        return run_function(c.v[1].str, v, p);
+                        return run_function(c.v[1].str, v, scopes);
                     }
                 }
                 if (c.v[1].type == CalUnitType::Parameter)
                 {
-                    return get_parameter(c.v[0].str + "::" + c.v[1].str, p);
+                    return get_parameter(c.v[0].str + "::" + c.v[1].str, scopes);
                 }
             }
             //.和::作为取成员运算符时，目前只保证一层
-            if (c.str == "::") { return get_parameter(c.v[0].str + "::" + c.v[1].str, p); }
-            if (c.str == "*") { return mul(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "/") { return div(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "%") { return mod(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "+") { return add(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "-") { return sub(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == ">") { return more(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "<") { return less(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == ">=") { return more_equal(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "<=") { return less_equal(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "==") { return equal(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "!=") { return not_equal(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "&") { return bit_and(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "^") { return bit_xor(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "|") { return bit_or(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "&&") { return logic_and(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "||") { return logic_or(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "<<") { return shift_left(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == ">>") { return shift_right(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "=") { return get_parameter(c.v[0], p) = eval(c.v[1], p); }
-            if (c.str == "+=") { return get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "-=") { return get_parameter(c.v[0], p) = sub(get_parameter(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "*=") { return get_parameter(c.v[0], p) = mul(get_parameter(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "/=") { return get_parameter(c.v[0], p) = div(get_parameter(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "%=") { return get_parameter(c.v[0], p) = mod(get_parameter(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "<<=") { return get_parameter(c.v[0], p) = shift_left(get_parameter(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == ">>=") { return get_parameter(c.v[0], p) = shift_right(get_parameter(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "&=") { return get_parameter(c.v[0], p) = bit_and(get_parameter(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "|=") { return get_parameter(c.v[0], p) = bit_or(get_parameter(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "^=") { return get_parameter(c.v[0], p) = bit_xor(get_parameter(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "::") { return get_parameter(c.v[0].str + "::" + c.v[1].str, scopes); }
+            if (c.str == "*") { return mul(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "/") { return div(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "%") { return mod(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "+") { return add(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "-") { return sub(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == ">") { return more(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "<") { return less(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == ">=") { return more_equal(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "<=") { return less_equal(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "==") { return equal(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "!=") { return not_equal(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "&") { return bit_and(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "^") { return bit_xor(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "|") { return bit_or(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "&&") { return logic_and(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "||") { return logic_or(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "<<") { return shift_left(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == ">>") { return shift_right(eval_scoped(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "=") { return get_parameter_for_assign(c.v[0], scopes, c.v[0].with_type) = eval_scoped(c.v[1], scopes); }
+            if (c.str == "+=") { return get_parameter_for_assign(c.v[0], scopes, c.v[0].with_type) = add(get_parameter(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "-=") { return get_parameter_for_assign(c.v[0], scopes, c.v[0].with_type) = sub(get_parameter(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "*=") { return get_parameter_for_assign(c.v[0], scopes, c.v[0].with_type) = mul(get_parameter(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "/=") { return get_parameter_for_assign(c.v[0], scopes, c.v[0].with_type) = div(get_parameter(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "%=") { return get_parameter_for_assign(c.v[0], scopes, c.v[0].with_type) = mod(get_parameter(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "<<=") { return get_parameter_for_assign(c.v[0], scopes, c.v[0].with_type) = shift_left(get_parameter(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == ">>=") { return get_parameter_for_assign(c.v[0], scopes, c.v[0].with_type) = shift_right(get_parameter(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "&=") { return get_parameter_for_assign(c.v[0], scopes, c.v[0].with_type) = bit_and(get_parameter(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "|=") { return get_parameter_for_assign(c.v[0], scopes, c.v[0].with_type) = bit_or(get_parameter(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
+            if (c.str == "^=") { return get_parameter_for_assign(c.v[0], scopes, c.v[0].with_type) = bit_xor(get_parameter(c.v[0], scopes), eval_scoped(c.v[1], scopes)); }
             if (c.str == ",")
             {
                 Object o;
-                o.v.emplace_back(eval(c.v[0], p));
-                o.v.emplace_back(eval(c.v[1], p));
+                o.v.emplace_back(eval_scoped(c.v[0], scopes));
+                o.v.emplace_back(eval_scoped(c.v[1], scopes));
                 return o;
             }
             if (c.str == "?")    //条件1 ? 语句1 : 语句2;
             {
-                if (eval(c.v[0], p))    //比较?运算符左侧的 [条件1]
+                if (eval_scoped(c.v[0], scopes))    //比较?运算符左侧的 [条件1]
                 {
-                    return eval(c.v[1].v[0], p);    //取:运算符左侧 [语句1] 的结果
+                    return eval_scoped(c.v[1].v[0], scopes);    //取:运算符左侧 [语句1] 的结果
                 }
                 else
                 {
-                    return eval(c.v[1].v[1], p);    //取:运算符右侧 [语句2] 的结果
+                    return eval_scoped(c.v[1].v[1], scopes);    //取:运算符右侧 [语句2] 的结果
                 }
             }
         }
@@ -255,7 +295,7 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
     }
     else if (c.type == CalUnitType::Parameter)
     {
-        return get_parameter(c, p);
+        return get_parameter(c, scopes);
     }
     else if (c.type == CalUnitType::Function)
     {
@@ -264,19 +304,19 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
         {
             expand_comma(c.v[0], v);
         }
-        return run_function(c.str, v, p);
+        return run_function(c.str, v, scopes);
     }
     else if (c.type == CalUnitType::Key)
     {
         if (c.str == "if")    //if(条件1){语句1}else{语句2}
         {
-            if (eval(c.v[0], p))    //判断 [条件1]
+            if (eval_scoped(c.v[0], scopes))    //判断 [条件1]
             {
-                return eval(c.v[1], p);    //取: [语句1] 执行结果
+                return eval_scoped(c.v[1], scopes);    //取: [语句1] 执行结果
             }
             else if (c.v.size() >= 3)
             {
-                return eval(c.v[2], p);    //取: [语句2] 执行结果
+                return eval_scoped(c.v[2], scopes);    //取: [语句2] 执行结果
             }
             return Object(0);
         }
@@ -284,30 +324,28 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
         {
             Object o;
             for (
-                eval(c.v[0].v[0], p);    //执行 [语句1]
-                eval(c.v[0].v[1], p);    //判断 [条件1]
-                eval(c.v[0].v[2], p)     //执行 [语句2]
+                eval_scoped(c.v[0].v[0], scopes);    //执行 [语句1]
+                eval_scoped(c.v[0].v[1], scopes);    //判断 [条件1]
+                eval_scoped(c.v[0].v[2], scopes)     //执行 [语句2]
             )
             {
-                o = eval(c.v[1], p);    //执行 [语句3] 并 取执行结果
+                o = eval_scoped(c.v[1], scopes);    //执行 [语句3] 并 取执行结果
                 if (o.type1 == "__" && o.toString() == "break") { break; }
                 if (o.type1 == "__" && o.toString() == "continue") { continue; }
-                if (p.count("return")) { return p["return"]; }
+                if (has_return_value(scopes)) { return return_value(scopes); }
             }
-            //o.type = "";
             return Object(0);
         }
         if (c.str == "while")    //while (条件1) {语句1}
         {
             Object o;
-            while (eval(c.v[0], p))    //判断 [条件1]
+            while (eval_scoped(c.v[0], scopes))    //判断 [条件1]
             {
-                o = eval(c.v[1], p);    //执行 [语句1] 并 取执行结果
+                o = eval_scoped(c.v[1], scopes);    //执行 [语句1] 并 取执行结果
                 if (o.type1 == "__" && o.toString() == "break") { break; }
                 if (o.type1 == "__" && o.toString() == "continue") { continue; }
-                if (p.count("return")) { return p["return"]; }
+                if (has_return_value(scopes)) { return return_value(scopes); }
             }
-            //o.type = "";
             return o;
         }
         if (c.str == "do")    //do {语句1} while (条件1);
@@ -315,24 +353,25 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             Object o;
             do
             {
-                o = eval(c.v[0], p);    //执行 [语句1] 并 取执行结果
+                o = eval_scoped(c.v[0], scopes);    //执行 [语句1] 并 取执行结果
                 if (o.type1 == "__" && o.toString() == "break") { break; }
                 if (o.type1 == "__" && o.toString() == "continue") { continue; }
-                if (p.count("return")) { return p["return"]; }
-            } while (eval(c.v[1].v[0], p));    //判断 [条件1]
+                if (has_return_value(scopes)) { return return_value(scopes); }
+            } while (eval_scoped(c.v[1].v[0], scopes));    //判断 [条件1]
             return o;
         }
         if (c.str == "switch")
         {
-            auto cond = eval(c.v[0], p);
+            auto cond = eval_scoped(c.v[0], scopes);
             bool skip = true;
+            scopes.emplace_back();
             for (auto& c1 : c.v[1].v)
             {
                 if (c1.str == "case")
                 {
                     if (skip)
                     {
-                        if (equal(cond, eval(c1.v[0], p)))
+                        if (equal(cond, eval_scoped(c1.v[0], scopes)))
                         {
                             skip = false;
                         }
@@ -347,17 +386,23 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
                 }
                 else if (!skip)
                 {
-                    auto o = eval(c1, p);
+                    auto o = eval_scoped(c1, scopes);
                     if (o.type1 == "__" && o.toString() == "break") { break; }
-                    if (p.count("return")) { return p["return"]; }
+                    if (has_return_value(scopes))
+                    {
+                        auto ret = return_value(scopes);
+                        scopes.pop_back();
+                        return ret;
+                    }
                 }
             }
+            scopes.pop_back();
             return 0;
         }
         if (c.str == "return")
         {
-            p["return"] = eval(c.v[0], p);
-            return p["return"];
+            return_value(scopes) = eval_scoped(c.v[0], scopes);
+            return return_value(scopes);
         }
         if (c.str == "break")
         {
@@ -378,13 +423,30 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
     }
     else if (c.type == CalUnitType::Union)
     {
+        const bool is_block_scope = c.str == "{}";
+        if (is_block_scope)
+        {
+            scopes.emplace_back();
+        }
         Object o;
         for (auto& c1 : c.v)
         {
-            o = eval(c1, p);
+            o = eval_scoped(c1, scopes);
             if (o.type1 == "__" && o.toString() == "break") { break; }
             if (o.type1 == "__" && o.toString() == "continue") { break; }
-            if (p.count("return")) { return p["return"]; }
+            if (has_return_value(scopes))
+            {
+                auto ret = return_value(scopes);
+                if (is_block_scope)
+                {
+                    scopes.pop_back();
+                }
+                return ret;
+            }
+        }
+        if (is_block_scope)
+        {
+            scopes.pop_back();
         }
         return o;
     }
@@ -1209,6 +1271,34 @@ Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc, std
     }
 }
 
+Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc, ScopeStack& scopes)
+{
+    if (functions.count(name))
+    {
+        auto f = functions[name];
+        std::vector<Object> v;
+        for (auto& c : vc)
+        {
+            v.emplace_back(eval_scoped(c, scopes));
+        }
+        return f(v);
+    }
+    else if (functions2.count(name))
+    {
+        auto& f = functions2[name];
+        auto p1 = parameters;    //新的变量表
+        for (int i = 0; i < std::min(vc.size(), f.arguments.size()); i++)
+        {
+            p1[f.arguments[i]] = eval_scoped(vc[i], scopes);
+        }
+        return eval(f.body, p1);
+    }
+    else
+    {
+        return Object();
+    }
+}
+
 Object& Cifa::get_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p, bool only_check)
 {
     //return p[convert_parameter_name(c, p)];
@@ -1216,6 +1306,22 @@ Object& Cifa::get_parameter(CalUnit& c, std::unordered_map<std::string, Object>&
     auto& o = p[name];
     o.name = name;
     return o;
+}
+
+Object& Cifa::get_parameter(CalUnit& c, ScopeStack& scopes, bool only_check)
+{
+    auto name = convert_parameter_name(c, scopes, only_check);
+    auto* o = find_object_from_inner(scopes, name);
+    if (o == nullptr)
+    {
+        if (scopes.empty())
+        {
+            scopes.emplace_back();
+        }
+        o = &scopes.back()[name];
+    }
+    o->name = name;
+    return *o;
 }
 
 std::string Cifa::convert_parameter_name(CalUnit& c, std::unordered_map<std::string, Object>& p, bool only_check)
@@ -1245,9 +1351,41 @@ std::string Cifa::convert_parameter_name(CalUnit& c, std::unordered_map<std::str
     return parameter_name;
 }
 
+std::string Cifa::convert_parameter_name(CalUnit& c, ScopeStack& scopes, bool only_check)
+{
+    std::string parameter_name = c.str;
+    if (c.v.size() > 0 && c.v[0].str == "[]")
+    {
+        if (c.v[0].v.size() > 0)
+        {
+            //检查语法树时不处理坐标
+            if (!only_check)
+            {
+                auto e = eval_scoped(c.v[0].v[0], scopes);
+                std::string str;
+                if (e.isType<std::string>())
+                {
+                    str = e.toString();
+                }
+                else
+                {
+                    str = std::to_string(e.toInt());
+                }
+                parameter_name += "[" + str + "]";
+            }
+        }
+    }
+    return parameter_name;
+}
+
 bool Cifa::check_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p)
 {
     return p.count(convert_parameter_name(c, p));
+}
+
+bool Cifa::check_parameter(CalUnit& c, ScopeStack& scopes)
+{
+    return check_parameter(convert_parameter_name(c, scopes), scopes);
 }
 
 Object& Cifa::get_parameter(const std::string& name, std::unordered_map<std::string, Object>& p)
@@ -1255,9 +1393,53 @@ Object& Cifa::get_parameter(const std::string& name, std::unordered_map<std::str
     return p[name];
 }
 
+Object& Cifa::get_parameter(const std::string& name, ScopeStack& scopes)
+{
+    auto* o = find_object_from_inner(scopes, name);
+    if (o == nullptr)
+    {
+        if (scopes.empty())
+        {
+            scopes.emplace_back();
+        }
+        o = &scopes.back()[name];
+    }
+    o->name = name;
+    return *o;
+}
+
 bool Cifa::check_parameter(const std::string& name, std::unordered_map<std::string, Object>& p)
 {
     return p.count(name);
+}
+
+bool Cifa::check_parameter(const std::string& name, ScopeStack& scopes)
+{
+    return find_object_from_inner(scopes, name) != nullptr;
+}
+
+Object& Cifa::get_parameter_for_assign(CalUnit& c, ScopeStack& scopes, bool declare_current)
+{
+    auto name = convert_parameter_name(c, scopes);
+    if (scopes.empty())
+    {
+        scopes.emplace_back();
+    }
+    Object* o = nullptr;
+    if (declare_current)
+    {
+        o = &scopes.back()[name];
+    }
+    else
+    {
+        o = find_object_from_inner(scopes, name);
+        if (o == nullptr)
+        {
+            o = &scopes.back()[name];
+        }
+    }
+    o->name = name;
+    return *o;
 }
 
 void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::string, Object>& p)

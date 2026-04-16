@@ -235,6 +235,7 @@ class Cifa
 {
 public:
     using func_type = std::function<Object(ObjectVector&)>;
+    using ScopeStack = std::vector<std::unordered_map<std::string, Object>>;
 
 private:
     //运算符，此处的顺序即优先级，单目和右结合由下面的列表判断
@@ -277,25 +278,6 @@ private:
 
 public:
     Cifa();
-    Object eval(CalUnit& c, std::unordered_map<std::string, Object>& p);
-    void expand_comma(CalUnit& c1, std::vector<CalUnit>& v);
-    CalUnit& find_right_side(CalUnit& c1);
-    //bool need_suffix(CalUnit& c) { return c.can_cal() || vector_have(keys[0], c.str); }
-
-    CalUnitType guess_char(char c);
-    std::list<CalUnit> split(std::string& str);
-
-    CalUnit combine_all_cal(std::list<CalUnit>& ppp, bool curly = true, bool square = true, bool round = true);
-    std::list<CalUnit>::iterator inside_bracket(std::list<CalUnit>& ppp, std::list<CalUnit>& ppp2, const std::string& bl, const std::string& br);
-    void combine_curly_bracket(std::list<CalUnit>& ppp);
-    void combine_square_bracket(std::list<CalUnit>& ppp);
-    void combine_round_bracket(std::list<CalUnit>& ppp);
-    void combine_ops(std::list<CalUnit>& ppp);
-    void combine_semi(std::list<CalUnit>& ppp);
-    void deal_special_keys(std::list<CalUnit>& ppp);
-    void combine_keys(std::list<CalUnit>& ppp);
-    void combine_types(std::list<CalUnit>& ppp);
-    void combine_functions2(std::list<CalUnit>& ppp);
 
     void register_function(const std::string& name, func_type func);
     void register_user_data(const std::string& name, void* p);
@@ -323,14 +305,6 @@ public:
     }
 
     void* get_user_data(const std::string& name);
-    Object run_function(const std::string& name, std::vector<CalUnit>& vc, std::unordered_map<std::string, Object>& p);
-    Object& get_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p, bool only_check = false);
-    std::string convert_parameter_name(CalUnit& c, std::unordered_map<std::string, Object>& p, bool only_check = false);
-    bool check_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p);
-    Object& get_parameter(const std::string& name, std::unordered_map<std::string, Object>& p);
-    bool check_parameter(const std::string& name, std::unordered_map<std::string, Object>& p);
-
-    void check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::string, Object>& p);
 
     Object run_script(std::string str);    //运行脚本，注意实际上使用独立的变量表
 
@@ -343,6 +317,53 @@ public:
     std::string get_errors_str() const;
 
     void print_errors() const;
+
+    void set_output_error(bool oe) { output_error = oe; }
+
+    //用户可扩展的运算符函数列表
+    std::vector<std::function<Object(const Object&, const Object&)>> user_add, user_sub, user_mul, user_div, user_mod,
+        user_less, user_more, user_less_equal, user_more_equal,
+        user_equal, user_not_equal, user_bit_and, user_bit_or, user_bit_xor, user_logic_and, user_logic_or,
+        user_shift_left, user_shift_right;
+
+private:
+    Object eval(CalUnit& c, std::unordered_map<std::string, Object>& p);
+    Object eval_scoped(CalUnit& c, ScopeStack& scopes);
+    Object run_function(const std::string& name, std::vector<CalUnit>& vc, std::unordered_map<std::string, Object>& p);
+    Object run_function(const std::string& name, std::vector<CalUnit>& vc, ScopeStack& scopes);
+
+    void expand_comma(CalUnit& c1, std::vector<CalUnit>& v);
+    CalUnit& find_right_side(CalUnit& c1);
+    CalUnitType guess_char(char c);
+    std::list<CalUnit> split(std::string& str);
+    CalUnit combine_all_cal(std::list<CalUnit>& ppp, bool curly = true, bool square = true, bool round = true);
+    std::list<CalUnit>::iterator inside_bracket(std::list<CalUnit>& ppp, std::list<CalUnit>& ppp2, const std::string& bl, const std::string& br);
+    void combine_curly_bracket(std::list<CalUnit>& ppp);
+    void combine_square_bracket(std::list<CalUnit>& ppp);
+    void combine_round_bracket(std::list<CalUnit>& ppp);
+    void combine_ops(std::list<CalUnit>& ppp);
+    void combine_semi(std::list<CalUnit>& ppp);
+    void deal_special_keys(std::list<CalUnit>& ppp);
+    void combine_keys(std::list<CalUnit>& ppp);
+    void combine_types(std::list<CalUnit>& ppp);
+    void combine_functions2(std::list<CalUnit>& ppp);
+
+    Object& get_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p, bool only_check = false);
+    Object& get_parameter(CalUnit& c, ScopeStack& scopes, bool only_check = false);
+    std::string convert_parameter_name(CalUnit& c, std::unordered_map<std::string, Object>& p, bool only_check = false);
+    std::string convert_parameter_name(CalUnit& c, ScopeStack& scopes, bool only_check = false);
+    bool check_parameter(CalUnit& c, std::unordered_map<std::string, Object>& p);
+    bool check_parameter(CalUnit& c, ScopeStack& scopes);
+    Object& get_parameter(const std::string& name, std::unordered_map<std::string, Object>& p);
+    Object& get_parameter(const std::string& name, ScopeStack& scopes);
+    bool check_parameter(const std::string& name, std::unordered_map<std::string, Object>& p);
+    bool check_parameter(const std::string& name, ScopeStack& scopes);
+    Object& get_parameter_for_assign(CalUnit& c, ScopeStack& scopes, bool declare_current = false);
+    Object* find_object_from_inner(ScopeStack& scopes, const std::string& name);
+    bool has_return_value(const ScopeStack& scopes) const;
+    Object& return_value(ScopeStack& scopes);
+
+    void check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::string, Object>& p);
 
     template <typename... Args>
     void add_error(CalUnit& c, Args... args)
@@ -362,8 +383,6 @@ public:
         e.message = buffer;
         errors.emplace(std::move(e));
     }
-
-    void set_output_error(bool oe) { output_error = oe; }
 
     //四则运算准许用户增加自定义功能
 
@@ -396,12 +415,6 @@ public:
         } \
         OPERATOR(o1, o2, op, user_##opname, trans_type); \
     }
-
-    //用户可扩展的运算符函数列表
-    std::vector<std::function<Object(const Object&, const Object&)>> user_add, user_sub, user_mul, user_div, user_mod,
-        user_less, user_more, user_less_equal, user_more_equal,
-        user_equal, user_not_equal, user_bit_and, user_bit_or, user_bit_xor, user_logic_and, user_logic_or,
-        user_shift_left, user_shift_right;
 
     OPERATOR_DEF_CONTENT(add, +, double)
     OPERATOR_DEF(sub, -, double)
