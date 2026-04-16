@@ -105,8 +105,8 @@ bool string_operation_test()
 {   // 字符串操作与拼接测试
     Cifa c;
     std::string script = R"(
-        s1 = "Hello ";
-        s2 = "World";
+        string s1 = "Hello ";
+        string s2 = "World";
         return s1 + s2;
     )";
     auto o = c.run_script(script);

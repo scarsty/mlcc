@@ -244,7 +244,7 @@ private:
     std::vector<std::string> ops_right = { "=", "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", "&=", "|=", "^=" };         //右结合
     //关键字，在表中的位置为其所需参数个数
     std::vector<std::vector<std::string>> keys = { { "true", "false" }, { "break", "continue", "else", "return", "default" }, { "if", "for", "while", "do", "switch", "case" } };
-    std::vector<std::string> types = { "auto", "int", "float", "double" };
+    std::vector<std::string> types = { "auto", "int", "float", "double", "string", "char" };
     std::map<std::string, std::string> op_representations = { { "and", "&&" }, { "and_eq", "&=" }, { "bitand", "&" }, { "bitor", "|" }, { "compl", "~" }, { "not", "!" }, { "not_eq", "!=" }, { "or", "||" }, { "or_eq", "|=" }, { "xor", "^" }, { "xor_eq", "^=" }, { "<%", "{" }, { "%>", "}" }, { "<:", "[" }, { ":>", "]" }, { "%:", "#" }, { "%:%:", "##" } };
     //两个函数表都是全局的
 
