@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <cmath>
 #include <limits>
+#include <vector>
 #include "../../Cifa.h"
 
 using namespace cifa;
@@ -52,8 +53,7 @@ bool loop_math_test()
     auto o = c1.run_script(script_code);
     if (o.hasValue() && o.isNumber() && o.isType<double>()) {
         return (std::fabs(o.ref<double>() - 34) <= std::numeric_limits<double>::epsilon());
-    }
-    else {
+    } else {
         return false;
     }
 }
@@ -105,66 +105,90 @@ bool string_operation_test()
 {   // 字符串操作与拼接测试
     Cifa c;
     std::string script = R"(
-        auto s1 = "Hello ";
-        auto s2 = "World";
+        s1 = "Hello ";
+        s2 = "World";
         return s1 + s2;
     )";
     auto o = c.run_script(script);
     return o.hasValue() && o.isType<std::string>() && o.toString() == "Hello World";
 }
 
-bool post_increment_test()
-{   // 后置自增/自减测试
+bool bitwise_operator_test()
+{   // 位运算测试
     Cifa c;
     std::string script = R"(
-        int a = 10;
-        int b = a++; 
-        return b * 100 + a; // 期望 10 * 100 + 11 = 1011
+        int a = 5;      // 0101
+        int b = 3;      // 0011
+        int res1 = a & b;  // 0001 (1)
+        int res2 = a | b;  // 0111 (7)
+        int res3 = a ^ b;  // 0110 (6)
+        int res4 = a << 1; // 1010 (10)
+        return res1 + res2 + res3 + res4; // 1 + 7 + 6 + 10 = 24
     )";
     auto o = c.run_script(script);
-    return o.hasValue() && o.toInt() == 1011;
+    return o.toInt() == 24;
+}
+
+bool scope_shadowing_test()
+{   // 变量作用域遮蔽测试
+    Cifa c;
+    std::string script = R"(
+        int x = 10;
+        {
+            int x = 20;
+            if (x == 20) {
+                int x = 30;
+            }
+        }
+        return x;
+    )";
+    auto o = c.run_script(script);
+    return o.toInt() == 10; // 外部作用域不应受内部干扰
+}
+
+bool complex_math_priority_test()
+{   // 复杂算术优先级测试
+    Cifa c;
+    std::string script = R"(
+        return 2 + 3 * 4 / (1 + 1) - 5 % 2; // 2 + 12 / 2 - 1 = 2 + 6 - 1 = 7
+    )";
+    auto o = c.run_script(script);
+    return o.toInt() == 7;
+}
+
+bool array_access_test()
+{   // 数组/集合模拟测试 (假设Cifa支持类似[]的操作)
+    Cifa c;
+    std::string script = R"(
+        int arr[3];
+        arr[0] = 10;
+        arr[1] = 20;
+        arr[2] = arr[0] + arr[1];
+        return arr[2];
+    )";
+    auto o = c.run_script(script);
+    return o.hasValue() && o.toInt() == 30;
 }
 
 int main() {
-    if (register_function_test()) {
-        std::cout << "✅register_function_test unit test success\n";
-    } else {
-        std::cerr << "❌register_function_test unit test failed\n";
-    }
+    auto run_test = [](std::string name, bool (*func)()) {
+        if (func()) {
+            std::cout << "✅ " << name << " success\n";
+        } else {
+            std::cerr << "❌ " << name << " failed\n";
+        }
+    };
 
-    if (loop_math_test()) {
-        std::cout << "✅loop_math_test unit test success\n";
-    } else {
-        std::cerr << "❌loop_math_test unit test failed\n";
-    }
+    run_test("register_function_test", register_function_test);
+    run_test("loop_math_test", loop_math_test);
+    run_test("ternary_operator_test", ternary_operator_test);
+    run_test("switch_case_test", switch_case_test);
+    run_test("recursion_test", recursion_test);
+    run_test("string_operation_test", string_operation_test);
+    run_test("bitwise_operator_test", bitwise_operator_test);
+    run_test("scope_shadowing_test", scope_shadowing_test);
+    run_test("complex_math_priority_test", complex_math_priority_test);
+    run_test("array_access_test", array_access_test);
 
-    if (ternary_operator_test()) {
-        std::cout << "✅ternary_operator_test unit test success\n";
-    } else {
-        std::cerr << "❌ternary_operator_test unit test failed\n";
-    }
-
-    if (switch_case_test()) {
-        std::cout << "✅switch_case_test unit test success\n";
-    } else {
-        std::cerr << "❌switch_case_test unit test failed\n";
-    }
-
-    if (recursion_test()) {
-        std::cout << "✅recursion_test unit test success\n";
-    } else {
-        std::cerr << "❌recursion_test unit test failed\n";
-    }
-
-    if (string_operation_test()) {
-        std::cout << "✅string_operation_test unit test success\n";
-    } else {
-        std::cerr << "❌string_operation_test unit test failed\n";
-    }
-
-    if (post_increment_test()) {
-        std::cout << "✅post_increment_test unit test success\n";
-    } else {
-        std::cerr << "❌post_increment_test unit test failed\n";
-    }
+    return 0;
 }

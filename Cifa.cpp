@@ -153,6 +153,7 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
         {
             if (c.str == "+") { return eval(c.v[0], p); }
             if (c.str == "-") { return sub(Object(0.0), eval(c.v[0], p)); }
+            if (c.str == "~") { return double(~int(eval(c.v[0], p))); }
             if (c.str == "!") { return !eval(c.v[0], p); }
             if (c.str == "++") { return get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(1)); }
             if (c.str == "--") { return get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), Object(-1)); }
@@ -196,7 +197,7 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             if (c.str == "::") { return get_parameter(c.v[0].str + "::" + c.v[1].str, p); }
             if (c.str == "*") { return mul(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "/") { return div(eval(c.v[0], p), eval(c.v[1], p)); }
-            if (c.str == "%") { return int(eval(c.v[0], p)) % int(eval(c.v[1], p)); }
+            if (c.str == "%") { return mod(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "+") { return add(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "-") { return sub(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == ">") { return more(eval(c.v[0], p), eval(c.v[1], p)); }
@@ -206,14 +207,23 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
             if (c.str == "==") { return equal(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "!=") { return not_equal(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "&") { return bit_and(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "^") { return bit_xor(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "|") { return bit_or(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "&&") { return logic_and(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "||") { return logic_or(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "<<") { return shift_left(eval(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == ">>") { return shift_right(eval(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "=") { return get_parameter(c.v[0], p) = eval(c.v[1], p); }
             if (c.str == "+=") { return get_parameter(c.v[0], p) = add(get_parameter(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "-=") { return get_parameter(c.v[0], p) = sub(get_parameter(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "*=") { return get_parameter(c.v[0], p) = mul(get_parameter(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == "/=") { return get_parameter(c.v[0], p) = div(get_parameter(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "%=") { return get_parameter(c.v[0], p) = mod(get_parameter(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "<<=") { return get_parameter(c.v[0], p) = shift_left(get_parameter(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == ">>=") { return get_parameter(c.v[0], p) = shift_right(get_parameter(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "&=") { return get_parameter(c.v[0], p) = bit_and(get_parameter(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "|=") { return get_parameter(c.v[0], p) = bit_or(get_parameter(c.v[0], p), eval(c.v[1], p)); }
+            if (c.str == "^=") { return get_parameter(c.v[0], p) = bit_xor(get_parameter(c.v[0], p), eval(c.v[1], p)); }
             if (c.str == ",")
             {
                 Object o;
@@ -415,7 +425,7 @@ CalUnitType Cifa::guess_char(char c)
     {
         return CalUnitType::Constant;
     }
-    if (std::string("+-*/%=.!<>&|,?:").find(c) != std::string::npos)
+    if (std::string("+-*/%=.!<>&|,?:^").find(c) != std::string::npos)
     {
         return CalUnitType::Operator;
     }

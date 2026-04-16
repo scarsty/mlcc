@@ -238,9 +238,9 @@ public:
 
 private:
     //运算符，此处的顺序即优先级，单目和右结合由下面的列表判断
-    std::vector<std::vector<std::string>> ops = { { "::", ".", "++", "--" }, { "!" }, { "*", "/", "%" }, { "+", "-" }, { ">", "<", ">=", "<=" }, { "==", "!=" }, { "&" }, { "|" }, { "&&" }, { ":", "?" }, { "||" }, { "=", "*=", "/=", "+=", "-=" }, { "," } };
-    std::vector<std::string> ops_single = { "++", "--", "!", "()++", "()--" };    //单目全部是右结合
-    std::vector<std::string> ops_right = { "=", "*=", "/=", "+=", "-=" };         //右结合
+    std::vector<std::vector<std::string>> ops = { { "::", ".", "++", "--" }, { "~", "!" }, { "*", "/", "%" }, { "+", "-" }, { "<<", ">>" }, { ">", "<", ">=", "<=" }, { "==", "!=" }, { "&" }, { "^" }, { "|" }, { "&&" }, { ":", "?" }, { "||" }, { "=", "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", "&=", "|=", "^=" }, { "," } };
+    std::vector<std::string> ops_single = { "++", "--", "~", "!", "()++", "()--" };    //单目全部是右结合
+    std::vector<std::string> ops_right = { "=", "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", "&=", "|=", "^=" };         //右结合
     //关键字，在表中的位置为其所需参数个数
     std::vector<std::vector<std::string>> keys = { { "true", "false" }, { "break", "continue", "else", "return", "default" }, { "if", "for", "while", "do", "switch", "case" } };
     std::vector<std::string> types = { "auto", "int", "float", "double" };
@@ -398,14 +398,16 @@ public:
     }
 
     //用户可扩展的运算符函数列表
-    std::vector<std::function<Object(const Object&, const Object&)>> user_add, user_sub, user_mul, user_div,
+    std::vector<std::function<Object(const Object&, const Object&)>> user_add, user_sub, user_mul, user_div, user_mod,
         user_less, user_more, user_less_equal, user_more_equal,
-        user_equal, user_not_equal, user_bit_and, user_bit_or, user_logic_and, user_logic_or;
+        user_equal, user_not_equal, user_bit_and, user_bit_or, user_bit_xor, user_logic_and, user_logic_or,
+        user_shift_left, user_shift_right;
 
     OPERATOR_DEF_CONTENT(add, +, double)
     OPERATOR_DEF(sub, -, double)
     OPERATOR_DEF(mul, *, double)
     OPERATOR_DEF(div, /, double)
+    OPERATOR_DEF(mod, %, int)
     OPERATOR_DEF_CONTENT(less, <, double)
     OPERATOR_DEF_CONTENT(more, >, double)
     OPERATOR_DEF_CONTENT(less_equal, <=, double)
@@ -414,8 +416,11 @@ public:
     OPERATOR_DEF_CONTENT(not_equal, !=, double)
     OPERATOR_DEF(bit_and, &, int)
     OPERATOR_DEF(bit_or, |, int)
+    OPERATOR_DEF(bit_xor, ^, int)
     OPERATOR_DEF(logic_and, &&, int)
     OPERATOR_DEF(logic_or, ||, int)
+    OPERATOR_DEF(shift_left, <<, int)
+    OPERATOR_DEF(shift_right, >>, int)
 };
 
 //#define OPERATOR_DEF_DOUBLE(op) \
