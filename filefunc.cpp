@@ -63,6 +63,33 @@ std::string normalize_path(std::string path)
     return path;
 }
 
+#ifdef _WIN32
+std::wstring to_wide_path(const std::string& path)
+{
+    if (path.empty())
+    {
+        return std::wstring();
+    }
+
+    int required = MultiByteToWideChar(CP_ACP, 0, path.c_str(), -1, nullptr, 0);
+    if (required <= 0)
+    {
+        return std::wstring();
+    }
+    std::wstring out(size_t(required), L'\0');
+    int written = MultiByteToWideChar(CP_ACP, 0, path.c_str(), -1, &out[0], required);
+    if (written <= 0)
+    {
+        return std::wstring();
+    }
+    if (!out.empty() && out.back() == L'\0')
+    {
+        out.pop_back();
+    }
+    return out;
+}
+#endif
+
 bool is_absolute_path(const std::string& path)
 {
     if (path.empty())
@@ -223,21 +250,24 @@ bool filefunc::fileExist(const std::string& name)
         return false;
     }
 #ifdef _WIN32
-    WIN32_FILE_ATTRIBUTE_DATA attrs = { 0 };
-    auto exist = ::GetFileAttributesExA(name.c_str(), ::GetFileExInfoStandard, &attrs);
-    if (exist)
-    {
-        return !(attrs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-    }
-    return false;
-#else
-    if (access(name.c_str(), 0) == -1)
+    auto wname = to_wide_path(name);
+    if (wname.empty())
     {
         return false;
     }
+    DWORD attrs = ::GetFileAttributesW(wname.c_str());
+    if (attrs != INVALID_FILE_ATTRIBUTES)
+    {
+        return (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0;
+    }
+    return false;
+#else
     struct stat sb;
-    stat(name.c_str(), &sb);
-    return !(sb.st_mode & S_IFDIR);
+    if (stat(name.c_str(), &sb) != 0)
+    {
+        return false;
+    }
+    return !S_ISDIR(sb.st_mode);
 #endif
 }
 
@@ -248,20 +278,24 @@ bool filefunc::pathExist(const std::string& name)
         return false;
     }
 #ifdef _WIN32
-    WIN32_FILE_ATTRIBUTE_DATA attrs = { 0 };
-    if (!::GetFileAttributesExA(name.c_str(), ::GetFileExInfoStandard, &attrs))
+    auto wname = to_wide_path(name);
+    if (wname.empty())
     {
         return false;
     }
-    return (attrs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+    DWORD attrs = ::GetFileAttributesW(wname.c_str());
+    if (attrs == INVALID_FILE_ATTRIBUTES)
+    {
+        return false;
+    }
+    return (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
 #else
-    if (access(name.c_str(), 0) == -1)
+    struct stat sb;
+    if (stat(name.c_str(), &sb) != 0)
     {
         return false;
     }
-    struct stat sb;
-    stat(name.c_str(), &sb);
-    return (sb.st_mode & S_IFDIR) != 0;
+    return S_ISDIR(sb.st_mode);
 #endif
 }
 
@@ -487,7 +521,8 @@ std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, i
             if (filename != "." && filename != "..")
             {
                 std::string full = join_path(pathname, filename);
-                if (include_path != 0 || !pathExist(full))
+                bool is_dir = (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+                if (include_path != 0 || !is_dir)
                 {
                     files.push_back(absolute_path ? getAbsolutePath(full) : filename);
                 }
@@ -515,7 +550,24 @@ std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, i
             if (filename != "." && filename != "..")
             {
                 std::string full = join_path(pathname, filename);
-                if (include_path != 0 || !pathExist(full))
+                bool is_dir = false;
+#if defined(DT_DIR)
+                if (ptr->d_type == DT_DIR)
+                {
+                    is_dir = true;
+                }
+#if defined(DT_UNKNOWN)
+                else if (ptr->d_type == DT_UNKNOWN)
+#endif
+#endif
+                {
+                    struct stat sb;
+                    if (stat(full.c_str(), &sb) == 0)
+                    {
+                        is_dir = S_ISDIR(sb.st_mode);
+                    }
+                }
+                if (include_path != 0 || !is_dir)
                 {
                     files.push_back(absolute_path ? getAbsolutePath(full) : filename);
                 }
@@ -527,29 +579,93 @@ std::vector<std::string> filefunc::getFilesInPath(const std::string& pathname, i
     }
     else
     {
-        std::vector<std::string> files, paths;
-        paths = getFilesInPath(pathname, 0, 1, 0);
-        while (!paths.empty())
+        std::vector<std::string> files, dir_paths;
+        dir_paths.push_back("");
+        while (!dir_paths.empty())
         {
-            auto p = paths.back();
-            paths.pop_back();
-            auto full = join_path(pathname, p);
-            if (pathExist(full))
+            auto p = dir_paths.back();
+            dir_paths.pop_back();
+            auto full_dir = p.empty() ? pathname : join_path(pathname, p);
+#ifdef _WIN32
+            WIN32_FIND_DATAA find_data;
+            auto query = normalize_path(full_dir) + "\\*";
+            HANDLE h_find = FindFirstFileA(query.c_str(), &find_data);
+            if (h_find == INVALID_HANDLE_VALUE)
             {
-                auto new_paths = getFilesInPath(full, 0, 1, 0);
-                for (auto& np : new_paths)
+                continue;
+            }
+            do
+            {
+                std::string np = find_data.cFileName;
+                if (np == "." || np == "..")
                 {
-                    paths.push_back(join_path(p, np));
+                    continue;
                 }
-                if (include_path)
+                bool is_dir = (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+                auto rel = p.empty() ? np : join_path(p, np);
+                auto full_rel = join_path(pathname, rel);
+                if (is_dir)
                 {
-                    files.push_back(absolute_path ? getAbsolutePath(full) : p);
+                    dir_paths.push_back(rel);
+                    if (include_path)
+                    {
+                        files.push_back(absolute_path ? getAbsolutePath(full_rel) : rel);
+                    }
+                }
+                else
+                {
+                    files.push_back(absolute_path ? getAbsolutePath(full_rel) : rel);
+                }
+            } while (FindNextFileA(h_find, &find_data) != 0);
+            FindClose(h_find);
+#else
+            DIR* dir = opendir(full_dir.c_str());
+            if (dir == nullptr)
+            {
+                continue;
+            }
+            struct dirent* ptr;
+            while ((ptr = readdir(dir)) != nullptr)
+            {
+                std::string np = std::string(ptr->d_name);
+                if (np == "." || np == "..")
+                {
+                    continue;
+                }
+                auto rel = p.empty() ? np : join_path(p, np);
+                auto full_rel = join_path(pathname, rel);
+                bool is_dir = false;
+#if defined(DT_DIR)
+                if (ptr->d_type == DT_DIR)
+                {
+                    is_dir = true;
+                }
+#if defined(DT_UNKNOWN)
+                else if (ptr->d_type == DT_UNKNOWN)
+#endif
+#endif
+                {
+                    struct stat sb;
+                    if (stat(full_rel.c_str(), &sb) == 0)
+                    {
+                        is_dir = S_ISDIR(sb.st_mode);
+                    }
+                }
+                if (is_dir)
+                {
+                    dir_paths.push_back(rel);
+                    if (include_path)
+                    {
+                        files.push_back(absolute_path ? getAbsolutePath(full_rel) : rel);
+                    }
+                }
+                else
+                {
+                    files.push_back(absolute_path ? getAbsolutePath(full_rel) : rel);
                 }
             }
-            else
-            {
-                files.push_back(absolute_path ? getAbsolutePath(full) : p);
-            }
+            closedir(dir);
+#endif
         }
         std::reverse(files.begin(), files.end());
         return files;
