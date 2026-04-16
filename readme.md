@@ -1,4 +1,9 @@
 # MLCC Library
+<p align="center">
+    <a href="https://github.com/scarsty/mlcc/actions/workflows/cifa_unit_test.yml">
+        <img src="https://github.com/scarsty/mlcc/actions/workflows/cifa_unit_test.yml/badge.svg" />
+    </a>
+</p>
 
 Chinese version: [readme.zh-CN.md](readme.zh-CN.md)
 
