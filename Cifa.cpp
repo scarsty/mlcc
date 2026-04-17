@@ -117,6 +117,35 @@ Cifa::Cifa()
             }
             return min_val;
         });
+    register_function("random", [](ObjectVector& x) -> Object
+        {
+            if (x.size() == 0) { return Object(double(rand()) / RAND_MAX); }
+            if (x.size() == 1)
+            {
+                return Object(double(rand()) / RAND_MAX * x[0].toDouble());
+            }
+            if (x.size() == 2)
+            {
+                double min_val = x[0].toDouble();
+                double max_val = x[1].toDouble();
+                return Object(min_val + double(rand()) / RAND_MAX * (max_val - min_val));
+            }
+        });
+    register_function("size", [](ObjectVector& x) -> Object
+        {
+            if (x.size() == 0) { return 0; }
+            if (x.size() == 1)
+            {
+                if (x[0].isType<std::string>())
+                {
+                    return Object(double(x[0].toString().size()));
+                }
+                if (x[0].isType<std::vector<Object>>())
+                {
+                    return Object(double(x[0].ref<std::vector<Object>>().size()));
+                }
+            }
+        });
 #define REGISTER_FUNCTION(func) \
     register_function(#func, [](ObjectVector& x) -> Object \
         { \
@@ -423,6 +452,12 @@ Object Cifa::eval_scoped(CalUnit& c, ScopeStack& scopes)
     }
     else if (c.type == CalUnitType::Union)
     {
+        Object array_literal;
+        if (try_eval_array_literal(c, scopes, array_literal))
+        {
+            return array_literal;
+        }
+
         const bool is_block_scope = c.str == "{}";
         if (is_block_scope)
         {
@@ -451,6 +486,49 @@ Object Cifa::eval_scoped(CalUnit& c, ScopeStack& scopes)
         return o;
     }
     return Object();
+}
+
+bool Cifa::is_array_literal_candidate(CalUnit& c) const
+{
+    if (c.type != CalUnitType::Union || c.str != "{}")
+    {
+        return false;
+    }
+    if (c.v.empty())
+    {
+        // Keep empty block behavior unchanged.
+        return false;
+    }
+    for (auto& c1 : c.v)
+    {
+        // Statements imply block semantics, not array-literal semantics.
+        if (c1.is_statement())
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool Cifa::try_eval_array_literal(CalUnit& c, ScopeStack& scopes, Object& out)
+{
+    if (!is_array_literal_candidate(c))
+    {
+        return false;
+    }
+
+    std::vector<Object> arr;
+    for (auto& c1 : c.v)
+    {
+        std::vector<CalUnit> items;
+        expand_comma(c1, items);
+        for (auto& item : items)
+        {
+            arr.emplace_back(eval_scoped(item, scopes));
+        }
+    }
+    out = Object(arr);
+    return true;
 }
 
 void Cifa::expand_comma(CalUnit& c1, std::vector<CalUnit>& v)

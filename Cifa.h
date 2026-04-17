@@ -365,6 +365,8 @@ private:
     bool check_parameter(const std::string& name, ScopeStack& scopes);
     Object& get_parameter_for_assign(CalUnit& c, ScopeStack& scopes, bool declare_current = false);
     Object& resolve_indexed_parameter(CalUnit& c, ScopeStack& scopes, bool only_check, bool declare_current, bool declaration_as_array);
+    bool try_eval_array_literal(CalUnit& c, ScopeStack& scopes, Object& out);
+    bool is_array_literal_candidate(CalUnit& c) const;
     Object* find_object_from_inner(ScopeStack& scopes, const std::string& name);
     bool has_return_value(const ScopeStack& scopes) const;
     Object& return_value(ScopeStack& scopes);

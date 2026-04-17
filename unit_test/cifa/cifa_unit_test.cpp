@@ -170,6 +170,28 @@ bool array_access_test()
     return o.hasValue() && o.toInt() == 30;
 }
 
+bool array_literal_assignment_test()
+{   // 数组字面量赋值测试
+    Cifa c;
+    std::string script = R"(
+        array = {1,2,3,4,5};
+        return array[0] + array[4];
+    )";
+    auto o = c.run_script(script);
+    return o.hasValue() && o.toInt() == 6;
+}
+
+bool size_of_array_test()
+{   // 数组大小测试
+    Cifa c;
+    std::string script = R"(
+        array = {1,2,3,4,5};
+        return size(array);
+    )";
+    auto o = c.run_script(script);
+    return o.hasValue() && o.toInt() == 5;
+}
+
 int main() {
     auto run_test = [](std::string name, bool (*func)()) {
         if (func()) {
@@ -189,6 +211,8 @@ int main() {
     run_test("scope_shadowing_test", scope_shadowing_test);
     run_test("complex_math_priority_test", complex_math_priority_test);
     run_test("array_access_test", array_access_test);
+    run_test("array_literal_assignment_test", array_literal_assignment_test);
+    run_test("size_of_array_test", size_of_array_test);
 
     return 0;
 }
