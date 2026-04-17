@@ -364,6 +364,7 @@ private:
     bool check_parameter(const std::string& name, std::unordered_map<std::string, Object>& p);
     bool check_parameter(const std::string& name, ScopeStack& scopes);
     Object& get_parameter_for_assign(CalUnit& c, ScopeStack& scopes, bool declare_current = false);
+    Object& resolve_indexed_parameter(CalUnit& c, ScopeStack& scopes, bool only_check, bool declare_current, bool declaration_as_array);
     Object* find_object_from_inner(ScopeStack& scopes, const std::string& name);
     bool has_return_value(const ScopeStack& scopes) const;
     Object& return_value(ScopeStack& scopes);

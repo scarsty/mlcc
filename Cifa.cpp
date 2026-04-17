@@ -1312,80 +1312,7 @@ Object& Cifa::get_parameter(CalUnit& c, ScopeStack& scopes, bool only_check)
 {
     if (c.v.size() > 0 && c.v[0].str == "[]")
     {
-        int index = 0;
-        if (!only_check && c.v[0].v.size() > 0)
-        {
-            index = eval_scoped(c.v[0].v[0], scopes).toInt();
-            if (index < 0)
-            {
-                index = 0;
-            }
-        }
-        const std::string legacy_name = c.str + "[" + std::to_string(index) + "]";
-
-        auto* base = find_object_from_inner(scopes, c.str);
-        if (base != nullptr && base->isType<std::vector<Object>>())
-        {
-            auto& arr = base->ref<std::vector<Object>>();
-            if (c.with_type && c.suffix)
-            {
-                // Declaration form: int arr[n]; should size as n, not index n.
-                if (!only_check)
-                {
-                    arr.resize(size_t(index));
-                }
-                base->name = c.str;
-                return *base;
-            }
-            if (!only_check)
-            {
-                if (index >= int(arr.size()))
-                {
-                    arr.resize(size_t(index + 1));
-                }
-            }
-            auto& element = arr[size_t(index)];
-            element.name = legacy_name;
-            return element;
-        }
-
-        auto* legacy = find_object_from_inner(scopes, legacy_name);
-        if (legacy != nullptr)
-        {
-            legacy->name = legacy_name;
-            return *legacy;
-        }
-
-        if (scopes.empty())
-        {
-            scopes.emplace_back();
-        }
-        auto& current = scopes.back();
-        auto& base_obj = current[c.str];
-        base_obj.name = c.str;
-        if (!base_obj.isType<std::vector<Object>>())
-        {
-            std::vector<Object> arr;
-            if (!only_check)
-            {
-                size_t initial_size = (c.with_type && c.suffix) ? size_t(index) : size_t(index + 1);
-                arr.resize(initial_size);
-            }
-            base_obj = Object(arr);
-            base_obj.name = c.str;
-        }
-        if (c.with_type && c.suffix)
-        {
-            return base_obj;
-        }
-        auto& arr = base_obj.ref<std::vector<Object>>();
-        if (!only_check && index >= int(arr.size()))
-        {
-            arr.resize(size_t(index + 1));
-        }
-        auto& element = arr[size_t(index)];
-        element.name = legacy_name;
-        return element;
+        return resolve_indexed_parameter(c, scopes, only_check, false, true);
     }
 
     auto name = convert_parameter_name(c, scopes, only_check);
@@ -1500,77 +1427,7 @@ Object& Cifa::get_parameter_for_assign(CalUnit& c, ScopeStack& scopes, bool decl
 {
     if (c.v.size() > 0 && c.v[0].str == "[]")
     {
-        int index = 0;
-        if (c.v[0].v.size() > 0)
-        {
-            index = eval_scoped(c.v[0].v[0], scopes).toInt();
-            if (index < 0)
-            {
-                index = 0;
-            }
-        }
-        const std::string legacy_name = c.str + "[" + std::to_string(index) + "]";
-
-        if (scopes.empty())
-        {
-            scopes.emplace_back();
-        }
-
-        Object* base = nullptr;
-        if (declare_current)
-        {
-            base = &scopes.back()[c.str];
-            base->name = c.str;
-        }
-        else
-        {
-            base = find_object_from_inner(scopes, c.str);
-        }
-
-        if (base != nullptr && base->isType<std::vector<Object>>())
-        {
-            auto& arr = base->ref<std::vector<Object>>();
-            if (index >= int(arr.size()))
-            {
-                arr.resize(size_t(index + 1));
-            }
-            auto& element = arr[size_t(index)];
-            element.name = legacy_name;
-            return element;
-        }
-
-        if (!declare_current)
-        {
-            auto* legacy = find_object_from_inner(scopes, legacy_name);
-            if (legacy != nullptr)
-            {
-                legacy->name = legacy_name;
-                return *legacy;
-            }
-        }
-
-        if (base == nullptr)
-        {
-            base = &scopes.back()[c.str];
-            base->name = c.str;
-        }
-
-        if (!base->isType<std::vector<Object>>())
-        {
-            std::vector<Object> arr;
-            arr.resize(size_t(index + 1));
-            *base = Object(arr);
-            base->name = c.str;
-        }
-
-        auto& arr = base->ref<std::vector<Object>>();
-        if (index >= int(arr.size()))
-        {
-            arr.resize(size_t(index + 1));
-        }
-        auto& element = arr[size_t(index)];
-        element.name = legacy_name;
-        return element;
+        return resolve_indexed_parameter(c, scopes, false, declare_current, false);
     }
 
     auto name = convert_parameter_name(c, scopes);
@@ -1593,6 +1450,97 @@ Object& Cifa::get_parameter_for_assign(CalUnit& c, ScopeStack& scopes, bool decl
     }
     o->name = name;
     return *o;
+}
+
+Object& Cifa::resolve_indexed_parameter(CalUnit& c, ScopeStack& scopes, bool only_check, bool declare_current, bool declaration_as_array)
+{
+    int index = 0;
+    if (!only_check && c.v[0].v.size() > 0)
+    {
+        index = eval_scoped(c.v[0].v[0], scopes).toInt();
+        if (index < 0)
+        {
+            index = 0;
+        }
+    }
+    const std::string legacy_name = c.str + "[" + std::to_string(index) + "]";
+    const bool is_decl_array = declaration_as_array && c.with_type && c.suffix;
+
+    if (scopes.empty())
+    {
+        scopes.emplace_back();
+    }
+
+    Object* base = nullptr;
+    if (declare_current)
+    {
+        base = &scopes.back()[c.str];
+        base->name = c.str;
+    }
+    else
+    {
+        base = find_object_from_inner(scopes, c.str);
+    }
+
+    if (base != nullptr && base->isType<std::vector<Object>>())
+    {
+        auto& arr = base->ref<std::vector<Object>>();
+        if (is_decl_array)
+        {
+            if (!only_check)
+            {
+                arr.resize(size_t(index));
+            }
+            base->name = c.str;
+            return *base;
+        }
+        if (index >= int(arr.size()))
+        {
+            arr.resize(size_t(index + 1));
+        }
+        auto& element = arr[size_t(index)];
+        element.name = legacy_name;
+        return element;
+    }
+
+    if (!declare_current)
+    {
+        auto* legacy = find_object_from_inner(scopes, legacy_name);
+        if (legacy != nullptr)
+        {
+            legacy->name = legacy_name;
+            return *legacy;
+        }
+    }
+
+    if (base == nullptr)
+    {
+        base = &scopes.back()[c.str];
+        base->name = c.str;
+    }
+
+    if (!base->isType<std::vector<Object>>())
+    {
+        std::vector<Object> arr;
+        size_t initial_size = is_decl_array ? size_t(index) : size_t(index + 1);
+        arr.resize(initial_size);
+        *base = Object(arr);
+        base->name = c.str;
+    }
+
+    if (is_decl_array)
+    {
+        return *base;
+    }
+
+    auto& arr = base->ref<std::vector<Object>>();
+    if (index >= int(arr.size()))
+    {
+        arr.resize(size_t(index + 1));
+    }
+    auto& element = arr[size_t(index)];
+    element.name = legacy_name;
+    return element;
 }
 
 void Cifa::check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::string, Object>& p)

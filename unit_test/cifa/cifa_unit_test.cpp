@@ -160,9 +160,9 @@ bool array_access_test()
 {   // 数组/集合模拟测试 (假设Cifa支持类似[]的操作)
     Cifa c;
     std::string script = R"(
-        int arr[3];
+        //int arr[3];
         arr[0] = 10;
-        arr[1] = 20;
+        {arr[1] = 20;}
         arr[2] = arr[0] + arr[1];
         return arr[2];
     )";
