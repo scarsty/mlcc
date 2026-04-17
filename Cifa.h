@@ -297,11 +297,16 @@ public:
     template <typename T>
     void register_vector(const std::string& name, const std::vector<T>& v)
     {
+        std::vector<Object> arr;
+        arr.reserve(v.size());
         int i = 0;
         for (auto& o : v)
         {
+            arr.emplace_back(Object(o));
+            // Keep compatibility with old flat-key behavior (name[index]).
             parameters[name + "[" + std::to_string(i++) + "]"] = Object(o);
         }
+        parameters[name] = Object(arr);
     }
 
     void* get_user_data(const std::string& name);
