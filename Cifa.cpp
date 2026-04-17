@@ -1168,6 +1168,10 @@ void Cifa::combine_keys(std::list<CalUnit>& ppp)
                         it->v.emplace_back(std::move(*itr));
                         itr = ppp.erase(itr);
                     }
+                    else
+                    {
+                        break;    //这里应该是语法错误，缺少关键字参数，何时报错待定
+                    }
                 }
             }
         }
