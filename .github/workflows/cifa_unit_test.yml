@@ -21,8 +21,10 @@ jobs:
     - name: Compile Unit Test
       run: |
         New-Item -ItemType Directory -Force build | Out-Null
-        # Enable C++ standard library modules support (import std) on MSVC.
-        cl /nologo /EHsc /I./ /Fe:build/cifa_unit_test.exe unit_test/cifa/cifa_unit_test.cpp Cifa.cpp /std:c++latest /experimental:module /utf-8
+        # 1) Build the standard library module IFC/OBJ.
+        cl /std:c++latest /EHsc /nologo /W4 /utf-8 /c "$env:VCToolsInstallDir\modules\std.ixx" /ifcOutput build\std.ifc /Fo:build\std.obj
+        # 2) Build and link unit test with std module reference.
+        cl /std:c++latest /EHsc /nologo /W4 /utf-8 /I./ /Fe:build/cifa_unit_test.exe unit_test/cifa/cifa_unit_test.cpp Cifa.cpp /reference "std=build\std.ifc" build\std.obj
 
     - name: Run Cifa Unit Test
       run: |
