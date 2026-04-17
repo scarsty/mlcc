@@ -1,14 +1,16 @@
-﻿#include <iostream>
-#include <cmath>
-#include <limits>
-#include <vector>
-#include "../../Cifa.h"
+﻿#include "../../Cifa.h"
+
+import std;
 
 using namespace cifa;
 
-bool register_function_test() {
+bool register_function_test()
+{
     Cifa c1;
-    c1.register_function("sin", [](ObjectVector& d) { return sin(d[0]); });
+    c1.register_function("sin", [](ObjectVector& d)
+        {
+            return sin(d[0]);
+        });
 
     std::string script_code = R"(
     double PI = 3.141592653589793238462643383279;
@@ -20,9 +22,12 @@ bool register_function_test() {
     )";
 
     auto o = c1.run_script(script_code);
-    if (o.hasValue() && o.isNumber() && o.isType<double>()) {
+    if (o.hasValue() && o.isNumber() && o.isType<double>())
+    {
         return (std::fabs(o.ref<double>() - 1.0) <= std::numeric_limits<double>::epsilon());
-    } else {
+    }
+    else
+    {
         return false;
     }
 }
@@ -51,15 +56,18 @@ bool loop_math_test()
     )";
 
     auto o = c1.run_script(script_code);
-    if (o.hasValue() && o.isNumber() && o.isType<double>()) {
+    if (o.hasValue() && o.isNumber() && o.isType<double>())
+    {
         return (std::fabs(o.ref<double>() - 34) <= std::numeric_limits<double>::epsilon());
-    } else {
+    }
+    else
+    {
         return false;
     }
 }
 
 bool ternary_operator_test()
-{   // 测试嵌套三目运算
+{    // 测试嵌套三目运算
     Cifa c;
     std::string script = R"(
         int a = 1, b = 0;
@@ -70,7 +78,7 @@ bool ternary_operator_test()
 }
 
 bool switch_case_test()
-{   // Switch-Case 完备性测试
+{    // Switch-Case 完备性测试
     Cifa c;
     std::string script = R"(
         int x = 2;
@@ -88,7 +96,7 @@ bool switch_case_test()
 }
 
 bool recursion_test()
-{   // 递归函数测试
+{    // 递归函数测试
     Cifa c;
     std::string script = R"(
         double factorial(double n) {
@@ -102,7 +110,7 @@ bool recursion_test()
 }
 
 bool string_operation_test()
-{   // 字符串操作与拼接测试
+{    // 字符串操作与拼接测试
     Cifa c;
     std::string script = R"(
         string s1 = "Hello ";
@@ -114,7 +122,7 @@ bool string_operation_test()
 }
 
 bool bitwise_operator_test()
-{   // 位运算测试
+{    // 位运算测试
     Cifa c;
     std::string script = R"(
         int a = 5;      // 0101
@@ -130,7 +138,7 @@ bool bitwise_operator_test()
 }
 
 bool scope_shadowing_test()
-{   // 变量作用域遮蔽测试
+{    // 变量作用域遮蔽测试
     Cifa c;
     std::string script = R"(
         int x = 10;
@@ -143,11 +151,11 @@ bool scope_shadowing_test()
         return x;
     )";
     auto o = c.run_script(script);
-    return o.toInt() == 10; // 外部作用域不应受内部干扰
+    return o.toInt() == 10;    // 外部作用域不应受内部干扰
 }
 
 bool complex_math_priority_test()
-{   // 复杂算术优先级测试
+{    // 复杂算术优先级测试
     Cifa c;
     std::string script = R"(
         return 2 + 3 * 4 / (1 + 1) - 5 % 2; // 2 + 12 / 2 - 1 = 2 + 6 - 1 = 7
@@ -157,7 +165,7 @@ bool complex_math_priority_test()
 }
 
 bool array_access_test()
-{   // 数组/集合模拟测试 (假设Cifa支持类似[]的操作)
+{    // 数组/集合模拟测试 (假设Cifa支持类似[]的操作)
     Cifa c;
     std::string script = R"(
         //int arr[3];
@@ -171,7 +179,7 @@ bool array_access_test()
 }
 
 bool array_literal_assignment_test()
-{   // 数组字面量赋值测试
+{    // 数组字面量赋值测试
     Cifa c;
     std::string script = R"(
         array = {1,2,3,4,5};
@@ -182,7 +190,7 @@ bool array_literal_assignment_test()
 }
 
 bool size_of_array_test()
-{   // 数组大小测试
+{    // 数组大小测试
     Cifa c;
     std::string script = R"(
         array = {1,2,3,4,5};
@@ -192,11 +200,28 @@ bool size_of_array_test()
     return o.hasValue() && o.toInt() == 5;
 }
 
-int main() {
-    auto run_test = [](std::string name, bool (*func)()) {
-        if (func()) {
+bool register_vector_test()
+{
+    std::vector<double> v = {1.2, 1.45, 77.3};
+    Cifa c;
+    c.register_vector("v", v);
+    std::string script = R"(
+        return v[0] + v[1] + v[2];
+    )";
+    auto o = c.run_script(script);
+    return o.hasValue() && o.toDouble() == std::accumulate(v.begin(), v.end(), 0.0);
+}
+
+int main()
+{
+    auto run_test = [](std::string name, bool (*func)())
+    {
+        if (func())
+        {
             std::cout << "✅ " << name << " success\n";
-        } else {
+        }
+        else
+        {
             std::cerr << "❌ " << name << " failed\n";
         }
     };
@@ -213,6 +238,6 @@ int main() {
     run_test("array_access_test", array_access_test);
     run_test("array_literal_assignment_test", array_literal_assignment_test);
     run_test("size_of_array_test", size_of_array_test);
-
+    run_test("register_vector_test", register_function_test);
     return 0;
 }
