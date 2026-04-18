@@ -367,3 +367,13 @@ A simple runtime format implement, it should be a part of C++26, temporary use b
 A simllified JSON library. It does not support escape characters.
 
 一个简化版 JSON 库，不支持转义字符。
+
+## CaptureStdio
+
+This is written by AI.
+
+这个其实是AI写的。
+
+Reliably capture stdout output from function calls (e.g. DLL). Please see [doc/capturestdio.md](doc/capturestdio.md) for more details.
+
+可靠地捕获函数调用（如 DLL）中的 stdout 输出。使用 fd 级重定向实现，支持 tee 模式（实时控制台显示 + 字符串捕获），保留控制台色彩。详见 [doc/capturestdio.md](doc/capturestdio.md)。
