@@ -78,7 +78,9 @@ struct Object
         {
             return std::any_cast<double>(value);
         }
-        fprintf(stderr, "Error(%s): %s to double failed.\n", name.c_str(), value.type().name());
+        const std::string object_name = name.empty() ? "<temporary>" : name;
+        const std::string source_type = value.has_value() ? value.type().name() : "<empty>";
+        report_runtime_error("type conversion failed: variable '" + object_name + "' from " + source_type + " to double");
         return NAN;
     }
 
@@ -88,7 +90,9 @@ struct Object
         {
             return std::any_cast<std::string>(value);
         }
-        fprintf(stderr, "Error(%s): Object %s to string failed.\n", name.c_str(), value.type().name());
+        const std::string object_name = name.empty() ? "<temporary>" : name;
+        const std::string source_type = value.has_value() ? value.type().name() : "<empty>";
+        report_runtime_error("type conversion failed: variable '" + object_name + "' from " + source_type + " to string");
         return "";
     }
 
@@ -100,7 +104,9 @@ struct Object
         {
             return std::any_cast<T>(value);
         }
-        fprintf(stderr, "Error(%s): Object %s to %s failed.\n", name.c_str(), value.type().name(), typeid(T).name());
+        const std::string object_name = name.empty() ? "<temporary>" : name;
+        const std::string source_type = value.has_value() ? value.type().name() : "<empty>";
+        report_runtime_error("type conversion failed: variable '" + object_name + "' from " + source_type + " to " + typeid(T).name());
         return T();
     }
 
@@ -113,7 +119,9 @@ struct Object
         {
             return std::any_cast<const T&>(value);
         }
-        fprintf(stderr, "Error(%s): Object %s to %s failed.\n", name.c_str(), value.type().name(), typeid(T).name());
+        const std::string object_name = name.empty() ? "<temporary>" : name;
+        const std::string source_type = value.has_value() ? value.type().name() : "<empty>";
+        report_runtime_error("type conversion failed: variable '" + object_name + "' from " + source_type + " to " + typeid(T).name());
         throw std::bad_any_cast();
     }
 
@@ -124,7 +132,9 @@ struct Object
         {
             return std::any_cast<T&>(value);
         }
-        fprintf(stderr, "Error(%s): Object %s to %s failed.\n", name.c_str(), value.type().name(), typeid(T).name());
+        const std::string object_name = name.empty() ? "<temporary>" : name;
+        const std::string source_type = value.has_value() ? value.type().name() : "<empty>";
+        report_runtime_error("type conversion failed: variable '" + object_name + "' from " + source_type + " to " + typeid(T).name());
         throw std::bad_any_cast();
     }
 
@@ -144,6 +154,26 @@ struct Object
     std::type_info const& getType() const { return value.type(); }
 
 private:
+    static void report_runtime_error(const std::string& message)
+    {
+        if (runtime_error_reporter)
+        {
+            runtime_error_reporter(message);
+        }
+    }
+
+    static void set_runtime_error_reporter(const std::function<void(const std::string&)>& reporter)
+    {
+        runtime_error_reporter = reporter;
+    }
+
+    static void clear_runtime_error_reporter()
+    {
+        runtime_error_reporter = nullptr;
+    }
+
+    inline static std::function<void(const std::string&)> runtime_error_reporter;
+
     std::any value;
     std::string type1;        //特别的类型，用于Error、break、continue
     std::vector<Object> v;    //仅用于处理逗号表达式
@@ -274,6 +304,11 @@ private:
 
     std::set<ErrorMessage, ErrorMessageComp> errors;
 
+    std::vector<std::string> runtime_call_stack;
+    std::vector<std::string> runtime_source_lines;
+    std::string runtime_error_message;
+    bool runtime_error_reported = false;
+
     bool output_error = true;
 
 public:
@@ -370,6 +405,11 @@ private:
     Object* find_object_from_inner(ScopeStack& scopes, const std::string& name);
     bool has_return_value(const ScopeStack& scopes) const;
     Object& return_value(ScopeStack& scopes);
+    std::string format_runtime_frame(const CalUnit& c) const;
+    void set_runtime_error(const std::string& message);
+    void clear_runtime_error();
+    bool has_runtime_error() const { return !runtime_error_message.empty(); }
+    void print_runtime_error() const;
 
     void check_cal_unit(CalUnit& c, CalUnit* father, std::unordered_map<std::string, Object>& p);
 

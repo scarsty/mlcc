@@ -212,6 +212,17 @@ bool register_vector_test()
     return o.hasValue() && o.toDouble() == std::accumulate(v.begin(), v.end(), 0.0);
 }
 
+bool runtime_error_stack_test()
+{    // 运行时错误触发测试（类型转换失败）
+    Cifa c;
+    std::string script = R"(
+        string bad = "abc";
+        return sqrt(bad);
+    )";
+    auto o = c.run_script(script);
+    return o.getSpecialType() == "Error";
+}
+
 int main()
 {
     auto run_test = [](std::string name, bool (*func)())
@@ -238,6 +249,7 @@ int main()
     run_test("array_access_test", array_access_test);
     run_test("array_literal_assignment_test", array_literal_assignment_test);
     run_test("size_of_array_test", size_of_array_test);
-    run_test("register_vector_test", register_function_test);
+    run_test("register_vector_test", register_vector_test);
+    run_test("runtime_error_stack_test", runtime_error_stack_test);
     return 0;
 }

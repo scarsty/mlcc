@@ -212,6 +212,27 @@ Object Cifa::eval(CalUnit& c, std::unordered_map<std::string, Object>& p)
 
 Object Cifa::eval_scoped(CalUnit& c, ScopeStack& scopes)
 {
+    if (has_runtime_error())
+    {
+        return Object("RuntimeError", "Error");
+    }
+
+    runtime_call_stack.push_back(format_runtime_frame(c));
+    struct RuntimeFrameGuard
+    {
+        std::vector<std::string>& stack;
+        RuntimeFrameGuard(std::vector<std::string>& s) : stack(s) {}
+        ~RuntimeFrameGuard()
+        {
+            if (!stack.empty())
+            {
+                stack.pop_back();
+            }
+        }
+    } frame_guard(runtime_call_stack);
+
+    try
+    {
     if (has_return_value(scopes))
     {
         return return_value(scopes);
@@ -486,6 +507,17 @@ Object Cifa::eval_scoped(CalUnit& c, ScopeStack& scopes)
         return o;
     }
     return Object();
+    }
+    catch (const std::exception& e)
+    {
+        set_runtime_error(e.what());
+        return Object("RuntimeError", "Error");
+    }
+    catch (...)
+    {
+        set_runtime_error("unknown runtime exception");
+        return Object("RuntimeError", "Error");
+    }
 }
 
 bool Cifa::is_array_literal_candidate(CalUnit& c) const
@@ -1355,6 +1387,22 @@ Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc, std
 
 Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc, ScopeStack& scopes)
 {
+    runtime_call_stack.push_back("func " + name + "()");
+    struct RuntimeFrameGuard
+    {
+        std::vector<std::string>& stack;
+        RuntimeFrameGuard(std::vector<std::string>& s) : stack(s) {}
+        ~RuntimeFrameGuard()
+        {
+            if (!stack.empty())
+            {
+                stack.pop_back();
+            }
+        }
+    } frame_guard(runtime_call_stack);
+
+    try
+    {
     if (functions.count(name))
     {
         auto f = functions[name];
@@ -1377,7 +1425,19 @@ Object Cifa::run_function(const std::string& name, std::vector<CalUnit>& vc, Sco
     }
     else
     {
+        set_runtime_error("function " + name + " is not defined");
         return Object();
+    }
+    }
+    catch (const std::exception& e)
+    {
+        set_runtime_error(e.what());
+        return Object("RuntimeError", "Error");
+    }
+    catch (...)
+    {
+        set_runtime_error("unknown runtime exception");
+        return Object("RuntimeError", "Error");
     }
 }
 
@@ -1957,7 +2017,17 @@ Object Cifa::run_script(std::string str)
 Object Cifa::run_script(std::string str, std::unordered_map<std::string, Object>& p)
 {
     errors.clear();
+    clear_runtime_error();
     Object result;
+
+    {
+        std::stringstream source_stream(str);
+        std::string source_line;
+        while (std::getline(source_stream, source_line))
+        {
+            runtime_source_lines.emplace_back(std::move(source_line));
+        }
+    }
 
     str += ";";    //方便处理仅有一行的情况
     auto rv = split(str);
@@ -1979,11 +2049,32 @@ Object Cifa::run_script(std::string str, std::unordered_map<std::string, Object>
     }
     if (errors.empty())
     {
+        struct RuntimeReporterGuard
+        {
+            RuntimeReporterGuard(Cifa* owner)
+            {
+                Object::set_runtime_error_reporter([owner](const std::string& message)
+                    {
+                        owner->set_runtime_error(message);
+                    });
+            }
+            ~RuntimeReporterGuard()
+            {
+                Object::clear_runtime_error_reporter();
+            }
+        } runtime_reporter_guard(this);
+
         for (auto& [name, o] : parameters)
         {
             p[name] = o;
         }
         auto o = eval(c, p);
+        if (has_runtime_error())
+        {
+            result = std::string("");
+            result.type1 = "Error";
+            return result;
+        }
         return o;
     }
     else
@@ -2023,6 +2114,113 @@ void Cifa::print_errors() const
     for (auto& e : errors)
     {
         fprintf(stderr, "Error (%zu, %zu): %s\n", e.line, e.col, e.message.c_str());
+    }
+}
+
+std::string Cifa::format_runtime_frame(const CalUnit& c) const
+{
+    std::string label = c.str.empty() ? "<none>" : c.str;
+    std::string line_text;
+    if (c.line > 0 && c.line <= runtime_source_lines.size())
+    {
+        line_text = runtime_source_lines[c.line - 1];
+    }
+    if (line_text.empty())
+    {
+        line_text = label;
+    }
+
+    std::string header = "line " + std::to_string(c.line) + ", col " + std::to_string(c.col) + ": ";
+    size_t arrow_col = c.col > 0 ? (c.col - 1) : 0;
+    std::string caret_line(header.size(), ' ');
+    const size_t prefix_len = std::min(arrow_col, line_text.size());
+    for (size_t i = 0; i < prefix_len; ++i)
+    {
+        caret_line += (line_text[i] == '\t') ? '\t' : ' ';
+    }
+    if (arrow_col > prefix_len)
+    {
+        caret_line.append(arrow_col - prefix_len, ' ');
+    }
+    caret_line += "^";
+    return header + line_text + "\n" + caret_line;
+}
+
+void Cifa::set_runtime_error(const std::string& message)
+{
+    if (has_runtime_error())
+    {
+        return;
+    }
+    runtime_error_message = message.empty() ? "runtime error" : message;
+    if (output_error && !runtime_error_reported)
+    {
+        print_runtime_error();
+        runtime_error_reported = true;
+    }
+}
+
+void Cifa::clear_runtime_error()
+{
+    runtime_call_stack.clear();
+    runtime_source_lines.clear();
+    runtime_error_message.clear();
+    runtime_error_reported = false;
+}
+
+void Cifa::print_runtime_error() const
+{
+    fprintf(stderr, "Runtime Error: %s\n", runtime_error_message.c_str());
+    if (runtime_call_stack.empty())
+    {
+        return;
+    }
+    fprintf(stderr, "Call Stack (most recent call last):\n");
+    std::string last_source_line;
+    for (auto it = runtime_call_stack.rbegin(); it != runtime_call_stack.rend(); ++it)
+    {
+        const std::string& frame = *it;
+        const size_t line_pos = frame.find("line ");
+        const size_t colon_pos = frame.find(": ");
+        if (line_pos == 0 && colon_pos != std::string::npos)
+        {
+            size_t line_end = frame.find('\n', colon_pos + 2);
+            std::string source_line = frame.substr(colon_pos + 2, line_end == std::string::npos ? std::string::npos : line_end - (colon_pos + 2));
+            if (!source_line.empty() && source_line == last_source_line)
+            {
+                continue;
+            }
+            last_source_line = std::move(source_line);
+        }
+        size_t newline_pos = frame.find('\n');
+        if (newline_pos == std::string::npos)
+        {
+            fprintf(stderr, "  at %s\n", frame.c_str());
+        }
+        else
+        {
+            std::string first_line = frame.substr(0, newline_pos);
+            std::string rest = frame.substr(newline_pos + 1);
+            fprintf(stderr, "  at %s\n", first_line.c_str());
+
+            size_t start = 0;
+            while (start <= rest.size())
+            {
+                size_t pos = rest.find('\n', start);
+                std::string continuation = (pos == std::string::npos)
+                    ? rest.substr(start)
+                    : rest.substr(start, pos - start);
+                if (!continuation.empty())
+                {
+                    fprintf(stderr, "     %s\n", continuation.c_str());
+                }
+                if (pos == std::string::npos)
+                {
+                    break;
+                }
+                start = pos + 1;
+            }
+        }
     }
 }
 }    // namespace cifa
