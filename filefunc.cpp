@@ -354,12 +354,19 @@ std::string filefunc::readFileToString(const std::string& filename)
     FILE* fp = fopen(filename.c_str(), "rb");
     if (fp)
     {
-        fseek(fp, 0, SEEK_END);
-        int length = ftell(fp);
-        fseek(fp, 0, 0);
+#ifdef _WIN32
+        _fseeki64(fp, 0, SEEK_END);
+        int64_t length = _ftelli64(fp);
+        _fseeki64(fp, 0, SEEK_SET);
+#else
+        fseeko(fp, 0, SEEK_END);
+        int64_t length = ftello(fp);
+        fseeko(fp, 0, SEEK_SET);
+#endif
+        if (length <= 0) { fclose(fp); return ""; }
         std::string str;
         str.resize(length, '\0');
-        if (fread((void*)str.c_str(), 1, length, fp) < size_t(length))
+        if (fread((void*)str.data(), 1, length, fp) < size_t(length))
         {
         }
         fclose(fp);
