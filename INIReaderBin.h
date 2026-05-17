@@ -124,7 +124,52 @@ public:
 
     int save(const std::string& filename)
     {
-        return filefunc::writeStringToFile(to_string(), filename);
+        // Build INI index first (small), then stream binary data directly to file
+        INIReaderNormal assist;
+        std::vector<std::string> keys;
+        std::vector<size_t> sizes;
+        size_t offset = 0;
+        for (auto& section : ini_.getAllSections())
+        {
+            for (auto& key : ini_.getAllKeys(section))
+            {
+                size_t sz = ini_.getString(section, key).size();
+                assist.setKey(section, key, std::to_string(offset) + "," + std::to_string(sz));
+                keys.push_back(key);
+                sizes.push_back(sz);
+                offset += sz;
+            }
+        }
+        auto str_ini = assist.toString();
+        uint64_t l = str_ini.size();
+
+        FILE* fp = fopen(filename.c_str(), "wb");
+        if (!fp) return -1;
+
+        // Write 32-byte header
+        std::string header = head_;
+        header.resize(head_size_, '\0');
+        fwrite(header.c_str(), 1, head_size_, fp);
+        // Write INI size
+        fwrite(&l, sizeof(uint64_t), 1, fp);
+        // Write INI text
+        fwrite(str_ini.c_str(), 1, str_ini.size(), fp);
+        // Write binary data for each key
+        size_t written = 0;
+        size_t ki = 0;
+        for (auto& section : ini_.getAllSections())
+        {
+            for (auto& key : ini_.getAllKeys(section))
+            {
+                const std::string& val = ini_.getString(section, key);
+                fwrite(val.data(), 1, val.size(), fp);
+                written += val.size();
+                ki++;
+            }
+        }
+        fflush(fp);
+        fclose(fp);
+        return (int)(written > (size_t)INT_MAX ? INT_MAX : (int)written);
     }
 
     int load(const std::string& filename)

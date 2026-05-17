@@ -365,8 +365,8 @@ std::string filefunc::readFileToString(const std::string& filename)
 #endif
         if (length <= 0) { fclose(fp); return ""; }
         std::string str;
-        str.resize(length, '\0');
-        if (fread((void*)str.data(), 1, length, fp) < size_t(length))
+        str.resize((size_t)length, '\0');
+        if (fread((void*)str.c_str(), 1, (size_t)length, fp) < (size_t)length)
         {
         }
         fclose(fp);
@@ -380,11 +380,11 @@ int filefunc::writeStringToFile(const std::string& str, const std::string& filen
     FILE* fp = fopen(filename.c_str(), "wb");
     if (fp)
     {
-        int length = int(str.length());
-        fwrite(str.c_str(), 1, length, fp);
+        size_t length = str.length();
+        size_t written = fwrite(str.c_str(), 1, length, fp);
         fflush(fp);
         fclose(fp);
-        return length;
+        return (written == length) ? (length > (size_t)INT_MAX ? INT_MAX : (int)length) : -1;
     }
     return -1;
 }
