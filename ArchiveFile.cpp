@@ -62,7 +62,8 @@ bool readArchiveItems(const std::string& archivePath, const std::string& passwor
     }
 
     archive_entry* entry = nullptr;
-    while (archive_read_next_header(ar, &entry) == ARCHIVE_OK)
+    int r;
+    while ((r = archive_read_next_header(ar, &entry)) == ARCHIVE_OK || r == ARCHIVE_WARN)
     {
         if (!entry)
         {
@@ -83,6 +84,12 @@ bool readArchiveItems(const std::string& archivePath, const std::string& passwor
         }
 
         std::vector<unsigned char> data;
+        // 已知 entry 大小则预分配，避免多次 realloc
+        la_int64_t entry_size = archive_entry_size(entry);
+        if (entry_size > 0)
+        {
+            data.reserve(static_cast<size_t>(entry_size));
+        }
         unsigned char buffer[32768];
         while (true)
         {
@@ -97,6 +104,12 @@ bool readArchiveItems(const std::string& archivePath, const std::string& passwor
             }
             else
             {
+                // ARCHIVE_WARN(-20)/ARCHIVE_RETRY(-10)：非致命，保留已读数据
+                if (n == ARCHIVE_WARN || n == ARCHIVE_RETRY)
+                {
+                    break;
+                }
+                // ARCHIVE_FAILED / ARCHIVE_FATAL：真正的错误
                 archive_read_close(ar);
                 archive_read_free(ar);
                 return false;
@@ -244,7 +257,9 @@ void ArchiveFile::openRead(const std::string& filename)
 {
     std::lock_guard<std::mutex> lock(*mutex_);
     flushCache();
-    archive_filename_ = filename;
+    // 只有文件确实存在才设置 archive_filename_，否则 opened() 返回 false
+    // 令调用方可以 fallback 到目录读取（与 ZipFile 行为一致）
+    archive_filename_ = filefunc::fileExist(filename) ? filename : "";
     read_only_ = true;
     buffer_.clear();
     resetCache();
