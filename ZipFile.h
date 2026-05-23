@@ -1,11 +1,10 @@
 ﻿#pragma once
+#include <map>
+#include <miniz/miniz.h>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
-
-struct zip;
-typedef struct zip zip_t;
 
 class ZipFile
 {
@@ -14,15 +13,23 @@ public:
     ~ZipFile();
 
 private:
-    zip_t* zip_ = nullptr;
+    enum class Mode
+    {
+        None,
+        Read,
+        Write,
+    };
+
+    mutable mz_zip_archive zip_archive_ = {};
+    mutable bool reader_inited_ = false;
+    std::string zip_filename_;
+    Mode mode_ = Mode::None;
     std::shared_ptr<std::mutex> mutex_ = std::make_shared<std::mutex>();
-    std::vector<std::string> buffer_;    // 添加数据时先复制到这里，否则close的时候，原内容如果已经被销毁就会出错
+    std::map<std::string, std::string> pending_entries_;
 
 public:
 
-    //外部文件名是系统编码，取文件名时是原本的编码
-    //注意其实所用的库是libzip，只支持CP437和UTF-8两种编码，因此取文件名的时候要用原本的编码，如果强行用UTF-8编码会丢失信息
-    bool opened() const { return zip_ != nullptr; }
+    bool opened() const { return mode_ != Mode::None; }
 
     void openRead(const std::string& zip_filename);
     void openWrite(const std::string& zip_filename);
@@ -36,5 +43,8 @@ public:
     std::vector<std::string> getFileNames() const;
 
 private:
-    static std::string u8name(const std::string& filename);
+    void closeCurrent();
+    void flushPendingEntries();
+    void loadExistingEntriesForWrite();
+    std::string readFileUnlocked(const std::string& filename) const;
 };
