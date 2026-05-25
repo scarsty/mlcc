@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-// ZipFile2：zip 读写封装。读取支持 STORE/DEFLATE，写入使用 STORE。
-// CRC-32 与 inflate 均自行实现，无任何外部依赖。
+// ZipFile2：zip 读写封装。读取支持 STORE/DEFLATE，写入自动选 DEFLATE/STORE（取较小者）。
+// CRC-32、inflate 与 deflate 均自行实现，无任何外部依赖。
 class ZipFile2
 {
 public:

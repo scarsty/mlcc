@@ -1,6 +1,6 @@
 // ZipFile2.cpp — 自包含 ZIP 读写实现
-// 读取支持 STORE（method=0）和 DEFLATE（method=8），写入使用 STORE。
-// 无外部依赖，CRC-32 与 inflate 均内置实现。
+// 读取支持 STORE（method=0）和 DEFLATE（method=8），写入也支持两种模式（自动选较小者）。
+// 无外部依赖，CRC-32、inflate 与 deflate 均内置实现。
 #include "ZipFile2.h"
 #include "filefunc.h"
 #include <cstring>
@@ -266,6 +266,132 @@ static_assert(sizeof(EOCD)         == 22, "EOCD size");
 }  // namespace
 
 // ============================================================
+// deflate（RFC 1951 raw deflate，固定 Huffman + LZ77）
+// ============================================================
+static std::vector<uint8_t> do_deflate(const uint8_t* src, size_t slen)
+{
+    std::vector<uint8_t> out;
+    out.reserve(slen);
+    uint32_t wbuf = 0;
+    int      wcnt = 0;
+
+    // LSB-first 位写入器
+    auto wbits = [&](uint32_t v, int n)
+    {
+        if (n == 0) return;
+        wbuf |= (v & ((1u << n) - 1u)) << wcnt;
+        wcnt += n;
+        while (wcnt >= 8) { out.push_back((uint8_t)(wbuf & 0xFFu)); wbuf >>= 8; wcnt -= 8; }
+    };
+
+    // 反转低 n 位（把 Huffman 码按 MSB-first 写入 LSB-first 流）
+    auto rbits = [](uint32_t v, int n) -> uint32_t
+    {
+        uint32_t r = 0;
+        for (int i = 0; i < n; i++) { r = (r << 1) | (v & 1); v >>= 1; }
+        return r;
+    };
+
+    // 写入固定 Huffman 字面量/长度符号
+    auto emit_ll = [&](int s)
+    {
+        if      (s <= 143) wbits(rbits(0x30u  + (uint32_t)s,          8), 8);
+        else if (s <= 255) wbits(rbits(0x190u + (uint32_t)(s - 144),  9), 9);
+        else if (s <= 279) wbits(rbits(          (uint32_t)(s - 256), 7), 7);
+        else               wbits(rbits(0xC0u  + (uint32_t)(s - 280),  8), 8);
+    };
+
+    // 写入固定 Huffman 距离码（5 位）
+    auto emit_dc = [&](int d) { wbits(rbits((uint32_t)d, 5), 5); };
+
+    static const uint16_t LBASE[29] = { 3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,
+                                        35,43,51,59,67,83,99,115,131,163,195,227,258 };
+    static const uint8_t  LEXTR[29] = { 0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,
+                                        3,3,3,3,4,4,4,4,5,5,5,5,0 };
+    static const uint16_t DBASE[30] = { 1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,
+                                        257,385,513,769,1025,1537,2049,3073,
+                                        4097,6145,8193,12289,16385,24577 };
+    static const uint8_t  DEXTR[30] = { 0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,
+                                        7,7,8,8,9,9,10,10,11,11,12,12,13,13 };
+
+    auto len_sym = [&](int len) -> std::pair<int, int>
+    {
+        for (int i = 28; i >= 0; i--)
+            if (len >= (int)LBASE[i]) return { 257 + i, len - (int)LBASE[i] };
+        return { 257, 0 };
+    };
+    auto dst_sym = [&](int dist) -> std::pair<int, int>
+    {
+        for (int i = 29; i >= 0; i--)
+            if (dist >= (int)DBASE[i]) return { i, dist - (int)DBASE[i] };
+        return { 0, 0 };
+    };
+
+    // LZ77 哈希链（32 KB 窗口，8 K 桶）
+    const int            WSIZE = 32768, WMASK = WSIZE - 1, HMASK2 = 8191;
+    std::vector<int>     head(HMASK2 + 1, -1);
+    std::vector<int>     prev(WSIZE, -1);
+
+    auto hash3 = [&](size_t p) -> int
+    {
+        return (int)((((uint32_t)src[p] * 2654435761u)
+                    ^ ((uint32_t)src[p + 1] * 40503u)
+                    ^  (uint32_t)src[p + 2]) & (uint32_t)HMASK2);
+    };
+
+    wbits(1, 1);   // BFINAL = 1
+    wbits(1, 2);   // BTYPE  = 01（固定 Huffman）
+
+    size_t pos = 0;
+    while (pos < slen)
+    {
+        if (slen - pos >= 3)
+        {
+            int h         = hash3(pos);
+            int best_len  = 2, best_off = 0;
+            int candidate = head[h];
+            int depth     = 32;
+            while (candidate >= 0 && candidate < (int)pos
+                   && (int)pos - candidate <= WSIZE && depth-- > 0)
+            {
+                int max_ml = (int)std::min((size_t)258, slen - pos);
+                int ml     = 0;
+                while (ml < max_ml && src[candidate + ml] == src[pos + ml]) ml++;
+                if (ml > best_len) { best_len = ml; best_off = (int)pos - candidate; }
+                if (best_len == 258) break;
+                candidate = prev[candidate & WMASK];
+            }
+            prev[pos & WMASK] = head[h];
+            head[h]           = (int)pos;
+
+            if (best_len >= 3)
+            {
+                auto [ls, le] = len_sym(best_len);
+                emit_ll(ls);
+                wbits((uint32_t)le, LEXTR[ls - 257]);
+                auto [ds, de] = dst_sym(best_off);
+                emit_dc(ds);
+                wbits((uint32_t)de, DEXTR[ds]);
+                for (int k = 1; k < best_len; k++)
+                {
+                    if (slen - (pos + k) < 3) break;
+                    int hk = hash3(pos + k);
+                    prev[(pos + k) & WMASK] = head[hk];
+                    head[hk]                = (int)(pos + k);
+                }
+                pos += (size_t)best_len;
+                continue;
+            }
+        }
+        emit_ll((int)src[pos]);
+        pos++;
+    }
+    emit_ll(256);  // EOB
+    if (wcnt) out.push_back((uint8_t)(wbuf & 0xFFu));
+    return out;
+}
+
+// ============================================================
 // ZipFile2 私有方法
 // ============================================================
 
@@ -347,28 +473,32 @@ void ZipFile2::flushWrite()
 
     for (const auto& [name, data] : pending_)
     {
-        const uint32_t crc  = crc32_calc(data.data(), data.size());
-        const uint32_t size = (uint32_t)data.size();
+        const uint32_t crc    = crc32_calc(data.data(), data.size());
+        const uint32_t uncomp = (uint32_t)data.size();
+        auto           comp   = do_deflate((const uint8_t*)data.data(), data.size());
+        const uint16_t method    = comp.size() < data.size() ? uint16_t(8) : uint16_t(0);
+        const uint32_t comp_size = (method == 8) ? (uint32_t)comp.size() : uncomp;
+        const char*    comp_data = (method == 8) ? (const char*)comp.data() : data.data();
 
         LocalHeader lh;
-        lh.method     = 0;
+        lh.method     = method;
         lh.crc32      = crc;
-        lh.comp_size  = size;
-        lh.uncomp_sz  = size;
+        lh.comp_size  = comp_size;
+        lh.uncomp_sz  = uncomp;
         lh.name_len   = (uint16_t)name.size();
 
         CentralEntry ce;
-        ce.method     = 0;
+        ce.method     = method;
         ce.crc32      = crc;
-        ce.comp_size  = size;
-        ce.uncomp_sz  = size;
+        ce.comp_size  = comp_size;
+        ce.uncomp_sz  = uncomp;
         ce.name_len   = (uint16_t)name.size();
         ce.local_off  = offset;
 
         f.write(reinterpret_cast<const char*>(&lh), sizeof(lh));
         f.write(name.data(),  (std::streamsize)name.size());
-        f.write(data.data(),  (std::streamsize)data.size());
-        offset += (uint32_t)(sizeof(lh) + name.size() + data.size());
+        f.write(comp_data,    (std::streamsize)comp_size);
+        offset += (uint32_t)(sizeof(lh) + name.size() + comp_size);
         cds.emplace_back(name, ce);
     }
 

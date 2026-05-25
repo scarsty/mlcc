@@ -203,11 +203,12 @@ Supports open/create/read/write/add/remove/list for zip entries with optional pa
 自包含的 ZIP 文件读写封装，无任何外部依赖。
 
 - 读取支持 STORE（method=0）和 DEFLATE（method=8），可读取标准 ZIP 文件
-- 写入使用 STORE 模式（无压缩）
+- 写入自动选 DEFLATE（固定 Huffman + LZ77）或 STORE，取较小者
 - CRC-32 与 inflate 解压均内置实现（基于 RFC 1951）
 - 线程安全（内置 `std::mutex`）
 - 支持追加/修改模式（`openWrite` 加载已有条目后再写入）
 
+## SimpleCC
 
 A simple C++ implementation of Chinese Simplified and Traditional conversion to replace OpenCC.
 
