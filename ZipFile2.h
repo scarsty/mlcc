@@ -1,5 +1,7 @@
 #pragma once
-#include <memory>
+#include <cstdint>
+#include <map>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -8,7 +10,7 @@
 class ZipFile2
 {
 public:
-    ZipFile2();
+    ZipFile2()  = default;
     ~ZipFile2();
 
     // 是否已打开
@@ -37,6 +39,26 @@ public:
     std::vector<std::string> getFileNames() const;
 
 private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+    struct ZEntry
+    {
+        uint32_t method;
+        uint32_t crc32;
+        uint32_t comp_size;
+        uint32_t uncomp_sz;
+        uint32_t local_off;
+    };
+
+    enum class Mode { None, Read, Write };
+
+    std::string zip_filename_;
+    Mode        mode_ = Mode::None;
+    mutable std::mutex mutex_;
+    std::map<std::string, ZEntry>      entries_;
+    std::map<std::string, std::string> pending_;
+
+    bool        parseZip();
+    std::string readEntry(const ZEntry& e) const;
+    void        flushWrite();
+    std::string readOne(const std::string& filename) const;
+    void        reset();
 };

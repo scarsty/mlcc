@@ -28,6 +28,7 @@ All libraries are header-only or header + cpp files, you can just put them into 
 - [filefunc](#filefunc)：提供文件读写与路径处理实用函数。
 - [ArchiveFile](#archivefile)：统一封装压缩包读写（7z/zip）。
 - [ZipFile](#zipfile)：基于 libzip 的 zip 文件操作封装。
+- [ZipFile2](#zipfile2)：自包含 ZIP 读写，内置 inflate/CRC-32，无外部依赖。
 - [SimpleCC](#simplecc)：基于词典的简易文本转换工具。
 - [PotConv](#potconv)：基于 iconv 的编码转换工具。
 - [Timer](#timer)：用于统计代码耗时的计时器。
@@ -197,7 +198,16 @@ Supports open/create/read/write/add/remove/list for zip entries with optional pa
 
 支持 zip 条目的打开、创建、读取、写入、添加、删除、列举，并支持可选密码。
 
-## SimpleCC
+## ZipFile2
+
+自包含的 ZIP 文件读写封装，无任何外部依赖。
+
+- 读取支持 STORE（method=0）和 DEFLATE（method=8），可读取标准 ZIP 文件
+- 写入使用 STORE 模式（无压缩）
+- CRC-32 与 inflate 解压均内置实现（基于 RFC 1951）
+- 线程安全（内置 `std::mutex`）
+- 支持追加/修改模式（`openWrite` 加载已有条目后再写入）
+
 
 A simple C++ implementation of Chinese Simplified and Traditional conversion to replace OpenCC.
 

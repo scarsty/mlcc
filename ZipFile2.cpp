@@ -3,11 +3,8 @@
 // 无外部依赖，CRC-32 与 inflate 均内置实现。
 #include "ZipFile2.h"
 #include "filefunc.h"
-#include <cstdint>
 #include <cstring>
 #include <fstream>
-#include <map>
-#include <mutex>
 #include <vector>
 
 // ============================================================
@@ -40,7 +37,6 @@ static uint32_t crc32_calc(const void* data, size_t len)
 namespace
 {
 
-// 位流读取器
 struct Bits
 {
     const uint8_t* src;
@@ -64,7 +60,6 @@ struct Bits
     void align() { buf = 0; cnt = 0; }
 };
 
-// 规范 Huffman 解码器（puff.c 算法）
 struct Huff
 {
     static const int MAXLEN = 15;
@@ -99,7 +94,6 @@ struct Huff
     }
 };
 
-// 固定 Huffman 表（RFC 1951 §3.2.6）
 static Huff g_fixed_ll, g_fixed_dist;
 static bool g_fixed_ready = false;
 
@@ -118,7 +112,6 @@ static void init_fixed()
     g_fixed_ready = true;
 }
 
-// 长度/距离扩展表（RFC 1951 §3.2.5）
 static const uint16_t LEN_BASE[29]  = { 3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,
                                         35,43,51,59,67,83,99,115,131,163,195,227,258 };
 static const uint8_t  LEN_EXTRA[29] = { 0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,
@@ -130,7 +123,6 @@ static const uint8_t  DST_EXTRA[30] = { 0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,
                                         7,7,8,8,9,9,10,10,11,11,12,12,13,13 };
 static const uint8_t  CLCL_ORDER[19] = { 16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15 };
 
-// inflate 主函数
 static std::vector<uint8_t> do_inflate(const uint8_t* src, size_t slen, size_t ulen_hint)
 {
     init_fixed();
@@ -271,277 +263,255 @@ static_assert(sizeof(LocalHeader)  == 30, "LocalHeader size");
 static_assert(sizeof(CentralEntry) == 46, "CentralEntry size");
 static_assert(sizeof(EOCD)         == 22, "EOCD size");
 
-struct ZEntry
-{
-    uint32_t method;
-    uint32_t crc32;
-    uint32_t comp_size;
-    uint32_t uncomp_sz;
-    uint32_t local_off;
-};
-
 }  // namespace
 
 // ============================================================
-// ZipFile2::Impl
+// ZipFile2 私有方法
 // ============================================================
-struct ZipFile2::Impl
+
+bool ZipFile2::parseZip()
 {
-    enum class Mode { None, Read, Write };
+    std::ifstream f(zip_filename_, std::ios::binary | std::ios::ate);
+    if (!f) return false;
+    const auto fsz = static_cast<uint32_t>(f.tellg());
 
-    std::string zip_filename;
-    Mode        mode = Mode::None;
-    mutable std::mutex mutex;
+    const uint32_t search_start = fsz > 65557u ? fsz - 65557u : 0u;
+    f.seekg(search_start);
+    std::vector<char> tail(fsz - search_start);
+    f.read(tail.data(), (std::streamsize)tail.size());
 
-    std::map<std::string, ZEntry>      entries;
-    std::map<std::string, std::string> pending;
-
-    bool parseZip()
+    uint32_t eocd_pos = 0;
+    bool     found    = false;
+    for (int i = (int)tail.size() - 22; i >= 0; --i)
     {
-        std::ifstream f(zip_filename, std::ios::binary | std::ios::ate);
-        if (!f) return false;
-        const auto fsz = static_cast<uint32_t>(f.tellg());
-
-        const uint32_t search_start = fsz > 65557u ? fsz - 65557u : 0u;
-        f.seekg(search_start);
-        std::vector<char> tail(fsz - search_start);
-        f.read(tail.data(), (std::streamsize)tail.size());
-
-        uint32_t eocd_pos = 0;
-        bool     found    = false;
-        for (int i = (int)tail.size() - 22; i >= 0; --i)
+        if (memcmp(tail.data() + i, "\x50\x4b\x05\x06", 4) == 0)
         {
-            if (memcmp(tail.data() + i, "\x50\x4b\x05\x06", 4) == 0)
-            {
-                eocd_pos = search_start + (uint32_t)i;
-                found    = true;
-                break;
-            }
+            eocd_pos = search_start + (uint32_t)i;
+            found    = true;
+            break;
         }
-        if (!found) return false;
-
-        f.seekg(eocd_pos);
-        EOCD eocd;
-        f.read(reinterpret_cast<char*>(&eocd), sizeof(eocd));
-        if (eocd.sig != 0x06054b50) return false;
-
-        f.seekg(eocd.cd_offset);
-        for (uint16_t i = 0; i < eocd.cd_count_total; ++i)
-        {
-            CentralEntry ce;
-            f.read(reinterpret_cast<char*>(&ce), sizeof(ce));
-            if (ce.sig != 0x02014b50) break;
-            std::string name(ce.name_len, '\0');
-            f.read(name.data(), ce.name_len);
-            f.seekg(ce.extra_len + ce.comment_len, std::ios::cur);
-            if (name.empty() || name.back() == '/') continue;
-            entries[name] = { ce.method, ce.crc32, ce.comp_size, ce.uncomp_sz, ce.local_off };
-        }
-        return true;
     }
+    if (!found) return false;
 
-    std::string readEntry(const ZEntry& e) const
+    f.seekg(eocd_pos);
+    EOCD eocd;
+    f.read(reinterpret_cast<char*>(&eocd), sizeof(eocd));
+    if (eocd.sig != 0x06054b50) return false;
+
+    f.seekg(eocd.cd_offset);
+    for (uint16_t i = 0; i < eocd.cd_count_total; ++i)
     {
-        std::ifstream f(zip_filename, std::ios::binary);
-        if (!f) return {};
-        f.seekg(e.local_off);
+        CentralEntry ce;
+        f.read(reinterpret_cast<char*>(&ce), sizeof(ce));
+        if (ce.sig != 0x02014b50) break;
+        std::string name(ce.name_len, '\0');
+        f.read(name.data(), ce.name_len);
+        f.seekg(ce.extra_len + ce.comment_len, std::ios::cur);
+        if (name.empty() || name.back() == '/') continue;
+        entries_[name] = { ce.method, ce.crc32, ce.comp_size, ce.uncomp_sz, ce.local_off };
+    }
+    return true;
+}
+
+std::string ZipFile2::readEntry(const ZEntry& e) const
+{
+    std::ifstream f(zip_filename_, std::ios::binary);
+    if (!f) return {};
+    f.seekg(e.local_off);
+    LocalHeader lh;
+    f.read(reinterpret_cast<char*>(&lh), sizeof(lh));
+    if (lh.sig != 0x04034b50) return {};
+    f.seekg(lh.name_len + lh.extra_len, std::ios::cur);
+
+    std::vector<uint8_t> comp(e.comp_size);
+    f.read(reinterpret_cast<char*>(comp.data()), (std::streamsize)e.comp_size);
+
+    if (e.method == 0)
+        return std::string(comp.begin(), comp.end());
+    if (e.method == 8)
+    {
+        auto out = do_inflate(comp.data(), e.comp_size, e.uncomp_sz);
+        return std::string(out.begin(), out.end());
+    }
+    return {};
+}
+
+void ZipFile2::flushWrite()
+{
+    if (zip_filename_.empty() || pending_.empty()) return;
+    std::ofstream f(zip_filename_, std::ios::binary | std::ios::trunc);
+    if (!f) return;
+
+    std::vector<std::pair<std::string, CentralEntry>> cds;
+    uint32_t offset = 0;
+
+    for (const auto& [name, data] : pending_)
+    {
+        const uint32_t crc  = crc32_calc(data.data(), data.size());
+        const uint32_t size = (uint32_t)data.size();
+
         LocalHeader lh;
-        f.read(reinterpret_cast<char*>(&lh), sizeof(lh));
-        if (lh.sig != 0x04034b50) return {};
-        f.seekg(lh.name_len + lh.extra_len, std::ios::cur);
+        lh.method     = 0;
+        lh.crc32      = crc;
+        lh.comp_size  = size;
+        lh.uncomp_sz  = size;
+        lh.name_len   = (uint16_t)name.size();
 
-        std::vector<uint8_t> comp(e.comp_size);
-        f.read(reinterpret_cast<char*>(comp.data()), (std::streamsize)e.comp_size);
+        CentralEntry ce;
+        ce.method     = 0;
+        ce.crc32      = crc;
+        ce.comp_size  = size;
+        ce.uncomp_sz  = size;
+        ce.name_len   = (uint16_t)name.size();
+        ce.local_off  = offset;
 
-        if (e.method == 0)
-            return std::string(comp.begin(), comp.end());
-        if (e.method == 8)
-        {
-            auto out = do_inflate(comp.data(), e.comp_size, e.uncomp_sz);
-            return std::string(out.begin(), out.end());
-        }
-        return {};
+        f.write(reinterpret_cast<const char*>(&lh), sizeof(lh));
+        f.write(name.data(),  (std::streamsize)name.size());
+        f.write(data.data(),  (std::streamsize)data.size());
+        offset += (uint32_t)(sizeof(lh) + name.size() + data.size());
+        cds.emplace_back(name, ce);
     }
 
-    void flushWrite()
+    const uint32_t cd_offset = offset;
+    uint32_t       cd_size   = 0;
+    for (const auto& [name, ce] : cds)
     {
-        if (zip_filename.empty() || pending.empty()) return;
-        std::ofstream f(zip_filename, std::ios::binary | std::ios::trunc);
-        if (!f) return;
-
-        std::vector<std::pair<std::string, CentralEntry>> cds;
-        uint32_t offset = 0;
-
-        for (const auto& [name, data] : pending)
-        {
-            const uint32_t crc  = crc32_calc(data.data(), data.size());
-            const uint32_t size = (uint32_t)data.size();
-
-            LocalHeader lh;
-            lh.method     = 0;
-            lh.crc32      = crc;
-            lh.comp_size  = size;
-            lh.uncomp_sz  = size;
-            lh.name_len   = (uint16_t)name.size();
-
-            CentralEntry ce;
-            ce.method     = 0;
-            ce.crc32      = crc;
-            ce.comp_size  = size;
-            ce.uncomp_sz  = size;
-            ce.name_len   = (uint16_t)name.size();
-            ce.local_off  = offset;
-
-            f.write(reinterpret_cast<const char*>(&lh), sizeof(lh));
-            f.write(name.data(),  (std::streamsize)name.size());
-            f.write(data.data(),  (std::streamsize)data.size());
-            offset += (uint32_t)(sizeof(lh) + name.size() + data.size());
-            cds.emplace_back(name, ce);
-        }
-
-        const uint32_t cd_offset = offset;
-        uint32_t       cd_size   = 0;
-        for (const auto& [name, ce] : cds)
-        {
-            f.write(reinterpret_cast<const char*>(&ce), sizeof(ce));
-            f.write(name.data(), (std::streamsize)name.size());
-            cd_size += (uint32_t)(sizeof(ce) + name.size());
-        }
-
-        EOCD eocd;
-        eocd.cd_count_here  = (uint16_t)cds.size();
-        eocd.cd_count_total = (uint16_t)cds.size();
-        eocd.cd_size        = cd_size;
-        eocd.cd_offset      = cd_offset;
-        f.write(reinterpret_cast<const char*>(&eocd), sizeof(eocd));
+        f.write(reinterpret_cast<const char*>(&ce), sizeof(ce));
+        f.write(name.data(), (std::streamsize)name.size());
+        cd_size += (uint32_t)(sizeof(ce) + name.size());
     }
 
-    std::string readOne(const std::string& filename) const
+    EOCD eocd;
+    eocd.cd_count_here  = (uint16_t)cds.size();
+    eocd.cd_count_total = (uint16_t)cds.size();
+    eocd.cd_size        = cd_size;
+    eocd.cd_offset      = cd_offset;
+    f.write(reinterpret_cast<const char*>(&eocd), sizeof(eocd));
+}
+
+std::string ZipFile2::readOne(const std::string& filename) const
+{
+    if (mode_ == Mode::Write)
     {
-        if (mode == Mode::Write)
-        {
-            auto it = pending.find(filename);
-            return it != pending.end() ? it->second : std::string{};
-        }
-        if (mode == Mode::Read)
-        {
-            auto it = entries.find(filename);
-            return it != entries.end() ? readEntry(it->second) : std::string{};
-        }
-        return {};
+        auto it = pending_.find(filename);
+        return it != pending_.end() ? it->second : std::string{};
     }
-
-    void reset()
+    if (mode_ == Mode::Read)
     {
-        if (mode == Mode::Write) flushWrite();
-        entries.clear();
-        pending.clear();
-        zip_filename.clear();
-        mode = Mode::None;
+        auto it = entries_.find(filename);
+        return it != entries_.end() ? readEntry(it->second) : std::string{};
     }
-};
+    return {};
+}
+
+void ZipFile2::reset()
+{
+    if (mode_ == Mode::Write) flushWrite();
+    entries_.clear();
+    pending_.clear();
+    zip_filename_.clear();
+    mode_ = Mode::None;
+}
 
 // ============================================================
 // ZipFile2 公开方法
 // ============================================================
 
-ZipFile2::ZipFile2() : impl_(std::make_unique<Impl>()) {}
-
 ZipFile2::~ZipFile2()
 {
-    std::lock_guard<std::mutex> lock(impl_->mutex);
-    impl_->reset();
+    std::lock_guard<std::mutex> lock(mutex_);
+    reset();
 }
 
 bool ZipFile2::opened() const
 {
-    std::lock_guard<std::mutex> lock(impl_->mutex);
-    return impl_->mode != Impl::Mode::None;
+    std::lock_guard<std::mutex> lock(mutex_);
+    return mode_ != Mode::None;
 }
 
 void ZipFile2::openRead(const std::string& zip_filename)
 {
-    std::lock_guard<std::mutex> lock(impl_->mutex);
-    impl_->reset();
-    impl_->zip_filename = zip_filename;
-    impl_->mode         = Impl::Mode::Read;
-    if (!impl_->parseZip())
+    std::lock_guard<std::mutex> lock(mutex_);
+    reset();
+    zip_filename_ = zip_filename;
+    mode_         = Mode::Read;
+    if (!parseZip())
     {
-        impl_->zip_filename.clear();
-        impl_->mode = Impl::Mode::None;
+        zip_filename_.clear();
+        mode_ = Mode::None;
     }
 }
 
 void ZipFile2::openWrite(const std::string& zip_filename)
 {
-    std::lock_guard<std::mutex> lock(impl_->mutex);
-    impl_->reset();
-    impl_->zip_filename = zip_filename;
-    impl_->mode         = Impl::Mode::Write;
+    std::lock_guard<std::mutex> lock(mutex_);
+    reset();
+    zip_filename_ = zip_filename;
+    mode_         = Mode::Write;
     if (filefunc::fileExist(zip_filename))
     {
-        Impl tmp;
-        tmp.zip_filename = zip_filename;
-        tmp.mode         = Impl::Mode::Read;
+        ZipFile2 tmp;
+        tmp.zip_filename_ = zip_filename;
+        tmp.mode_         = Mode::Read;
         if (tmp.parseZip())
         {
-            for (const auto& [name, e] : tmp.entries)
-                impl_->pending[name] = tmp.readEntry(e);
+            for (const auto& [name, e] : tmp.entries_)
+                pending_[name] = tmp.readEntry(e);
         }
-        tmp.mode = Impl::Mode::None;
+        tmp.mode_ = Mode::None;  // 防止析构时 flush
     }
 }
 
 void ZipFile2::create(const std::string& zip_filename)
 {
-    std::lock_guard<std::mutex> lock(impl_->mutex);
-    impl_->reset();
-    impl_->zip_filename = zip_filename;
-    impl_->mode         = Impl::Mode::Write;
+    std::lock_guard<std::mutex> lock(mutex_);
+    reset();
+    zip_filename_ = zip_filename;
+    mode_         = Mode::Write;
 }
 
 std::string ZipFile2::readFile(const std::string& filename) const
 {
-    std::lock_guard<std::mutex> lock(impl_->mutex);
-    return impl_->readOne(filename);
+    std::lock_guard<std::mutex> lock(mutex_);
+    return readOne(filename);
 }
 
 void ZipFile2::readFileToBuffer(const std::string& filename, std::vector<char>& content) const
 {
-    std::lock_guard<std::mutex> lock(impl_->mutex);
-    const auto data = impl_->readOne(filename);
+    std::lock_guard<std::mutex> lock(mutex_);
+    const auto data = readOne(filename);
     content.assign(data.begin(), data.end());
 }
 
 void ZipFile2::addData(const std::string& filename, const char* p, int size)
 {
     if (!p || size < 0) return;
-    std::lock_guard<std::mutex> lock(impl_->mutex);
-    if (impl_->mode != Impl::Mode::Write) return;
-    impl_->pending[filename] = std::string(p, (size_t)size);
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (mode_ != Mode::Write) return;
+    pending_[filename] = std::string(p, (size_t)size);
 }
 
 void ZipFile2::addFile(const std::string& filename, const std::string& filename_ondisk)
 {
-    std::lock_guard<std::mutex> lock(impl_->mutex);
-    if (impl_->mode != Impl::Mode::Write) return;
-    impl_->pending[filename] = filefunc::readFileToString(filename_ondisk);
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (mode_ != Mode::Write) return;
+    pending_[filename] = filefunc::readFileToString(filename_ondisk);
 }
 
 void ZipFile2::removeFile(const std::string& filename)
 {
-    std::lock_guard<std::mutex> lock(impl_->mutex);
-    if (impl_->mode != Impl::Mode::Write) return;
-    impl_->pending.erase(filename);
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (mode_ != Mode::Write) return;
+    pending_.erase(filename);
 }
 
 std::vector<std::string> ZipFile2::getFileNames() const
 {
     std::vector<std::string> files;
-    std::lock_guard<std::mutex> lock(impl_->mutex);
-    if (impl_->mode == Impl::Mode::Write)
-        for (const auto& kv : impl_->pending) files.push_back(kv.first);
-    else if (impl_->mode == Impl::Mode::Read)
-        for (const auto& kv : impl_->entries) files.push_back(kv.first);
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (mode_ == Mode::Write)
+        for (const auto& kv : pending_) files.push_back(kv.first);
+    else if (mode_ == Mode::Read)
+        for (const auto& kv : entries_) files.push_back(kv.first);
     return files;
 }
