@@ -21,7 +21,10 @@ enum class ArchiveFormat
 ArchiveFormat getFormat(const std::string& filename)
 {
     auto ext = std::filesystem::path(filename).extension().string();
-    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c)
+        {
+            return static_cast<char>(std::tolower(c));
+        });
     return ext == ".zip" ? ArchiveFormat::Zip : ArchiveFormat::SevenZip;
 }
 
