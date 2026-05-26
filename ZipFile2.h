@@ -10,7 +10,7 @@
 class ZipFile2
 {
 public:
-    ZipFile2()  = default;
+    ZipFile2() = default;
     ~ZipFile2();
 
     // 是否已打开
@@ -48,17 +48,22 @@ private:
         uint32_t local_off;
     };
 
-    enum class Mode { None, Read, Write };
+    enum class Mode
+    {
+        None,
+        Read,
+        Write
+    };
 
     std::string zip_filename_;
-    Mode        mode_ = Mode::None;
+    Mode mode_ = Mode::None;
     mutable std::mutex mutex_;
-    std::map<std::string, ZEntry>      entries_;
+    std::map<std::string, ZEntry> entries_;
     std::map<std::string, std::string> pending_;
 
-    bool        parseZip();
+    bool parseZip();
     std::string readEntry(const ZEntry& e) const;
-    void        flushWrite();
+    void flushWrite();
     std::string readOne(const std::string& filename) const;
-    void        reset();
+    void reset();
 };
