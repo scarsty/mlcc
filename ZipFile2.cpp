@@ -197,9 +197,10 @@ static std::vector<uint8_t> do_inflate(const uint8_t* src, size_t slen, size_t u
                     int    li  = sym - 257;
                     int    len = LEN_BASE[li] + b.read(LEN_EXTRA[li]);
                     int    di  = dist.decode(b);
-                    size_t d   = (size_t)(DST_BASE[di] + b.read(DST_EXTRA[di]));
+                    size_t d     = (size_t)(DST_BASE[di] + b.read(DST_EXTRA[di]));
+                    size_t start = out.size() - d;
                     for (int k = 0; k < len; k++)
-                        out.push_back(out[out.size() - d + (size_t)k]);
+                        out.push_back(out[start + (size_t)k]);
                 }
             }
         }
