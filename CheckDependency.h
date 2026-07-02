@@ -1,5 +1,6 @@
 #pragma once
-
+#ifndef _CHECK_DEPENDENCY_H_
+#define _CHECK_DEPENDENCY_H_
 #include "windows.h"
 #include "ImageHlp.h"
 #include <map>
@@ -230,3 +231,5 @@ public:
         return problem_dlls;
     }
 };
+
+#endif 
