@@ -20,6 +20,7 @@ public:
     SQLite3Stmt& operator=(SQLite3Stmt&& other) noexcept;
 
     bool step();
+    bool execute();
     void reset();
     int getColumnCount() const;
     const char* getColumnName(int index) const;

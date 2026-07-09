@@ -31,6 +31,15 @@ bool SQLite3Stmt::step()
     }
 }
 
+bool SQLite3Stmt::execute()
+{
+    if (!stmt_)
+    {
+        return false;
+    }
+    return sqlite3_step(stmt_) == SQLITE_DONE;
+}
+
 void SQLite3Stmt::reset()
 {
     if (stmt_)
@@ -80,12 +89,12 @@ bool SQLite3Stmt::bind(int index, int value)
 
 bool SQLite3Stmt::bind(int index, const char* text)
 {
-    return sqlite3_bind_text(stmt_, index, text, -1, SQLITE_STATIC) == SQLITE_OK;
+    return sqlite3_bind_text(stmt_, index, text, -1, SQLITE_TRANSIENT) == SQLITE_OK;
 }
 
 bool SQLite3Stmt::bind(int index, void* p, size_t size)
 {
-    return sqlite3_bind_blob(stmt_, index, p, size, SQLITE_STATIC);
+    return sqlite3_bind_blob(stmt_, index, p, size, SQLITE_STATIC) == SQLITE_OK;
 }
 
 SQLite3Stmt::SQLite3Stmt(SQLite3Stmt&& other) noexcept :
