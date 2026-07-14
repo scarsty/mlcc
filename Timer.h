@@ -37,7 +37,7 @@ public:
         if (with_ms)
         {
             auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
-            sprintf(buffer, "%03d", ms.count());
+            std::snprintf(buffer, sizeof(buffer), "%03lld", static_cast<long long>(ms.count()));
             str += "." + std::string(buffer);
         }
         return str;
