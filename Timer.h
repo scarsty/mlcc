@@ -1,9 +1,10 @@
 ﻿#pragma once
 
-#include <cstdio>
 #include <chrono>
 #include <ctime>
 #include <string>
+
+#include "runtime_format.h"
 
 class Timer
 {
@@ -37,8 +38,7 @@ public:
         if (with_ms)
         {
             auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
-            std::snprintf(buffer, sizeof(buffer), "%03lld", static_cast<long long>(ms.count()));
-            str += "." + std::string(buffer);
+            str += std::format(std::runtime_format{".{:03}"}, ms.count());
         }
         return str;
         //#endif
@@ -78,35 +78,31 @@ public:
 
     static std::string autoFormatTime(double s)
     {
-        const int size = 80;
-        char buffer[size];
-        int h = s / 3600;
-        int m = (s - h * 3600) / 60;
-        s = s - h * 3600 - m * 60;
-        if (h > 0)
+        auto remaining = std::chrono::duration<double>{s};
+        const auto hours = std::chrono::duration_cast<std::chrono::hours>(remaining);
+        remaining -= hours;
+        const auto minutes = std::chrono::duration_cast<std::chrono::minutes>(remaining);
+        remaining -= minutes;
+        const auto seconds = remaining.count();
+        if (hours.count() > 0)
         {
-            snprintf(buffer, size, "%d:%02d:%05.2f", h, m, s);
+            return std::format(std::runtime_format{"{}:{:02}:{:05.2f}"}, hours.count(), minutes.count(), seconds);
         }
-        else if (m > 0)
+        if (minutes.count() > 0)
         {
-            snprintf(buffer, size, "%d:%05.2f", m, s);
+            return std::format(std::runtime_format{"{}:{:05.2f}"}, minutes.count(), seconds);
         }
-        else
-        {
-            snprintf(buffer, size, "%.2f s", s);
-        }
-        return std::string(buffer);
+        return std::format(std::runtime_format{"{:.2f} s"}, seconds);
     }
 
-    static std::string formatTime(double s, const std::string& format_str = "%d:%02d:%05.2f")
+    static std::string formatTime(double s, const std::string& format_str = "{}:{:02}:{:05.2f}")
     {
-        const int size = 80;
-        char buffer[size];
-        int h = s / 3600;
-        int m = (s - h * 3600) / 60;
-        s = s - h * 3600 - m * 60;
-        snprintf(buffer, size, format_str.c_str(), h, m, s);
-        return std::string(buffer);
+        auto remaining = std::chrono::duration<double>{s};
+        const auto hours = std::chrono::duration_cast<std::chrono::hours>(remaining);
+        remaining -= hours;
+        const auto minutes = std::chrono::duration_cast<std::chrono::minutes>(remaining);
+        remaining -= minutes;
+        return std::format(std::runtime_format{format_str}, hours.count(), minutes.count(), remaining.count());
     }
 
     static int64_t getNanoTime()
