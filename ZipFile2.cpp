@@ -3,6 +3,7 @@
 // 无外部依赖，CRC-32、inflate 与 deflate 均内置实现。
 #include "ZipFile2.h"
 #include "filefunc.h"
+#include <array>
 #include <cstring>
 #include <fstream>
 #include <vector>
@@ -12,26 +13,25 @@
 // ============================================================
 static uint32_t crc32_calc(const void* data, size_t len)
 {
-    static uint32_t tbl[256];
-    static bool ready = false;
-    if (!ready)
+    static const auto table = []
     {
-        for (int i = 0; i < 256; i++)
+        std::array<uint32_t, 256> values{};
+        for (int i = 0; i < values.size(); i++)
         {
             uint32_t c = (uint32_t)i;
             for (int j = 0; j < 8; j++)
             {
                 c = (c & 1) ? (0xEDB88320u ^ (c >> 1)) : (c >> 1);
             }
-            tbl[i] = c;
+            values[i] = c;
         }
-        ready = true;
-    }
+        return values;
+    }();
     const auto* p = static_cast<const uint8_t*>(data);
     uint32_t crc = 0xFFFFFFFFu;
     while (len--)
     {
-        crc = tbl[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
+        crc = table[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
     }
     return crc ^ 0xFFFFFFFFu;
 }
@@ -118,40 +118,44 @@ struct Huff
     }
 };
 
-static Huff g_fixed_ll, g_fixed_dist;
-static bool g_fixed_ready = false;
-
-static void init_fixed()
+struct FixedHuffmanTables
 {
-    if (g_fixed_ready)
+    Huff literal_length;
+    Huff distance;
+
+    FixedHuffmanTables()
     {
-        return;
+        uint16_t lens[288];
+        int i = 0;
+        while (i < 144)
+        {
+            lens[i++] = 8;
+        }
+        while (i < 256)
+        {
+            lens[i++] = 9;
+        }
+        while (i < 280)
+        {
+            lens[i++] = 7;
+        }
+        while (i < 288)
+        {
+            lens[i++] = 8;
+        }
+        literal_length.build(lens, 288);
+        for (i = 0; i < 30; i++)
+        {
+            lens[i] = 5;
+        }
+        distance.build(lens, 30);
     }
-    uint16_t lens[288];
-    int i = 0;
-    while (i < 144)
-    {
-        lens[i++] = 8;
-    }
-    while (i < 256)
-    {
-        lens[i++] = 9;
-    }
-    while (i < 280)
-    {
-        lens[i++] = 7;
-    }
-    while (i < 288)
-    {
-        lens[i++] = 8;
-    }
-    g_fixed_ll.build(lens, 288);
-    for (i = 0; i < 30; i++)
-    {
-        lens[i] = 5;
-    }
-    g_fixed_dist.build(lens, 30);
-    g_fixed_ready = true;
+};
+
+static const FixedHuffmanTables& fixed_huffman_tables()
+{
+    static const FixedHuffmanTables tables;
+    return tables;
 }
 
 static const uint16_t LEN_BASE[29] = { 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31,
@@ -167,7 +171,7 @@ static const uint8_t CLCL_ORDER[19] = { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4,
 
 static std::vector<uint8_t> do_inflate(const uint8_t* src, size_t slen, size_t ulen_hint)
 {
-    init_fixed();
+    const auto& fixed_tables = fixed_huffman_tables();
     Bits b{ src, slen };
     std::vector<uint8_t> out;
     out.reserve(ulen_hint ? ulen_hint : slen * 3);
@@ -193,8 +197,8 @@ static std::vector<uint8_t> do_inflate(const uint8_t* src, size_t slen, size_t u
             Huff ll, dist;
             if (type == 1)
             {
-                ll = g_fixed_ll;
-                dist = g_fixed_dist;
+                ll = fixed_tables.literal_length;
+                dist = fixed_tables.distance;
             }
             else
             {

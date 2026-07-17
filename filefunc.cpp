@@ -686,9 +686,17 @@ std::string filefunc::getFileTime(const std::string& filename, const std::string
     if (ret == 0)
     {
         time_t tm_t = s.st_mtime;
-        auto filedate = localtime(&tm_t);
+        std::tm filedate{};
+    #ifdef _WIN32
+        if (localtime_s(&filedate, &tm_t) != 0)
+    #else
+        if (localtime_r(&tm_t, &filedate) == nullptr)
+    #endif
+        {
+            return "";
+        }
         char buf[128] = { 0 };
-        strftime(buf, 64, format.c_str(), filedate);
+        strftime(buf, 64, format.c_str(), &filedate);
         return buf;
     }
     return "";

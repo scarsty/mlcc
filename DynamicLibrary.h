@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <map>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -127,6 +128,7 @@ private:
     //free loaded dynamic libraries automatically when destruction
     ~DynamicLibrary()
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         for (auto dl : dynamic_libraries_)
         {
             if (dl.second)
@@ -146,6 +148,42 @@ private:
 #else
     std::map<std::string, void*> dynamic_libraries_;
 #endif
+    std::mutex mutex_;
+
+    static std::string normalizeLibraryName(std::string library_name)
+    {
+        if (library_name.find(".") == std::string::npos)
+        {
+#ifdef _WIN32
+            library_name += ".dll";
+#elif defined(__APPLE__)
+            library_name = "lib" + library_name + ".dylib";
+#else
+            library_name = "lib" + library_name + ".so";
+#endif
+        }
+        if (library_name.find_first_of("/\\") != std::string::npos)
+        {
+            library_name = std::filesystem::absolute(library_name).string();
+        }
+        return library_name;
+    }
+
+    void* loadDynamicLibraryLocked(const std::string& library_name)
+    {
+        const auto existing = dynamic_libraries_.find(library_name);
+        if (existing != dynamic_libraries_.end())
+        {
+            return existing->second;
+        }
+#ifdef _WIN32
+        auto hlib = LoadLibraryA(library_name.c_str());
+#else
+        auto hlib = dlopen(library_name.c_str(), RTLD_LAZY);
+#endif
+        dynamic_libraries_[library_name] = hlib;
+        return hlib;
+    }
 
 public:
     static std::string getLoadedDynamicLibraryPath(const std::string& library_name)
@@ -198,55 +236,27 @@ public:
 
     static void* loadDynamicLibrary(std::string library_name)
     {
-        if (library_name.find(".") == std::string::npos)
-        {
-#ifdef _WIN32
-            library_name = library_name + ".dll";
-#elif defined(__APPLE__)
-            library_name = "lib" + library_name + ".dylib";
-#else
-            library_name = "lib" + library_name + ".so";
-#endif
-        }
         auto dl = getInstance();
-        if (dl->dynamic_libraries_.count(library_name) == 0)
-        {
-            if (library_name.find_first_of("/\\") != std::string::npos)
-            {
-                library_name = std::filesystem::absolute(library_name).string();
-            }
-#ifdef _WIN32
-            auto hlib = LoadLibraryA(library_name.c_str());
-#else
-            auto hlib = dlopen(library_name.c_str(), RTLD_LAZY);
-#endif
-            dl->dynamic_libraries_[library_name] = hlib;
-            //if (hlib)
-            //{
-            //    fprintf(stdout, "Loaded dynamic library %s\n", library_name.c_str());
-            //}
-            //else
-            //{
-            //    fprintf(stdout, "Failed to load dynamic library %s\n", library_name.c_str());
-            //}
-        }
-        return dl->dynamic_libraries_[library_name];
+        std::lock_guard<std::mutex> lock(dl->mutex_);
+        return dl->loadDynamicLibraryLocked(normalizeLibraryName(std::move(library_name)));
     }
 
     static void* getFunction(const std::string& library_name, const std::string& function_name)
     {
-        auto dl = getInstance()->loadDynamicLibrary(library_name);
-        if (dl == nullptr)
+        auto instance = getInstance();
+        std::lock_guard<std::mutex> lock(instance->mutex_);
+        auto library = instance->loadDynamicLibraryLocked(normalizeLibraryName(library_name));
+        if (library == nullptr)
         {
-            dl = getInstance()->loadDynamicLibrary("./"+library_name);
+            library = instance->loadDynamicLibraryLocked(normalizeLibraryName("./" + library_name));
         }
         void* func = nullptr;
-        if (dl)
+        if (library)
         {
 #ifdef _WIN32
-            func = GetProcAddress((HINSTANCE)dl, function_name.c_str());
+            func = GetProcAddress((HINSTANCE)library, function_name.c_str());
 #else
-            func = dlsym(dl, function_name.c_str());
+            func = dlsym(library, function_name.c_str());
 #endif
             //fprintf(stdout, "Loaded function %s\n", function_name.c_str());
         }
@@ -260,15 +270,17 @@ public:
     static void freeDynamicLibrary(const std::string& library_name)
     {
         auto dl = getInstance();
-        if (dl->dynamic_libraries_.count(library_name) > 0)
+        std::lock_guard<std::mutex> lock(dl->mutex_);
+        const auto existing = dl->dynamic_libraries_.find(normalizeLibraryName(library_name));
+        if (existing != dl->dynamic_libraries_.end())
         {
-            auto hlib = dl->dynamic_libraries_[library_name];
+            auto hlib = existing->second;
 #ifdef _WIN32
             FreeLibrary(hlib);
 #else
             dlclose(hlib);
 #endif
-            dl->dynamic_libraries_.erase(library_name);
+            dl->dynamic_libraries_.erase(existing);
         }
     }
 };
