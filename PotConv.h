@@ -2,7 +2,6 @@
 
 #include "iconv.h"
 #include <cstring>
-#include <map>
 #include <string>
 
 class PotConv
@@ -42,13 +41,12 @@ public:
         auto str = PotConv::conv(src, from, "utf-16le");
         std::wstring ws;
         ws.resize(str.size() / 2);
-        memcpy(&ws[0], str.data(),str.size()/2*2);
+        if (!str.empty())
+        {
+            memcpy(ws.data(), str.data(), str.size());
+        }
         return ws;
     }
     static std::string to_read(const std::string& src);
 
-private:
-    std::map<std::string, iconv_t> cds_;
-    static PotConv potconv_;
-    static iconv_t createcd(const char* from, const char* to);
 };

@@ -1,43 +1,102 @@
 #include "PotConv.h"
 
+#include <algorithm>
+#include <cerrno>
+#include <map>
+#include <vector>
+
+namespace
+{
+class ConversionDescriptorCache
+{
+public:
+    ~ConversionDescriptorCache()
+    {
+        for (const auto& [key, descriptor] : descriptors_)
+        {
+            iconv_close(descriptor);
+        }
+    }
+
+    iconv_t get(const char* from, const char* to)
+    {
+        const std::string key = std::string(from) + '\0' + to;
+        const auto existing = descriptors_.find(key);
+        if (existing != descriptors_.end())
+        {
+            return existing->second;
+        }
+
+        const iconv_t descriptor = iconv_open(to, from);
+        if (descriptor == reinterpret_cast<iconv_t>(-1))
+        {
+            return descriptor;
+        }
+        descriptors_.emplace(key, descriptor);
+        return descriptor;
+    }
+
+private:
+    std::map<std::string, iconv_t> descriptors_;
+};
+
+thread_local ConversionDescriptorCache conversion_descriptors;
+}    // namespace
+
 PotConv::PotConv()
 {
 }
 
 PotConv::~PotConv()
 {
-    for (auto& cd : cds_)
-    {
-        iconv_close(cd.second);
-    }
 }
 
 std::string PotConv::conv(const std::string& src, const char* from, const char* to)
 {
-    //const char *from_charset, const char *to_charset, const char *inbuf, size_t inlen, char *outbuf;
-    iconv_t cd = createcd(from, to);
-    if (cd == nullptr)
+    iconv_t descriptor = conversion_descriptors.get(from, to);
+    if (descriptor == reinterpret_cast<iconv_t>(-1))
     {
         return "";
     }
-    size_t inlen = src.length();
-    size_t outlen = src.length() * 2;
-    auto in = new char[inlen + 1];
-    auto out = new char[outlen + 1];
-    memset(in, 0, inlen + 1);
-    memcpy(in, src.c_str(), inlen);
-    memset(out, 0, outlen + 1);
-    char *pin = in, *pout = out;
-    if (iconv(cd, &pin, &inlen, &pout, &outlen) == -1)
-    {
-        out[0] = '\0';
-    }
-    std::string result(out, src.length() * 2 - outlen);
-    delete[] in;
-    delete[] out;
-    return result;
-}
 
+    iconv(descriptor, nullptr, nullptr, nullptr, nullptr);
+
+    size_t input_size = src.size();
+    char* input = const_cast<char*>(src.data());
+    std::vector<char> output(std::max<size_t>(src.size() * 2, 32));
+    char* output_position = output.data();
+    size_t output_size = output.size();
+
+    auto grow_output = [&]
+    {
+        const size_t used = static_cast<size_t>(output_position - output.data());
+        output.resize(output.size() * 2);
+        output_position = output.data() + used;
+        output_size = output.size() - used;
+    };
+
+    while (iconv(descriptor, &input, &input_size, &output_position, &output_size) == static_cast<size_t>(-1))
+    {
+        if (errno != E2BIG)
+        {
+            iconv(descriptor, nullptr, nullptr, nullptr, nullptr);
+            return "";
+        }
+        grow_output();
+    }
+
+    while (iconv(descriptor, nullptr, nullptr, &output_position, &output_size) == static_cast<size_t>(-1))
+    {
+        if (errno != E2BIG)
+        {
+            iconv(descriptor, nullptr, nullptr, nullptr, nullptr);
+            return "";
+        }
+        grow_output();
+    }
+
+    return std::string(output.data(), static_cast<size_t>(output_position - output.data()));
+}
 std::string PotConv::conv(const std::string& src, const std::string& from, const std::string& to)
 {
     return conv(src, from.c_str(), to.c_str());
@@ -52,20 +111,3 @@ std::string PotConv::to_read(const std::string& src)
 #endif
 }
 
-PotConv PotConv::potconv_;
-
-iconv_t PotConv::createcd(const char* from, const char* to)
-{
-    std::string cds = std::string(from) + std::string(to);
-    if (potconv_.cds_.count(cds) == 0)
-    {
-        iconv_t cd;
-        cd = iconv_open(to, from);
-        potconv_.cds_[cds] = cd;
-        return cd;
-    }
-    else
-    {
-        return potconv_.cds_[cds];
-    }
-}

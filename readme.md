@@ -38,7 +38,6 @@ All libraries are header-only or header + cpp files, you can just put them into 
 - [cmdline](#cmdline)：命令行参数解析工具（含 Windows 细节修正）。
 - [StrCvt](#strcvt)：字符串与 UTF8/UTF16/宽字符互转工具。
 - [DrawStringFT](#drawstringft)：在图像上绘制文本（含中文）工具。
-- [FunctionTrait](#functiontrait)：用于提取成员函数签名信息。
 - [targetlnk](#targetlnk)：读取 Windows `.lnk` 快捷方式目标。
 - [runtime_format](#runtime_format)：运行时格式化工具（C++26 前置实现）。
 - [INIReaderBin](#inireaderbin)：把 ini 元数据与二进制内容打包存储。
@@ -378,12 +377,6 @@ cv::Mat m = cv::imread(R"(1.png)");
 // text, image, x, y, color (BGR usually), fusion (0 or 1), back ground (0 means no back, and 255 means black)， coding of the string
 ft.drawString((char*)u8"黄埃散漫风萧索，云栈萦纡登剑阁", m, 50, 100, { 0x87, 0x89, 0xf0 }, 1, 192, "utf-8");
 ```
-
-## FunctionTrait
-
-Check the number of patameters anf the return type of a class member function.
-
-用于检查类成员函数的参数个数以及返回类型。
 
 ## targetlnk
 
