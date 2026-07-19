@@ -8,6 +8,7 @@
 #ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
+#include <intrin.h>
 #undef NOMINMAX
 #else
 #include <dlfcn.h>
@@ -185,6 +186,18 @@ private:
         return hlib;
     }
 
+#ifndef _WIN32
+    void* loadSelfDynamicLibraryLocked(const void* address)
+    {
+        Dl_info info{};
+        if (!address || !dladdr(address, &info) || !info.dli_fname || !*info.dli_fname)
+        {
+            return nullptr;
+        }
+        return loadDynamicLibraryLocked(normalizePath(info.dli_fname));
+    }
+#endif
+
 public:
     static std::string getLoadedDynamicLibraryPath(const std::string& library_name)
     {
@@ -241,14 +254,41 @@ public:
         return dl->loadDynamicLibraryLocked(normalizeLibraryName(std::move(library_name)));
     }
 
+#ifdef _WIN32
+    __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+    __attribute__((noinline))
+#endif
     static void* getFunction(const std::string& library_name, const std::string& function_name)
     {
-        auto instance = getInstance();
-        std::lock_guard<std::mutex> lock(instance->mutex_);
-        auto library = instance->loadDynamicLibraryLocked(normalizeLibraryName(library_name));
-        if (library == nullptr)
+        void* library = nullptr;
+        if (library_name.empty())
         {
-            library = instance->loadDynamicLibraryLocked(normalizeLibraryName("./" + library_name));
+#ifdef _WIN32
+            HMODULE self_module = nullptr;
+            if (!GetModuleHandleExA(
+                GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                reinterpret_cast<LPCSTR>(_ReturnAddress()),
+                &self_module))
+            {
+                return nullptr;
+            }
+            library = self_module;
+#else
+            auto instance = getInstance();
+            std::lock_guard<std::mutex> lock(instance->mutex_);
+            library = instance->loadSelfDynamicLibraryLocked(__builtin_return_address(0));
+#endif
+        }
+        else
+        {
+            auto instance = getInstance();
+            std::lock_guard<std::mutex> lock(instance->mutex_);
+            library = instance->loadDynamicLibraryLocked(normalizeLibraryName(library_name));
+            if (library == nullptr)
+            {
+                library = instance->loadDynamicLibraryLocked(normalizeLibraryName("./" + library_name));
+            }
         }
         void* func = nullptr;
         if (library)
