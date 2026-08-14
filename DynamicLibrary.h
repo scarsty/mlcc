@@ -199,6 +199,26 @@ private:
 #endif
 
 public:
+    static std::string getFunctionLibraryPath(const void* function)
+    {
+        if (!function)
+        {
+            return {};
+        }
+#ifdef _WIN32
+        HMODULE module = nullptr;
+        if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCSTR>(function), &module))
+        {
+            return {};
+        }
+        return getModulePath(module);
+#else
+        Dl_info info{};
+        return dladdr(function, &info) && info.dli_fname ? normalizePath(info.dli_fname) : std::string{};
+#endif
+    }
+
     static std::string getLoadedDynamicLibraryPath(const std::string& library_name)
     {
 #ifdef _WIN32
