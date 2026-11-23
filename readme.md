@@ -271,6 +271,18 @@ Get the C-style function pointer like this:
 void* func = DynamicLibrary::getFunction("xxx.dll", "xxx");
 ```
 
+To find another exported function in the same module as a known function address, use:
+
+已知一个函数地址时，可以在该函数所在的模块中查找另一个导出函数：
+
+```cpp
+void* diagnostic = DynamicLibrary::getFunctionFromSameModule(known_function, "ext_getdiag");
+```
+
+The function returns `nullptr` if the address or name is invalid, or the export is not found.
+
+若地址或名称无效，或者找不到导出函数，则返回 `nullptr`。
+
 You have to give the full name of the library include the path.
 
 你需要传入包含完整路径的库文件名。

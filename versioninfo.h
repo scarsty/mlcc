@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Windows.h>
 #include <string>
 #include <vector>
@@ -21,7 +21,7 @@ inline std::wstring get_loaded_module_path(const void* address)
         return {};
     }
 
-    std::wstring path(512, L'\\0');
+    std::wstring path(512, L'\0');
     for (;;)
     {
         DWORD length = GetModuleFileNameW(module, path.data(), static_cast<DWORD>(path.size()));

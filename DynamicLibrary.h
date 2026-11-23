@@ -219,6 +219,29 @@ public:
 #endif
     }
 
+    static void* getFunctionFromSameModule(const void* anchor, const char* function_name)
+    {
+        if (!anchor || !function_name || !*function_name)
+        {
+            return nullptr;
+        }
+#ifdef _WIN32
+        HMODULE module = nullptr;
+        if (!GetModuleHandleExA(
+                GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                reinterpret_cast<LPCSTR>(anchor), &module))
+        {
+            return nullptr;
+        }
+        return reinterpret_cast<void*>(GetProcAddress(module, function_name));
+#else
+        auto instance = getInstance();
+        std::lock_guard<std::mutex> lock(instance->mutex_);
+        void* module = instance->loadSelfDynamicLibraryLocked(anchor);
+        return module ? dlsym(module, function_name) : nullptr;
+#endif
+    }
+
     static std::string getLoadedDynamicLibraryPath(const std::string& library_name)
     {
 #ifdef _WIN32
