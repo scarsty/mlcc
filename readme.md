@@ -34,6 +34,7 @@ All libraries are header-only or header + cpp files, you can just put them into 
 - [Timer](#timer)：用于统计代码耗时的计时器。
 - [Random](#random)：对随机数生成器的轻量封装。
 - [DynamicLibrary](#dynamiclibrary)：动态库加载与函数获取工具。
+- [loaded_dll_paths](#loaded_dll_paths)：列出当前进程已加载的 DLL 路径（Windows）。
 - [ConsoleControl](#consolecontrol)：控制台颜色与光标控制工具。
 - [cmdline](#cmdline)：命令行参数解析工具（含 Windows 细节修正）。
 - [StrCvt](#strcvt)：字符串与 UTF8/UTF16/宽字符互转工具。
@@ -290,6 +291,24 @@ You have to give the full name of the library include the path.
 The loaded libraries will be unload automatically when the program exits.
 
 程序退出时，已加载的库会自动卸载。
+
+## loaded_dll_paths
+
+On Windows, `loaded_dll_paths()` returns the absolute paths of DLLs currently loaded by this process in the local code page by default; pass `true` to get UTF-8 strings instead. The executable itself is excluded. On other platforms it returns an empty vector. It returns paths rather than printing them; for example:
+
+在 Windows 上，`loaded_dll_paths()` 默认返回当前进程已加载 DLL 的本地编码绝对路径；传入 `true` 可改为 UTF-8。结果不包含可执行文件本身。其他平台返回空列表。函数只返回路径，不直接输出；例如：
+
+```cpp
+#include "loaded_dll_paths.h"
+#include <iostream>
+
+for (const auto& path : loaded_dll_paths())
+{
+    std::cout << path << '\n';
+}
+
+auto utf8_paths = loaded_dll_paths(true);
+```
 
 ## ConsoleControl
 
